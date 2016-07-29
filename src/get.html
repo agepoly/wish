@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script>
+function timestamp2string(timestamp){
+	var a = new Date(timestamp);
+	var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+	var year = a.getFullYear();
+	var month = months[a.getMonth()];
+	var date = a.getDate();
+	var hour = a.getHours();
+	var min = a.getMinutes();
+	var sec = a.getSeconds();
+	var time = date + ' ' + month + ' ' + year + ' ' + hour + 'h' + min;
+	return time;
+}
+
+$(document).ready(function(){
+	$.post("/info", "{ \"key\" : \"{key}\" }",
+		function(data,status){
+		if (status == "success") {
+			var x = eval('(' + data + ')');
+			$("#name").text(x.name);
+			$("#mail").text(x.mail);
+			$("#wish").text(x.wish);
+			$("#slots").text(x.slots);
+			$("#deadline").text(timestamp2string(x.deadline));
+		}
+	});
+});
+</script>
+</head>
+<body>
+
+<h1 id="name">Not found</h1>
+<h2 id="mail"></h2>
+
+<p id="wish"></p>
+<p id="slots"></p>
+<p id="deadline"></p>
+
+</body>
+</html>
+
+
