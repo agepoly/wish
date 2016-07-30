@@ -1,15 +1,124 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+<script src="https://rawgit.com/janl/mustache.js/master/mustache.min.js"></script>
+
+
 <script>
 $(document).ready(function(){
+
+	var slotform = $('#slotform').html();
+	Mustache.parse(slotform);
+	
+	var inputcreate = $('#inputcreate').html();
+	Mustache.parse(inputcreate);
+	
+
+	$("input[name='nslots']").change(function() {
+		var n = $("input[name='nslots']").val();
+		var old = getSlots();
+		
+		var content = "<table><tr><th>Slot Name</th><th>Min Bound</th><th>Max Bound</th></tr>";
+		for (i=0; i < n; ++i) {
+			var data = {
+				name: "slot"+i,
+				namev: "no "+(i+1),
+				vmin: "vmin"+i,
+				vminv: "0",
+				vmax: "vmax"+i,
+				vmaxv: "10"
+			};
+			if (i < old.slots.length) {
+				data.namev = old.slots[i];
+				data.vminv = old.vmin[i];
+				data.vmaxv = old.vmax[i];
+			}
+			content += Mustache.render(slotform, data);
+		}
+		content += "</table>";
+		$("#slots").html(content);
+	});
+	
+	$("#send").click(function() {
+		var myDate = $("input[name='deadline']").val();
+		myDate=myDate.split("-");
+		var newDate=myDate[0]+"/"+myDate[1]+"/"+myDate[2];
+		console.log(newDate);
+		var timestamp = new Date(newDate).getTime();
+		
+		console.log($("#mails").html().split(/[\s,]+/));
+		var s = getSlots();
+		
+		var payload = '{"name": "'+$("input[name='name']").val()+'", '
+			+'"deadline": '+timestamp+', '
+			+'"mails": ["'+$("#mails").html().split(/[\s,]+/).join('","')+'"], '
+			+'"slots": ["'+s.slots.join('","')+'"], '
+			+'"vmin": ['+s.vmin.join(',')+'], '
+			+'"vmax": ['+s.vmax.join(',')+']}';
+				
+		console.log(payload);
+		$.post("/create", payload, function(data,status){
+			if (status == "success") {
+				var x = eval('(' + data + ')');
+				console.log(x);
+				
+				var content = "";
+				for (i=0; i < x.people.length; ++i) {
+					content += x.people[i].mail + ", " + window.location.hostname + ":" + window.location.port + "/get/" + x.people[i].key + "\n";
+				}
+				
+				$("#output").html(content);
+			}
+		});
+	});
+	
+	$("input[name='nslots']").change();
 });
+
+function getSlots() {
+	var n = $("input[name='nslots']").val();
+	var slots = [];
+	var vmin = [];
+	var vmax = [];
+	for (i=0; $("input[name='slot"+i+"']").length; ++i) {
+		slots.push($("input[name='slot"+i+"']").val());
+		vmin.push($("input[name='vmin"+i+"']").val());
+		vmax.push($("input[name='vmax"+i+"']").val());
+	}
+	
+	return { slots: slots, vmin: vmin, vmax: vmax };
+}
 </script>
+
+
+<script id="slotform" type="x-tmpl-mustache">
+<tr>
+	<th><input type="text" name="{{ name }}" value="{{ namev }}"></th>
+	<th><input type="number" name="{{ vmin }}" min="0" max="100" step="1" value="{{ vminv }}"></th>
+	<th><input type="number" name="{{ vmax }}" min="0" max="100" step="1" value="{{ vmaxv }}"></th>
+</tr>
+</script>
+
 </head>
 <body>
 
 <h1>Activities Web</h1>
+
+<form>
+	Activity Name:
+	<input type="text" name="name"><br>
+	Number of slots:
+	<input type="number" name="nslots" min="1" max="100" step="1" value="5">
+	<div id="slots"></div>
+	Mail list:
+	<textarea id="mails" rows="4" cols="50">name@x.com, other@x.com, onemore@x.com</textarea><br>
+	Deadline: <input type="date" name="deadline">
+	
+	<button type="button" id="send">Send</button>
+</form>
+
+<textarea readonly id="output" rows="10" cols="100"></textarea>
 
 </body>
 </html>
