@@ -2,103 +2,134 @@
 <html>
 <head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
-<script src="https://rawgit.com/janl/mustache.js/master/mustache.min.js"></script>
 
 
 <script>
-$(document).ready(function(){
-
-	var slotform = $('#slotform').html();
-	Mustache.parse(slotform);
-	
-	var inputcreate = $('#inputcreate').html();
-	Mustache.parse(inputcreate);
-	
-
-	$("input[name='nslots']").change(function() {
-		var n = $("input[name='nslots']").val();
-		var old = getSlots();
-		
-		var content = "<table><tr><th>Slot Name</th><th>Min Bound</th><th>Max Bound</th></tr>";
-		for (i=0; i < n; ++i) {
-			var data = {
-				name: "slot"+i,
-				namev: "no "+(i+1),
-				vmin: "vmin"+i,
-				vminv: "0",
-				vmax: "vmax"+i,
-				vmaxv: "10"
-			};
-			if (i < old.slots.length) {
-				data.namev = old.slots[i];
-				data.vminv = old.vmin[i];
-				data.vmaxv = old.vmax[i];
-			}
-			content += Mustache.render(slotform, data);
-		}
-		content += "</table>";
-		$("#slots").html(content);
-	});
-	
-	$("#send").click(function() {
-		var myDate = $("input[name='deadline']").val();
-		myDate=myDate.split("-");
-		var newDate=myDate[0]+"/"+myDate[1]+"/"+myDate[2];
-		console.log(newDate);
-		var timestamp = new Date(newDate).getTime();
-		
-		console.log($("#mails").html().split(/[\s,]+/));
-		var s = getSlots();
-		
-		var payload = '{"name": "'+$("input[name='name']").val()+'", '
-			+'"deadline": '+timestamp+', '
-			+'"mails": ["'+$("#mails").html().split(/[\s,]+/).join('","')+'"], '
-			+'"slots": ["'+s.slots.join('","')+'"], '
-			+'"vmin": ['+s.vmin.join(',')+'], '
-			+'"vmax": ['+s.vmax.join(',')+']}';
-				
-		console.log(payload);
-		$.post("/create", payload, function(data,status){
-			if (status == "success") {
-				var x = eval('(' + data + ')');
-				console.log(x);
-				
-				var content = "";
-				for (i=0; i < x.people.length; ++i) {
-					content += x.people[i].mail + ", " + window.location.hostname + ":" + window.location.port + "/get/" + x.people[i].key + "\n";
-				}
-				
-				$("#output").html(content);
-			}
-		});
-	});
-	
-	$("input[name='nslots']").change();
+$(document).ready(function() {
+	$("input[name='nslots']").bind('input propertychange', create_slots);
+	$("#send").click(send);
+	$("input").bind('input propertychange', check_validity);
+	$("textarea").bind('input propertychange', check_validity);
+	$("input[name='deadline']").prop('min', new Date().toJSON().split('T')[0]);
+	$("#output").hide();
+	create_slots();
+	check_validity();
 });
 
-function getSlots() {
+function send() {
+	var slots = get_slot_val();
+	var deadline = new Date($("input[name='deadline']").val()).getTime();
+	
+	var payload = '{'
+		+'"name"     : "'+$("input[name='name']").val()+'", '
+		+'"deadline" : '+deadline+', '
+		+'"mails"    : ["'+$("#mails").val().split(/[\s,]+/).join('","')+'"], '
+		+'"slots"    : ["'+slots.slot.join('","')+'"], '
+		+'"vmin"     : ['+ slots.vmin.join(',')  +'], '
+		+'"vmax"     : ['+ slots.vmax.join(',')  +']'
+		+'}';
+	
+	console.log(payload);
+	
+	$.post("/create", payload, function(data,status) {
+		if (status == "success") {
+			var x = eval('(' + data + ')');
+			var url = window.location.hostname + ":" + window.location.port + "/get/";
+			var content = "";
+			for (i=0; i < x.people.length; ++i) {
+				content += x.people[i].mail+", "+url+x.people[i].key+"\n";
+			}
+			$("#output").html(content);
+			$("#output").show();
+		}
+	});
+}
+	
+function create_slots() {
 	var n = $("input[name='nslots']").val();
-	var slots = [];
+	var oldvalues = get_slot_val();
+	
+	var content = "<table><tr><th>Slot Name</th><th>Min Bound</th><th>Max Bound</th></tr>";
+	for (i=0; i < n; ++i) {
+		var values = {
+			name: "no "+(i+1),
+			vmin: "0",
+			vmax: "10"
+		};
+		if (i < oldvalues.slot.length) {
+			values.name = oldvalues.slot[i];
+			values.vmin = oldvalues.vmin[i];
+			values.vmax = oldvalues.vmax[i];
+		}
+		content += '<tr><th><input type="text" class="slot" name="slot'+i+'" value="'+values.name+'"></th>'
+			+ '<th><input type="number" class="vmin" name="vmin'+i+'" min="0" max="100" step="1" value="'+values.vmin+'"></th>'
+			+ '<th><input type="number" class="vmax" name="vmax'+i+'" min="0" max="100" step="1" value="'+values.vmax+'"></th></tr>'
+	}
+	content += "</table>";
+	$("#slots").html(content);
+	$("input").bind('input propertychange', check_validity);
+}
+
+function get_slot_val() {
+	var slot = [];
 	var vmin = [];
 	var vmax = [];
-	for (i=0; $("input[name='slot"+i+"']").length; ++i) {
-		slots.push($("input[name='slot"+i+"']").val());
+	for (var i = 0; $("input[name='slot"+i+"']").length; ++i) {
+		slot.push($("input[name='slot"+i+"']").val());
 		vmin.push($("input[name='vmin"+i+"']").val());
 		vmax.push($("input[name='vmax"+i+"']").val());
 	}
 	
-	return { slots: slots, vmin: vmin, vmax: vmax };
+	return { slot: slot, vmin: vmin, vmax: vmax };
+}
+
+function check_validity() {
+	if ($("input[name='name']").val() == "") {
+		$("input[name='name']").css({'border-color' : '#FF0000'});
+	} else {
+		$("input[name='name']").removeAttr('style');
+	}
+	
+	var max_capacity = 0;
+	
+	for (var i = 0; $("input[name='slot"+i+"']").length; ++i) {
+		if ($("input[name='slot"+i+"']").val() == "") {
+			$("input[name='slot"+i+"']").css({'border-color' : '#FF0000'});
+		} else {
+			$("input[name='slot"+i+"']").removeAttr('style');
+		}
+		if ($("input[name='vmin"+i+"']").val() > $("input[name='vmax"+i+"']").val()) {
+			$("input[name='vmin"+i+"']").css({'border-color' : '#FF0000'});
+			$("input[name='vmax"+i+"']").css({'border-color' : '#FF0000'});
+		} else {
+			$("input[name='vmin"+i+"']").removeAttr('style');
+			$("input[name='vmax"+i+"']").removeAttr('style');
+		}
+		max_capacity += Number($("input[name='vmax"+i+"']").val());
+	}
+	
+	var mails = $("#mails").val().split(/[\s,]+/);
+	
+	if (mails.length > max_capacity) {
+		$(".vmax").css({'border-color' : '#FF0000'});
+	} else {
+		$(".vmax").removeAttr('style');
+	}
+	
+	if ($("#mails").val() == "" || mails.length > max_capacity) {
+		$("#mails").css({'border-color' : '#FF0000'});
+	} else {
+		$("#mails").removeAttr('style');
+	}
+	
+	if ($("input[name='deadline']").val() == "") {
+		$("input[name='deadline']").css({'border-color' : '#FF0000'});
+	} else {
+		$("input[name='deadline']").removeAttr('style');
+	}
 }
 </script>
 
-
-<script id="slotform" type="x-tmpl-mustache">
-<tr>
-	<th><input type="text" name="{{ name }}" value="{{ namev }}"></th>
-	<th><input type="number" name="{{ vmin }}" min="0" max="100" step="1" value="{{ vminv }}"></th>
-	<th><input type="number" name="{{ vmax }}" min="0" max="100" step="1" value="{{ vmaxv }}"></th>
-</tr>
-</script>
 
 </head>
 <body>
@@ -107,18 +138,18 @@ function getSlots() {
 
 <form>
 	Activity Name:
-	<input type="text" name="name"><br>
+	<input type="text" name="name" value=""><br>
 	Number of slots:
-	<input type="number" name="nslots" min="1" max="100" step="1" value="5">
+	<input type="number" name="nslots" min="1" max="100" step="1" value="2">
 	<div id="slots"></div>
 	Mail list:
-	<textarea id="mails" rows="4" cols="50">name@x.com, other@x.com, onemore@x.com</textarea><br>
+	<textarea id="mails" rows="4" cols="70">mail1, mail2, mail3, ...</textarea><br>
 	Deadline: <input type="date" name="deadline">
 	
 	<button type="button" id="send">Send</button>
 </form>
 
-<textarea readonly id="output" rows="10" cols="100"></textarea>
+<textarea readonly id="output" rows="10" cols="90"></textarea>
 
 </body>
 </html>

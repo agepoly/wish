@@ -50,10 +50,11 @@ struct InputInfo {
 struct OutputInfo {
 	name: String,
 	mail: String,
+	mails: Vec<String>,
 	slots: Vec<String>,
 	wish: Vec<i32>,
 	deadline: i64,
-	students: i32
+	results: Vec<i32>
 }
 
 #[derive(RustcEncodable, RustcDecodable)]
@@ -65,7 +66,7 @@ struct InputFill {
 
 fn main() {
 	let client = Client::connect("localhost", 27017)
-		.ok().expect("Failed to initialize client.");
+		.expect("Failed to initialize client.");
     
 	let db: Database = client.db("activities");
 	
@@ -112,6 +113,21 @@ fn main() {
 				return Ok(Response::with(status::BadRequest));
 			}
 		};
+
+		if data.vmax.iter().fold(0, |acc, &x| acc + x) < (data.mails.len() as i32) {
+			println!("create: not enough room");
+			return Ok(Response::with(status::BadRequest));
+		}
+		
+		if data.vmax.len() != data.vmin.len() || data.vmax.len() != data.slots.len() {
+			println!("create: array size problem");
+			return Ok(Response::with(status::BadRequest));
+		}
+		
+		if data.vmin.iter().zip(data.vmax.iter()).any(|(&xmin, &xmax)| xmin > xmax) {
+			println!("create: vmin > vmax");
+			return Ok(Response::with(status::BadRequest));			
+		}
 
 		let mut hasher = Md5::new();
 		let mut keys = Vec::new();
@@ -198,7 +214,7 @@ fn main() {
 			Ok(x) => x,
 			Err(e) => {
 				println!("fill: {}", e);
-				return Ok(Response::with(status::BadRequest));
+				return Ok(Response::with((status::BadRequest, r#"{"error": "error when parse data"}"#)));
 			}
 		};
 		
@@ -206,21 +222,17 @@ fn main() {
 		c.sort();
 		for i in 0..c.len() {
 			if c[i] > i as i32 {
-				return Ok(Response::with((status::Ok, r#"{"error": "illegal"}"#)));
+				return Ok(Response::with((status::BadRequest, r#"{"error": "illegal data"}"#)));
 			}
 		}
 		
 		let wish = Bson::Array(data.wish.iter().map(|x| Bson::I32(*x)).collect());
 
 		match db.collection("events").update_one(doc!{"people.key" => (data.key.clone())}, doc!{"$set" => {"people.$.wish" => wish}}, None) {
-			Ok(x) => {
-				if x.modified_count == 0 {
-					return Ok(Response::with((status::Ok, r#"{"error": "not found"}"#)));
-				}
-			},
+			Ok(_) => {},
 			Err(e) => {
 				println!("info: {}", e);
-				return Ok(Response::with((status::Ok, r#"{"error": "database"}"#)));
+				return Ok(Response::with((status::NotFound, r#"{"error": "error with database"}"#)));
 			}
 		};
 		
@@ -231,9 +243,6 @@ fn main() {
 	fn info(req: &mut Request, db: &Database) -> IronResult<Response> {
 		let mut payload = String::new();
 		req.body.read_to_string(&mut payload).unwrap();
-		//if !payload.trim().starts_with("{") {
-		//	payload = "{".to_string() + &payload + "}";
-		//}
 
 		let data: InputInfo = match json::decode(&payload) {
 			Ok(x) => x,
@@ -273,10 +282,11 @@ fn main() {
 				let payload = json::encode(&OutputInfo{ 
 					name: event.get_str("name").unwrap_or("").to_string(),
 					deadline: event.get_i64("deadline").unwrap_or(0),
-					students: event.get_array("people").unwrap_or(&Vec::new()).len() as i32,
-					mail: person.get_str("mail").unwrap_or("anonymous@").to_owned(),
+					mails: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p| match p {&Bson::Document(ref x) => x.get_str("mail").unwrap_or("@").to_owned(), _ => "@".to_owned()}).collect(),
+					mail: person.get_str("mail").unwrap_or("@").to_owned(),
 					wish: person.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(v) => v, _ => 0}).collect(),
-					slots: event.get_array("slots").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::String(ref v) => v.clone(), _ => "".to_owned()}).collect()
+					slots: event.get_array("slots").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::String(ref v) => v.clone(), _ => "".to_owned()}).collect(),
+					results: event.get_array("results").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(v) => v, _ => 0}).collect()
 				}).unwrap();
 				Ok(Response::with((status::Ok, payload)))
 			} else {
@@ -287,10 +297,9 @@ fn main() {
 		}
 	}
 	
-	fn gui_get(req: &mut Request) -> IronResult<Response> {
-		let key = req.extensions.get::<Router>().unwrap().find("key").unwrap_or("/");
+	fn gui_get(_: &mut Request) -> IronResult<Response> {
 		let content_type : Mime = "text/html".parse().unwrap();
-		Ok(Response::with((content_type, status::Ok, include_str!("get.html").replace("{key}", key))))
+		Ok(Response::with((content_type, status::Ok, include_str!("get.html"))))
 	}
 	fn gui_home(_: &mut Request) -> IronResult<Response> {
 		let content_type : Mime = "text/html".parse().unwrap();
