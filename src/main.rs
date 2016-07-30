@@ -98,7 +98,7 @@ fn main() {
 		std::thread::spawn(move || {
 			loop {
 				std::thread::sleep(std::time::Duration::from_secs(10));
-				process(&arc.lock().unwrap());
+				process(&arc);
 			}
 		})
 	};
@@ -306,23 +306,27 @@ fn main() {
 		Ok(Response::with((content_type, status::Ok, include_str!("home.html"))))
 	}
 	
-	fn process(db: &Database) {
+	fn process(db: &Arc<Mutex<Database>>) {
 		let time = time::get_time().sec;
 		
 		let query = doc!{"deadline" => {"$lt" => time}, "results" => (Bson::Null)};
+	
+		let event = {
+			let db = db.clone();
+			let db = db.lock().unwrap();
+			db.collection("events").find_one(Some(query), None)
+		};
 
-		if let Ok(Some(event)) = db.collection("events").find_one(Some(query), None) {
-			println!("event found");
-			
+		if let Ok(Some(event)) = event {			
 			let vmin = event.get_array("vmin").unwrap().iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();
 			let vmax = event.get_array("vmax").unwrap().iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();
 			let wishes = event.get_array("people").unwrap().iter().map(|p| match p { &Bson::Document(ref p) => p.get_array("wish").unwrap().iter().map(|x| match x {&Bson::I32(v) => v as u32, _ => 0}).collect(), _ => Vec::new()} ).collect();
 			
-			let results = solver::search_solution(&vmin, &vmax, &wishes, 10f64);
+			let results = solver::search_solution(&vmin, &vmax, &wishes, 20f64);
 			if results.is_empty() { return; }
 			
 			let results = Bson::Array(results[0].iter().map(|x| Bson::I32(*x as i32)).collect());
-			db.collection("events").update_one(doc!{"_id" => (event.get_object_id("_id").unwrap().clone())}, doc!{"$set" => {"results" => results}}, None).unwrap();
+			db.lock().unwrap().collection("events").update_one(doc!{"_id" => (event.get_object_id("_id").unwrap().clone())}, doc!{"$set" => {"results" => results}}, None).unwrap();
 		}
 	}
 
