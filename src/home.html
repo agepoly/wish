@@ -3,6 +3,21 @@
 <head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 
+<style>
+body {
+    background-color: linen;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+}
+#slots {
+    display: inline-block;
+}
+h1 {
+    color: maroon;
+    margin-left: 20px;
+} 
+</style>
 
 <script>
 $(document).ready(function() {
@@ -136,20 +151,25 @@ function check_validity() {
 
 <h1>Activities Web</h1>
 
-<form>
-	Activity Name:
-	<input type="text" name="name" value=""><br>
-	Number of slots:
-	<input type="number" name="nslots" min="1" max="100" step="1" value="2">
-	<div id="slots"></div>
-	Mail list:
-	<textarea id="mails" rows="4" cols="70">mail1, mail2, mail3, ...</textarea><br>
-	Deadline: <input type="date" name="deadline">
-	
-	<button type="button" id="send">Send</button>
-</form>
+Activity Name:<br />
+<input type="text" name="name" value=""><br />
+<br />
 
-<textarea readonly id="output" rows="10" cols="90"></textarea>
+Number of slots:<br />
+<input type="number" name="nslots" min="1" max="100" step="1" value="2"><br />
+<div id="slots"></div><br />
+<br />
+
+Mail list:<br />
+<textarea id="mails" rows="5" cols="50">mail1, mail2, mail3, ...</textarea><br />
+<br />
+
+Deadline: <input type="date" name="deadline"><br />
+<br />
+
+<button type="button" id="send">Send</button><br />
+
+<textarea readonly id="output" rows="5" cols="50"></textarea>
 
 </body>
 </html>

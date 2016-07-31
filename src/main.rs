@@ -65,7 +65,7 @@ struct InputFill {
 
 fn main() {
 	let client = Client::connect("localhost", 27017)
-		.expect("Failed to initialize client.");
+		.ok().expect("Failed to initialize client.");
     
 	let db: Database = client.db("activities");
 	

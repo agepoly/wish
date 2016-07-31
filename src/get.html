@@ -3,6 +3,25 @@
 <head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 
+<style>
+body {
+    background-color: linen;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+}
+#content {
+    display: inline-block;
+}
+h1 {
+    color: maroon;
+    margin-left: 20px;
+}
+p {
+	margin-left: 5px;
+}
+</style>
+
 <script>
 var key = window.location.pathname.split("/")[2];
 var x = null;
@@ -13,16 +32,21 @@ $(document).ready(function() {
 	$.post("/info", '{ "key" : "'+key+'" }', function(data,status) {
 		if (status == "success") {
 			x = eval('(' + data + ')');
-			$("#name").text(x.name);
-			$("#mail").text(x.mail);
+			$("#name").text('Activity name: '+x.name);
+			$("#mail").text('Your email: '+x.mail);
 			
 			deadline = new Date(x.deadline);
-			hours = Math.floor((deadline-now)/1000/3600);
-			days = Math.floor(hours / 24);
-			hours = hours % 24;
 			
-			$("#deadline").text('Deadline '+deadline.toJSON().split('T')[0]+' (in '+days+' days and '+hours+' hours)');
-			
+			if (deadline > now) {
+				var hours = Math.floor((deadline-now)/1000/3600);
+				var days = Math.floor(hours / 24);
+				hours = hours % 24;
+				$("#deadline").text('Deadline: '+deadline.toJSON().split('T')[0]+' (in '+days+' days and '+hours+' hours)');
+			} else {
+				var days = Math.floor((now-deadline)/1000/3600/24);
+				$("#deadline").text('Deadline: '+deadline.toJSON().split('T')[0]+' ('+days+' days ago)');
+			}
+						
 			if (x.results.length > 0) {
 				var content = '<table border="1"><tr><th>Slot Name</th><th>Mail</th></tr>';
 				var n = x.slots.length;
@@ -38,7 +62,7 @@ $(document).ready(function() {
 				content += '</table>';
 				$("#content").html(content);
 			} else {
-				var content = '<table><tr><th>Slot Name</th><th>Wish</th></tr>';
+				var content = '<table border="1"><tr><th>Slot Name</th><th>Wish</th></tr>';
 				var n = x.slots.length;
 				for (i=0; i< n; ++i) {
 					content += '<tr><th>'+x.slots[i]+'</th><th><input type="number" name="wish'+i+'" min="1" max="'+n+'" step="1" value="'+(n-x.wish[i])+'"></th></tr>';
@@ -70,10 +94,12 @@ function upload_wish() {
 		success: function(data) {
 			console.log(data);
 			$("input").css({'border-color' : ''});
+			$("#error").text('');
 		},
 		error: function(data) {
 			console.log(data);
 			$("input").css({'border-color' : '#FF0000'});
+			$("#error").text('The values are not valid: each number must appear one time');
 		},
 	});
 }
@@ -96,11 +122,12 @@ function color_wish() {
 
 <h1>Activities Web</h1>
 
-<p id="name">Not found</p>
+<p id="name">Waiting for request...</p>
 <p id="mail"></p>
 <p id="deadline"></p>
 
 <div id="content"></div>
+<p id="error"></p>
 
 </body>
 </html>
