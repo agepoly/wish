@@ -26,6 +26,8 @@ use std::io::Read;
 use rustc_serialize::hex::ToHex;
 use std::collections::btree_map::BTreeMap;
 use rand::Rng;
+use std::env;
+
 
 
 #[derive(RustcEncodable, RustcDecodable)]
@@ -334,6 +336,6 @@ fn main() {
 		}
 	}
 
-	Iron::new(router).http("localhost:3000").unwrap();
+	Iron::new(router).http(env::args().nth(1).unwrap_or("localhost:3000".to_string()).as_str()).unwrap();
 	handler.join().unwrap();
 }
