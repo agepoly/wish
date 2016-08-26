@@ -88,8 +88,28 @@ fn main() {
 			info(r, &arc.lock().unwrap()));
 	}
 
-	router.get("/get/:key", gui_get);
-	router.get("/", gui_home);
+
+	router.get("/get/:key", |_: &mut Request| {
+		let content_type : Mime = "text/html".parse().unwrap();
+		Ok(Response::with((content_type, status::Ok, include_str!("get.html"))))
+	});
+	router.get("/", |_: &mut Request| {
+		let content_type : Mime = "text/html".parse().unwrap();
+		Ok(Response::with((content_type, status::Ok, include_str!("home.html"))))
+	});
+	router.get("/home.js", |_: &mut Request| {
+		let content_type : Mime = "application/javascript".parse().unwrap();
+		Ok(Response::with((content_type, status::Ok, include_str!("home.js"))))
+	});
+	router.get("/get.js", |_: &mut Request| {
+		let content_type : Mime = "application/javascript".parse().unwrap();
+		Ok(Response::with((content_type, status::Ok, include_str!("get.js"))))
+	});
+	router.get("/style.css", |_: &mut Request| {
+		let content_type : Mime = "text/css".parse().unwrap();
+		Ok(Response::with((content_type, status::Ok, include_str!("style.css"))))
+	});
+	
 	
 	
 	let handler = {
@@ -296,16 +316,7 @@ fn main() {
 			}
 		}
 	}
-	
-	fn gui_get(_: &mut Request) -> IronResult<Response> {
-		let content_type : Mime = "text/html".parse().unwrap();
-		Ok(Response::with((content_type, status::Ok, include_str!("get.html"))))
-	}
-	fn gui_home(_: &mut Request) -> IronResult<Response> {
-		let content_type : Mime = "text/html".parse().unwrap();
-		Ok(Response::with((content_type, status::Ok, include_str!("home.html"))))
-	}
-	
+		
 	fn process(db: &Arc<Mutex<Database>>) {
 		let time = time::get_time().sec;
 		
