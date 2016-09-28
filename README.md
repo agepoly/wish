@@ -10,9 +10,10 @@ With the url the participant can enter his own wish by sorting the slots by pref
 
 ## Compile & Run
 
-1. [Install rust](https://www.rust-lang.org/en-US/downloads.html)
-2. Clone this repository and open a terminal in it
-3. `cargo run`
+1. [Install mongodb](www.mongodb.com)
+2. [Install rust](https://www.rust-lang.org/en-US/downloads.html)
+3. Clone this repository and open a terminal in it
+4. `cargo run`
 
 ## Example
 
