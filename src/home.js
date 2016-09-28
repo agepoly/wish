@@ -31,7 +31,7 @@ function send() {
 			var url = window.location.hostname + ":" + window.location.port + "/get/";
 			var content = "";
 			for (i=0; i < x.people.length; ++i) {
-				content += x.people[i].mail+", "+url+x.people[i].key+"\n";
+				content += x.people[i].mail+" "+url+x.people[i].key+"\n";
 			}
 			$("#output").html(content);
 			$("#output").show();
@@ -78,10 +78,11 @@ function get_slot_val() {
 }
 
 function check_validity() {
+	$("input").removeAttr('style');
+	$("#mails").removeAttr('style');
+
 	if ($("input[name='name']").val() == "") {
 		$("input[name='name']").css({'border-color' : '#FF0000'});
-	} else {
-		$("input[name='name']").removeAttr('style');
 	}
 	
 	var max_capacity = 0;
@@ -89,36 +90,27 @@ function check_validity() {
 	for (var i = 0; $("input[name='slot"+i+"']").length; ++i) {
 		if ($("input[name='slot"+i+"']").val() == "") {
 			$("input[name='slot"+i+"']").css({'border-color' : '#FF0000'});
-		} else {
-			$("input[name='slot"+i+"']").removeAttr('style');
 		}
-		if ($("input[name='vmin"+i+"']").val() > $("input[name='vmax"+i+"']").val()) {
+		var vmin = Number($("input[name='vmin"+i+"']").val());
+		var vmax = Number($("input[name='vmax"+i+"']").val());
+		if (vmin > vmax) {
 			$("input[name='vmin"+i+"']").css({'border-color' : '#FF0000'});
 			$("input[name='vmax"+i+"']").css({'border-color' : '#FF0000'});
-		} else {
-			$("input[name='vmin"+i+"']").removeAttr('style');
-			$("input[name='vmax"+i+"']").removeAttr('style');
 		}
-		max_capacity += Number($("input[name='vmax"+i+"']").val());
+		max_capacity += vmax;
 	}
 	
 	var mails = $("#mails").val().split(/[\s,]+/);
 	
 	if (mails.length > max_capacity) {
 		$(".vmax").css({'border-color' : '#FF0000'});
-	} else {
-		$(".vmax").removeAttr('style');
 	}
 	
 	if ($("#mails").val() == "" || mails.length > max_capacity) {
 		$("#mails").css({'border-color' : '#FF0000'});
-	} else {
-		$("#mails").removeAttr('style');
 	}
 	
 	if ($("input[name='deadline']").val() == "") {
 		$("input[name='deadline']").css({'border-color' : '#FF0000'});
-	} else {
-		$("input[name='deadline']").removeAttr('style');
 	}
 }

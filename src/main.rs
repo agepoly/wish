@@ -215,6 +215,7 @@ fn main() {
 			}
 		};
 	
+		println!("event created");
 		Ok(Response::with((status::Ok, payload)))
 	}
 
@@ -253,6 +254,8 @@ fn main() {
 	}
 	
 	fn info(req: &mut Request, db: &Database) -> IronResult<Response> {
+		println!("info");
+
 		let mut payload = String::new();
 		req.body.read_to_string(&mut payload).unwrap();
 
@@ -316,7 +319,7 @@ fn main() {
 			}
 		}
 	}
-		
+	
 	fn process(db: &Arc<Mutex<Database>>) {
 		let time = time::get_time().sec;
 		

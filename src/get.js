@@ -4,6 +4,8 @@ var deadline = null;
 var now = new Date();
 
 $(document).ready(function() {
+	console.log("hello");
+		
 	$.post("/info", '{ "key" : "'+key+'" }', function(data,status) {
 		if (status == "success") {
 			x = eval('(' + data + ')');
