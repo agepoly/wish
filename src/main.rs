@@ -16,7 +16,7 @@ use iron::prelude::*;
 use iron::status;
 use router::Router;
 use std::sync::{Arc, Mutex};
-use iron::mime::Mime;
+//use iron::mime::Mime;
 use mongodb::{Client, ThreadedClient};
 use mongodb::db::{Database, ThreadedDatabase};
 use rustc_serialize::json;
@@ -28,6 +28,7 @@ use std::collections::btree_map::BTreeMap;
 use rand::Rng;
 use std::env;
 use iron::headers::AccessControlAllowOrigin;
+use iron::modifiers::Header;
 
 #[derive(RustcEncodable, RustcDecodable)]
 struct InputCreate {
@@ -87,8 +88,8 @@ fn main() {
 			info(r, &arc.lock().unwrap()));
 	}
 
-
-	router.get("/get/:key", |_: &mut Request| {
+	/*
+	router.get("/get", |_: &mut Request| {
 		let content_type : Mime = "text/html".parse().unwrap();
 		Ok(Response::with((content_type, status::Ok, include_str!("www/get.html"))))
 	});
@@ -108,7 +109,7 @@ fn main() {
 		let content_type : Mime = "text/css".parse().unwrap();
 		Ok(Response::with((content_type, status::Ok, include_str!("www/style.css"))))
 	});
-	
+	*/
 	
 	
 	let handler = {
@@ -121,30 +122,32 @@ fn main() {
 		})
 	};
 	
-	fn create(req: &mut Request, db: &Database) -> IronResult<Response> {		
+	fn create(req: &mut Request, db: &Database) -> IronResult<Response> {	
+		println!("create");
+	
 		let mut payload = String::new();
 		req.body.read_to_string(&mut payload).unwrap();
 		let data: InputCreate = match json::decode(&payload) {
 			Ok(x) => x,
 			Err(e) => {
 				println!("create: {}", e);
-				return Ok(Response::with((status::BadRequest, format!(r#"{{"error": "request error : {}"}}"#, e))));
+				return Ok(Response::with((status::BadRequest, format!(r#"{{"error": "request error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 			}
 		};
 
 		if data.vmax.iter().fold(0, |acc, &x| acc + x) < (data.mails.len() as i32) {
 			println!("create: not enough room");
-			return Ok(Response::with((status::BadRequest, r#"{"error": "more mails than slots"}"#)));
+			return Ok(Response::with((status::BadRequest, r#"{"error": "more mails than slots"}"#, Header(AccessControlAllowOrigin::Any))));
 		}
 		
 		if data.vmax.len() != data.vmin.len() || data.vmax.len() != data.slots.len() {
 			println!("create: array size problem");
-			return Ok(Response::with((status::BadRequest, r#"{"error": "vmin, vmax and slots must have the same size"}"#)));
+			return Ok(Response::with((status::BadRequest, r#"{"error": "vmin, vmax and slots must have the same size"}"#, Header(AccessControlAllowOrigin::Any))));
 		}
 		
 		if data.vmin.iter().zip(data.vmax.iter()).any(|(&xmin, &xmax)| xmin > xmax) {
 			println!("create: vmin > vmax");
-			return Ok(Response::with((status::BadRequest, r#"{"error": "there are vmin bigger than vmax"}"#)));			
+			return Ok(Response::with((status::BadRequest, r#"{"error": "there are vmin bigger than vmax"}"#, Header(AccessControlAllowOrigin::Any))));			
 		}
 
 		let mut keys = Vec::with_capacity(data.mails.len());
@@ -189,7 +192,7 @@ fn main() {
 		
 		if let Err(e) = db.collection("events").insert_one(doc, None) {
 			println!("create: {}", e);
-			return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e))));
+			return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 		}
 		
 		let json = Json::Object({
@@ -210,17 +213,16 @@ fn main() {
 			Ok(x) => x,
 			Err(e) => {
 				println!("create: {}", e);
-				return Ok(Response::with((status::NotFound, format!(r#"{{"error": "json error : {}"}}"#, e))));
+				return Ok(Response::with((status::NotFound, format!(r#"{{"error": "json error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 			}
 		};
-	
-		println!("event created");
-		let mut resp = Response::with((status::Ok, payload));
-		resp.headers.set(AccessControlAllowOrigin::Any); // to allow request from an other website
-		Ok(resp)
+			
+		Ok(Response::with((status::Ok, payload, Header(AccessControlAllowOrigin::Any))))
 	}
 
 	fn fill(req: &mut Request, db: &Database) -> IronResult<Response> {
+		println!("fill");
+	
 		let mut payload = String::new();
 		req.body.read_to_string(&mut payload).unwrap();
 	
@@ -228,7 +230,7 @@ fn main() {
 			Ok(x) => x,
 			Err(e) => {
 				println!("fill: {}", e);
-				return Ok(Response::with((status::BadRequest, format!(r#"{{"error": "request error : {}"}}"#, e))));
+				return Ok(Response::with((status::BadRequest, format!(r#"{{"error": "request error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 			}
 		};
 		
@@ -236,7 +238,7 @@ fn main() {
 		c.sort();
 		for i in 0..c.len() {
 			if c[i] > i as i32 {
-				return Ok(Response::with((status::BadRequest, r#"{"error": "illegal data"}"#)));
+				return Ok(Response::with((status::BadRequest, r#"{"error": "illegal data"}"#, Header(AccessControlAllowOrigin::Any))));
 			}
 		}
 		
@@ -246,11 +248,11 @@ fn main() {
 			Ok(_) => {},
 			Err(e) => {
 				println!("info: {}", e);
-				return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e))));
+				return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 			}
 		};
 		
-		Ok(Response::with(status::Ok))
+		Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
 	}
 	
 	fn info(req: &mut Request, db: &Database) -> IronResult<Response> {
@@ -263,7 +265,7 @@ fn main() {
 			Ok(x) => x,
 			Err(e) => {
 				println!("info: {}\n{}", e, payload);
-				return Ok(Response::with(status::BadRequest));
+				return Ok(Response::with((status::BadRequest, Header(AccessControlAllowOrigin::Any))));
 			}
 		};
 
@@ -276,12 +278,12 @@ fn main() {
 			Ok(x) => x,
 			Err(e) => {
 				println!("info: {}", e);
-				return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e))));
+				return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 			}
 		};
 		
 		match event {
-			None => Ok(Response::with((status::NotFound, r#"{"error": "database"}"#))),
+			None => Ok(Response::with((status::NotFound, r#"{"error": "database"}"#, Header(AccessControlAllowOrigin::Any)))),
 			Some(event) => {
 				let people = event.get_array("people").unwrap();
 				let mut person = None;
@@ -295,7 +297,7 @@ fn main() {
 					}
 				}
 				match person {
-					None => Ok(Response::with((status::NotFound, r#"{"error": "database"}"#))),
+					None => Ok(Response::with((status::NotFound, r#"{"error": "database"}"#, Header(AccessControlAllowOrigin::Any)))),
 					Some(person) => {
 						let json = json::encode(&OutputInfo { 
 							name: event.get_str("name").unwrap_or("").to_string(),
@@ -310,10 +312,10 @@ fn main() {
 							Ok(x) => x,
 							Err(e) => {
 								println!("info: {}", e);
-								return Ok(Response::with((status::NotFound, format!(r#"{{"error": "json error : {}"}}"#, e))));
+								return Ok(Response::with((status::NotFound, format!(r#"{{"error": "json error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 							}
 						};
-						Ok(Response::with((status::Ok, payload)))
+						Ok(Response::with((status::Ok, payload, Header(AccessControlAllowOrigin::Any))))
 					}
 				}
 			}

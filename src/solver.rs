@@ -74,6 +74,7 @@ fn shuffle(vmin: &Vec<u32>, vmax: &Vec<u32>, mut wishes: Vec<Vec<f64>>, rand: &m
     results
 }
 
+// What we try to minimize
 fn action(wishes: &Vec<Vec<u32>>, results: &Vec<usize>) -> i32 {
     let mut score = 0;
     for i in 0..wishes.len() {

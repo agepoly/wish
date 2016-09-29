@@ -1,4 +1,5 @@
-var key = window.location.pathname.split("/")[2];
+//var key = window.location.pathname.split("/")[2];
+var key = window.location.hash.substring(1);
 var x = null;
 var deadline = null;
 var now = new Date();
@@ -6,7 +7,7 @@ var now = new Date();
 $(document).ready(function() {
 	console.log("hello");
 		
-	$.post("/info", '{ "key" : "'+key+'" }', function(data,status) {
+	$.post("http://localhost:3000/info", '{ "key" : "'+key+'" }', function(data,status) {
 		if (status == "success") {
 			x = eval('(' + data + ')');
 			$("#name").text('Activity name: '+x.name);
@@ -66,7 +67,7 @@ function upload_wish() {
 	
 	$.ajax({
 		type: "POST",
-		url: "/fill",
+		url: "http://localhost:3000/fill",
 		data: data,
 		success: function(data) {
 			console.log(data);

@@ -28,10 +28,10 @@ function send() {
 	$.post("http://localhost:3000/create", payload, function(data,status) {
 		if (status == "success") {
 			var x = eval('(' + data + ')');
-			var url = window.location.hostname + ":" + window.location.port + "/get/";
+			var url = window.location.hostname + ":" + window.location.port + "/get";
 			var content = "";
 			for (i=0; i < x.people.length; ++i) {
-				content += x.people[i].mail+" "+url+x.people[i].key+"\n";
+				content += x.people[i].mail+" "+url+"#"+x.people[i].key+"\n";
 			}
 			$("#output").html(content);
 			$("#output").show();
