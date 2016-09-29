@@ -8,12 +8,17 @@ This project provides a web interface to create such event.
 After having configured the event, unique url are created for each participant.
 With the url the participant can enter his own wish by sorting the slots by preference order.
 
-## Compile & Run
+## Backend : Compile & Run
 
 1. [Install mongodb](https://www.mongodb.com)
 2. [Install rust](https://www.rust-lang.org/en-US/downloads.html)
 3. Clone this repository and open a terminal in it
 4. `cargo run`
+
+## Frontend : Run
+
+1. Install a web server like [http-server](https://www.npmjs.com/package/http-server)
+2. Run it into `src/www`
 
 ## Example
 
