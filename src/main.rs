@@ -27,8 +27,7 @@ use rustc_serialize::hex::ToHex;
 use std::collections::btree_map::BTreeMap;
 use rand::Rng;
 use std::env;
-
-
+use iron::headers::AccessControlAllowOrigin;
 
 #[derive(RustcEncodable, RustcDecodable)]
 struct InputCreate {
@@ -68,9 +67,9 @@ fn main() {
 		.ok().expect("Failed to initialize client.");
     
 	let db: Database = client.db("activities");
-	
-	let mut router = Router::new();
 
+	let mut router = Router::new();
+	
 	let arc = Arc::new(Mutex::new(db));
 	{
 		let arc = arc.clone();
@@ -91,23 +90,23 @@ fn main() {
 
 	router.get("/get/:key", |_: &mut Request| {
 		let content_type : Mime = "text/html".parse().unwrap();
-		Ok(Response::with((content_type, status::Ok, include_str!("get.html"))))
+		Ok(Response::with((content_type, status::Ok, include_str!("www/get.html"))))
 	});
 	router.get("/", |_: &mut Request| {
 		let content_type : Mime = "text/html".parse().unwrap();
-		Ok(Response::with((content_type, status::Ok, include_str!("home.html"))))
+		Ok(Response::with((content_type, status::Ok, include_str!("www/home.html"))))
 	});
 	router.get("/home.js", |_: &mut Request| {
 		let content_type : Mime = "application/javascript".parse().unwrap();
-		Ok(Response::with((content_type, status::Ok, include_str!("home.js"))))
+		Ok(Response::with((content_type, status::Ok, include_str!("www/home.js"))))
 	});
 	router.get("/get.js", |_: &mut Request| {
 		let content_type : Mime = "application/javascript".parse().unwrap();
-		Ok(Response::with((content_type, status::Ok, include_str!("get.js"))))
+		Ok(Response::with((content_type, status::Ok, include_str!("www/get.js"))))
 	});
 	router.get("/style.css", |_: &mut Request| {
 		let content_type : Mime = "text/css".parse().unwrap();
-		Ok(Response::with((content_type, status::Ok, include_str!("style.css"))))
+		Ok(Response::with((content_type, status::Ok, include_str!("www/style.css"))))
 	});
 	
 	
@@ -216,7 +215,9 @@ fn main() {
 		};
 	
 		println!("event created");
-		Ok(Response::with((status::Ok, payload)))
+		let mut resp = Response::with((status::Ok, payload));
+		resp.headers.set(AccessControlAllowOrigin::Any); // to allow request from an other website
+		Ok(resp)
 	}
 
 	fn fill(req: &mut Request, db: &Database) -> IronResult<Response> {
@@ -248,7 +249,6 @@ fn main() {
 				return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e))));
 			}
 		};
-		
 		
 		Ok(Response::with(status::Ok))
 	}

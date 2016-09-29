@@ -25,7 +25,7 @@ function send() {
 	
 	console.log(payload);
 	
-	$.post("/create", payload, function(data,status) {
+	$.post("http://localhost:3000/create", payload, function(data,status) {
 		if (status == "success") {
 			var x = eval('(' + data + ')');
 			var url = window.location.hostname + ":" + window.location.port + "/get/";
@@ -100,15 +100,30 @@ function check_validity() {
 		max_capacity += vmax;
 	}
 	
+	if ($("#mails").val() == "") {
+		$("#mails").css({'border-color' : '#FF0000'});
+	}
+
 	var mails = $("#mails").val().split(/[\s,]+/);
+
+	for (var i = 0; i < mails.length; ++i) {
+		if (mails[i] == "") {
+			$("#mails").css({'border-color' : '#FF0000'});
+		}
+	}
 	
 	if (mails.length > max_capacity) {
 		$(".vmax").css({'border-color' : '#FF0000'});
-	}
-	
-	if ($("#mails").val() == "" || mails.length > max_capacity) {
 		$("#mails").css({'border-color' : '#FF0000'});
 	}
+	
+	mails.sort();
+	for (var i = 1; i < mails.length; ++i) {
+		if (mails[i-1] == mails[i]) {
+			$("#mails").css({'border-color' : '#FF0000'});
+		}
+	}
+	
 	
 	if ($("input[name='deadline']").val() == "") {
 		$("input[name='deadline']").css({'border-color' : '#FF0000'});
