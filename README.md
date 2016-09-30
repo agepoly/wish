@@ -18,7 +18,7 @@ With the url the participant can enter his own wish by sorting the slots by pref
 ## Frontend : Run
 
 1. Install a web server like [http-server](https://www.npmjs.com/package/http-server)
-2. Run it into `src/www`
+2. Run it into `frontend`
 
 ## Example
 
