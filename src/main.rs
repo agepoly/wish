@@ -32,12 +32,13 @@ use iron::modifiers::Header;
 fn main() {
 	let client = Client::connect("localhost", 27017)
 		.ok().expect("Failed to initialize client.");
-    
+	
 	let db: Database = client.db("activities");
 
 	let mut router = Router::new();
 	
 	let arc = Arc::new(Mutex::new(db));
+	
 	{
 		let arc = arc.clone();
 		router.post("/create", move |r: &mut Request| 
@@ -58,7 +59,7 @@ fn main() {
 		let arc = arc.clone();		
 		std::thread::spawn(move || {
 			loop {
-				std::thread::sleep(std::time::Duration::from_secs(10));
+				std::thread::sleep(std::time::Duration::from_secs(3));
 				process(&arc);
 			}
 		})
@@ -314,12 +315,14 @@ fn process(db: &Arc<Mutex<Database>>) {
 		};
 		db.collection("events").find_one(Some(query), None)
 	};
-
-	if let Ok(Some(event)) = event {			
+	
+	println!("check {}", time);
+	
+	if let Ok(Some(event)) = event {
 		let vmin = event.get_array("vmin").unwrap_or(&Vec::new()).iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();
 		let vmax = event.get_array("vmax").unwrap_or(&Vec::new()).iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();
 		let wishes = event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p| match p { &Bson::Document(ref p) => p.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(v) => v as u32, _ => 0}).collect(), _ => Vec::new()} ).collect();
-		
+				
 		let results = solver::search_solution(&vmin, &vmax, &wishes, 20f64);
 		if results.is_empty() { return; }
 		

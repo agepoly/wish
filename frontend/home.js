@@ -12,7 +12,7 @@ $(document).ready(function() {
 
 function send() {
 	var slots = get_slot_val();
-	var deadline = new Date($("input[name='deadline']").val()).getTime();
+	var deadline = new Date($("input[name='deadline']").val()).getTime() / 1000;
 	
 	var payload = '{'
 		+'"name"     : "'+$("input[name='name']").val()+'", '
