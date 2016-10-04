@@ -5,7 +5,6 @@ $(document).ready(function() {
 	$("input").bind('input propertychange', check_validity);
 	$("textarea").bind('input propertychange', check_validity);
 	$("input[name='deadline']").prop('min', new Date().toJSON().split('T')[0]);
-	$("#output").hide();
 	create_slots();
 	check_validity();
 });
@@ -34,7 +33,7 @@ function send() {
 				content += x.people[i].mail+" "+url+"#"+x.people[i].key+"\n";
 			}
 			$("#output").html(content);
-			$("#output").show();
+			$("#admin_url").html(url+"#"+x.admin_key);
 		}
 	});
 }

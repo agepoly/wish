@@ -39,21 +39,21 @@ fn main() {
 
 	let arc = db.clone();
 	router.post("/create", move |r: &mut Request|
-		create(r, &arc.lock().unwrap()));
+		create(r, &arc.lock().unwrap()), "create");
 
 	let arc = db.clone();
 	router.post("/fill", move |r: &mut Request|
-		fill(r, &arc.lock().unwrap()));
+		fill(r, &arc.lock().unwrap()), "fill");
 
 	let arc = db.clone();
 	router.post("/info", move |r: &mut Request|
-		info(r, &arc.lock().unwrap()));
+		info(r, &arc.lock().unwrap()), "info");
 
 	let arc = db.clone();
 	let handler = std::thread::spawn(move || {
 		loop {
-			std::thread::sleep(std::time::Duration::from_secs(3));
 			process(&arc);
+			std::thread::sleep(std::time::Duration::from_secs(15));
 		}
 	});
 
@@ -117,8 +117,22 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		}
 	}
 
+	let admin_key = {
+		let mut admin_key : String;
+		loop {
+			let mut key : [u8; 16] = [0; 16];
+			rand::thread_rng().fill_bytes(&mut key);
+			admin_key = key.to_hex();
+			if db.collection("events").find_one(Some(doc!{"admin_key" => (admin_key.clone())}), None).unwrap_or(None).is_none() {
+				break;
+			}
+		}
+		admin_key
+	};
+
 	let mut doc = Document::new();
 	doc.insert_bson("name".to_owned(), Bson::String(data.name.clone()));
+	doc.insert_bson("admin_key".to_owned(), Bson::String(admin_key.clone()));
 	doc.insert_bson("deadline".to_owned(), Bson::I64(data.deadline));
 	doc.insert_bson("slots".to_owned(), Bson::Array(data.slots.iter().map(|s| Bson::String(s.clone())).collect()));
 	doc.insert_bson("vmin".to_owned(), Bson::Array(data.vmin.iter().map(|&v| Bson::I32(v)).collect()));
@@ -157,6 +171,7 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 			}
 			v
 		}));
+		bt.insert("admin_key".to_string(), Json::String(admin_key.clone()));
 		bt
 	});
 	let payload = match json::encode(&json) {
@@ -176,7 +191,8 @@ fn fill(req: &mut Request, db: &Database) -> IronResult<Response> {
 	#[derive(RustcEncodable, RustcDecodable)]
 	struct InputFill {
 		key: String,
-		wish: Vec<i32>
+		wish: Vec<i32>,
+		admin_key: String
 	}
 
 	let mut payload = String::new();
@@ -190,11 +206,14 @@ fn fill(req: &mut Request, db: &Database) -> IronResult<Response> {
 		}
 	};
 
-	let mut c = data.wish.clone();
-	c.sort();
-	for i in 0..c.len() {
-		if c[i] > i as i32 {
-			return Ok(Response::with((status::BadRequest, r#"{"error": "illegal data"}"#, Header(AccessControlAllowOrigin::Any))));
+	if db.collection("events").find_one(Some(doc!{"admin_key" => (data.admin_key.clone()), "people.key" => (data.key.clone())}), None).unwrap_or(None).is_none() {
+		let mut c = data.wish.clone();
+		c.sort();
+		for i in 0..c.len() {
+			if c[i] > i as i32 {
+				println!("fill: illegal data");
+				return Ok(Response::with((status::BadRequest, r#"{"error": "illegal data"}"#, Header(AccessControlAllowOrigin::Any))));
+			}
 		}
 	}
 
@@ -308,7 +327,7 @@ fn process(db: &Arc<Mutex<Database>>) {
 		db.collection("events").find_one(Some(query), None)
 	};
 
-	println!("check {}", time);
+	println!("check {:?}", event);
 
 	if let Ok(Some(event)) = event {
 		let vmin = event.get_array("vmin").unwrap_or(&Vec::new()).iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();

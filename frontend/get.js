@@ -62,7 +62,7 @@ function upload_wish() {
 		wish.push(n - Number($("input[name='wish"+i+"']").val()));
 	}
 	
-	var data = '{ "key" : "'+key+'", "wish" : ['+wish.join(",")+'] }';
+	var data = '{ "key" : "'+key+'", "wish" : ['+wish.join(",")+'], "admin_key" : "" }';
 	console.log(data);
 	
 	$.ajax({
