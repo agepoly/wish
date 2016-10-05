@@ -12,7 +12,7 @@ $(document).ready(function() {
 function send() {
 	var slots = get_slot_val();
 	var deadline = new Date($("input[name='deadline']").val()).getTime() / 1000;
-	
+
 	var payload = '{'
 		+'"name"     : "'+$("input[name='name']").val()+'", '
 		+'"deadline" : '+deadline+', '
@@ -21,9 +21,9 @@ function send() {
 		+'"vmin"     : ['+ slots.vmin.join(',')  +'], '
 		+'"vmax"     : ['+ slots.vmax.join(',')  +']'
 		+'}';
-	
+
 	console.log(payload);
-	
+
 	$.post("http://localhost:3000/create", payload, function(data,status) {
 		if (status == "success") {
 			var x = eval('(' + data + ')');
@@ -37,15 +37,17 @@ function send() {
 		}
 	});
 }
-	
+
 function create_slots() {
 	var n = $("input[name='nslots']").val();
 	var oldvalues = get_slot_val();
-	
-	var content = "<table><tr><th>Slot Name</th><th>Min Bound</th><th>Max Bound</th></tr>";
+
+	var content = '<div class="row"><div class="six columns"><label>Time slots</label></div>'
+	content += '<div class="three columns"><label>Min people</label></div>'
+	content += '<div class="three columns"><label>Max people</label></div></div>'
 	for (i=0; i < n; ++i) {
 		var values = {
-			name: "no "+(i+1),
+			name: "Slot "+(i+1),
 			vmin: "0",
 			vmax: "10"
 		};
@@ -54,11 +56,10 @@ function create_slots() {
 			values.vmin = oldvalues.vmin[i];
 			values.vmax = oldvalues.vmax[i];
 		}
-		content += '<tr><th><input type="text" class="slot" name="slot'+i+'" value="'+values.name+'"></th>'
-			+ '<th><input type="number" class="vmin" name="vmin'+i+'" min="0" max="100" step="1" value="'+values.vmin+'"></th>'
-			+ '<th><input type="number" class="vmax" name="vmax'+i+'" min="0" max="100" step="1" value="'+values.vmax+'"></th></tr>'
+		content += '<div class="row"><div class="six columns"><input type="text" placeholder="Tuesday morning" class="slot u-full-width" name="slot'+i+'" value="'+values.name+'"></div>'
+			+ '<div class="three columns"><input type="number" class="vmin u-full-width" name="vmin'+i+'" min="0" max="100" step="1" value="'+values.vmin+'"></div>'
+			+ '<div class="three columns"><input type="number" class="vmax u-full-width" name="vmax'+i+'" min="0" max="100" step="1" value="'+values.vmax+'"></div></div>'
 	}
-	content += "</table>";
 	$("#slots").html(content);
 	$("input").bind('input propertychange', check_validity);
 }
@@ -72,7 +73,7 @@ function get_slot_val() {
 		vmin.push($("input[name='vmin"+i+"']").val());
 		vmax.push($("input[name='vmax"+i+"']").val());
 	}
-	
+
 	return { slot: slot, vmin: vmin, vmax: vmax };
 }
 
@@ -83,9 +84,9 @@ function check_validity() {
 	if ($("input[name='name']").val() == "") {
 		$("input[name='name']").css({'border-color' : '#FF0000'});
 	}
-	
+
 	var max_capacity = 0;
-	
+
 	for (var i = 0; $("input[name='slot"+i+"']").length; ++i) {
 		if ($("input[name='slot"+i+"']").val() == "") {
 			$("input[name='slot"+i+"']").css({'border-color' : '#FF0000'});
@@ -98,7 +99,7 @@ function check_validity() {
 		}
 		max_capacity += vmax;
 	}
-	
+
 	if ($("#mails").val() == "") {
 		$("#mails").css({'border-color' : '#FF0000'});
 	}
@@ -110,20 +111,20 @@ function check_validity() {
 			$("#mails").css({'border-color' : '#FF0000'});
 		}
 	}
-	
+
 	if (mails.length > max_capacity) {
 		$(".vmax").css({'border-color' : '#FF0000'});
 		$("#mails").css({'border-color' : '#FF0000'});
 	}
-	
+
 	mails.sort();
 	for (var i = 1; i < mails.length; ++i) {
 		if (mails[i-1] == mails[i]) {
 			$("#mails").css({'border-color' : '#FF0000'});
 		}
 	}
-	
-	
+
+
 	if ($("input[name='deadline']").val() == "") {
 		$("input[name='deadline']").css({'border-color' : '#FF0000'});
 	}
