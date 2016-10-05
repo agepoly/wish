@@ -8,7 +8,6 @@ extern crate mongodb;
 extern crate rustc_serialize;
 extern crate rand;
 extern crate time;
-extern crate num_cpus;
 
 mod solver;
 
