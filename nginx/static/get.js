@@ -11,8 +11,8 @@ $(document).ready(function() {
 		if (status == "success") {
 			console.log("hi");
 			x = eval('(' + data + ')');
-			$("#name").text('Activity name: '+x.name);
-			$("#mail").text('Your email: '+x.mail);
+			$("#name").html('<b>Activity name: </b>'+x.name);
+			$("#mail").html('<b>Your email: </b>'+x.mail);
 
 			deadline = new Date(x.deadline);
 
@@ -20,14 +20,14 @@ $(document).ready(function() {
 				var hours = Math.floor((deadline-now)/1000/3600);
 				var days = Math.floor(hours / 24);
 				hours = hours % 24;
-				$("#deadline").text('Deadline: '+deadline.toJSON().split('T')[0]+' (in '+days+' days and '+hours+' hours)');
+				$("#deadline").html('<b>Deadline: </b>'+deadline.toJSON().split('T')[0]+' (in '+days+' days and '+hours+' hours)');
 			} else {
 				var days = Math.floor((now-deadline)/1000/3600/24);
-				$("#deadline").text('Deadline: '+deadline.toJSON().split('T')[0]+' ('+days+' days ago)');
+				$("#deadline").html('<b>Deadline: </b>'+deadline.toJSON().split('T')[0]+' ('+days+' days ago)');
 			}
 
 			if (x.results.length > 0) {
-				var content = '<table border="1"><tr><th>Slot Name</th><th>Mail</th></tr>';
+				var content = '<table style="width:100%"><tr><th>Slot Name</th><th>Mail</th></tr>';
 				var n = x.slots.length;
 				for (i=0; i< n; ++i) {
 					var list = [];
@@ -41,7 +41,7 @@ $(document).ready(function() {
 				content += '</table>';
 				$("#content").html(content);
 			} else {
-				var content = '<table border="1"><tr><th>Slot Name</th><th>Wish</th></tr>';
+				var content = '<table style="width:100%"><tr><th>Slot Name</th><th>Wish</th></tr>';
 				var n = x.slots.length;
 				for (i=0; i< n; ++i) {
 					content += '<tr><th>'+x.slots[i]+'</th><th><input type="number" name="wish'+i+'" min="1" max="'+n+'" step="1" value="'+(n-x.wish[i])+'"></th></tr>';
