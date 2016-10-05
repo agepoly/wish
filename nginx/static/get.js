@@ -14,7 +14,9 @@ $(document).ready(function() {
 			$("#name").html('<b>Activity name: </b>'+x.name);
 			$("#mail").html('<b>Your email: </b>'+x.mail);
 
-			deadline = new Date(x.deadline);
+			deadline = new Date(x.deadline * 1000);
+			// x.deadline [seconds]
+			// deadline [milliseconds]
 
 			if (deadline > now) {
 				var hours = Math.floor((deadline-now)/1000/3600);
