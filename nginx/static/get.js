@@ -7,7 +7,7 @@ var now = new Date();
 $(document).ready(function() {
 	console.log("hello world");
 
-	$.post("http://localhost:3000/info", '{ "key" : "'+key+'" }', function(data,status) {
+	$.post("http://localhost:3000/get_data", '{ "key" : "'+key+'" }', function(data,status) {
 		if (status == "success") {
 			console.log("hi");
 			x = eval('(' + data + ')');
@@ -72,7 +72,7 @@ function upload_wish() {
 
 	$.ajax({
 		type: "POST",
-		url: "http://localhost:3000/fill",
+		url: "http://localhost:3000/set_wish",
 		data: data,
 		success: function(data) {
 			console.log(data);
