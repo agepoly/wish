@@ -1,15 +1,21 @@
 //var key = window.location.pathname.split("/")[2];
-var key = window.location.hash.substring(1);
+var hash = window.location.hash.substring(1);
+var hash = hash.split("+");
+
+var key = hash[0];
+var admin_key = hash[1];
+
 var x = null;
 var deadline = null;
 var now = new Date();
 
 $(document).ready(function() {
-	console.log("hello world");
+	console.log("get.js running");
+	
+	$("button[name='send']").bind("click", send);
 
 	$.post("http://localhost:3000/get_data", '{ "key" : "'+key+'" }', function(data,status) {
 		if (status == "success") {
-			console.log("hi");
 			x = eval('(' + data + ')');
 			$("#name").html('<b>Activity name: </b>'+x.name);
 			$("#mail").html('<b>Your email: </b>'+x.mail);
@@ -42,17 +48,22 @@ $(document).ready(function() {
 				}
 				content += '</table>';
 				$("#content").html(content);
+				$("button[name='send']").hide();
 			} else {
 				var content = '<table style="width:100%"><tr><th>Slot Name</th><th>Wish</th></tr>';
 				var n = x.slots.length;
 				for (i=0; i< n; ++i) {
-					content += '<tr><th>'+x.slots[i]+'</th><th><input type="number" name="wish'+i+'" min="1" max="'+n+'" step="1" value="'+(n-x.wish[i])+'"></th></tr>';
+					//content += '<tr><th>'+x.slots[i]+'</th><th><input type="number" name="wish'+i+'" min="1" max="'+n+'" step="1" value="'+(n-x.wish[i])+'"></th></tr>';
+					content += '<tr><th>'+x.slots[i]+'</th><th>wanted <input type="range" name="wish'+i+'" min="0" max="'+(n-1)+'" step="1" value="'+x.wish[i]+'" /> hated</th></tr>';
 				}
 				content += '</table>';
 				$("#content").html(content);
-				$("input").bind('input propertychange', upload_wish);
-				$("input").bind('input propertychange', color_wish);
-				color_wish();
+				
+				if (admin_key == undefined) {
+					$("input").bind('input propertychange', check);
+				}
+				//$("input").bind('input propertychange', color_wish);
+				//color_wish();
 			}
 		} else {
 			console.log("hello");
@@ -60,14 +71,55 @@ $(document).ready(function() {
 	});
 });
 
-function upload_wish() {
+function set_wish(wish) {
+	var n = x.slots.length;
+	for (var i = 0; i < n; ++i) {
+		$("input[name='wish"+i+"']").val(wish[i]);
+	}
+	
+}
+
+function check(event) {
 	var wish = [];
 	var n = x.slots.length;
 	for (var i = 0; i < n; ++i) {
-		wish.push(n - Number($("input[name='wish"+i+"']").val()));
+		wish.push(Number($("input[name='wish"+i+"']").val()));
+	}
+	
+	var target = Number(event.target.name.substring(4));
+	console.log("event from wish #"+target);
+	
+	var value = Number($(event.target).val());
+	console.log(value);
+	
+	var count = 0;
+	for (var i = 0; i < n; ++i) {
+		if (wish[i] >= value) count++;
+	}
+	
+	if (count > n - value) {
+		for (var i = 0; i < n; ++i) {
+			if (i == target) continue;
+			if (wish[i] == value) {
+				$("input[name='wish"+i+"']").val(value - 1);
+				wish[i] = value - 1;
+				
+				check(event);
+				break;
+			}
+		}
+	}
+}
+
+function send() {
+	var wish = [];
+	var n = x.slots.length;
+	for (var i = 0; i < n; ++i) {
+		wish.push(Number($("input[name='wish"+i+"']").val()));
 	}
 
-	var data = '{ "key" : "'+key+'", "wish" : ['+wish.join(",")+'], "admin_key" : "" }';
+
+	var data = '{ "key" : "'+key+'", "wish" : ['+wish.join(",")+'], "admin_key" : "'+admin_key+'" }';
 	console.log(data);
 
 	$.ajax({
@@ -75,18 +127,17 @@ function upload_wish() {
 		url: "http://localhost:3000/set_wish",
 		data: data,
 		success: function(data) {
-			console.log(data);
-			$("input").css({'border-color' : ''});
-			$("#error").text('');
+			$("#error").show();
+			$("#error").text('Set success');
+			$("#error").fadeOut(1000);
 		},
 		error: function(data) {
-			console.log(data);
-			$("input").css({'border-color' : '#FF0000'});
-			$("#error").text('The values are not valid: each number must appear one time');
+			$("#error").text('The set did not succeed');
 		},
 	});
 }
 
+/*
 function color_wish() {
 	var colormap = ['#40ff00', '#80ff00', '#bfff00', '#ffff00', '#ffbf00', '#ff8000', '#ff4000', '#ff0000'];
 	var n = x.slots.length;
@@ -98,3 +149,4 @@ function color_wish() {
 		$("input[name='wish"+i+"']").css({'background-color' : colormap[v]});
 	}
 }
+*/
