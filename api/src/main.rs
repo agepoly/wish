@@ -329,6 +329,7 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	struct Output {
 		name: String,
 		mails: Vec<String>,
+		keys: Vec<String>,
 		slots: Vec<String>,
 		wishes: Vec<Vec<i32>>,
 		deadline: i64,
@@ -363,7 +364,18 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 			let json = json::encode(&Output {
 				name: event.get_str("name").unwrap_or("").to_string(),
 				deadline: event.get_i64("deadline").unwrap_or(0),
-				mails:  event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p| match p {&Bson::Document(ref x) => x.get_str("mail").unwrap_or("@").to_owned(), _ => "@".to_owned()}).collect(),
+				mails:  event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
+					match p {
+						&Bson::Document(ref x) => x.get_str("mail").unwrap_or("").to_owned(),
+						_ => "".to_owned()
+					}
+				).collect(),
+				keys:  event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
+					match p {
+						&Bson::Document(ref x) => x.get_str("key").unwrap_or("").to_owned(),
+						_ => "".to_owned()
+					}
+				).collect(),
 				wishes: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
 					match p {
 						&Bson::Document(ref x) => x.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x|

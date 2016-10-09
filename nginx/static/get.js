@@ -66,18 +66,10 @@ $(document).ready(function() {
 				//color_wish();
 			}
 		} else {
-			console.log("hello");
+			console.log("status != success");
 		}
 	});
 });
-
-function set_wish(wish) {
-	var n = x.slots.length;
-	for (var i = 0; i < n; ++i) {
-		$("input[name='wish"+i+"']").val(wish[i]);
-	}
-	
-}
 
 function check(event) {
 	var wish = [];
