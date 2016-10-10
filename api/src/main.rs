@@ -29,10 +29,11 @@ use iron::headers::AccessControlAllowOrigin;
 use iron::modifiers::Header;
 
 fn main() {
-	let client = Client::connect("localhost", 27017)
-		.expect("Failed to initialize client.");
+	let client = Client::connect("db", 27017)
+		.expect("Failed to initialize mongodb client.");
+	client.db("wish").collection("events").find(None, None).expect("Failed to connect to mongodb");
 
-	let db: Arc<Mutex<Database>> = Arc::new(Mutex::new(client.db("activities")));
+	let db: Arc<Mutex<Database>> = Arc::new(Mutex::new(client.db("wish")));
 
 	let mut router = Router::new();
 
@@ -41,12 +42,20 @@ fn main() {
 		create(r, &arc.lock().unwrap()), "create");
 
 	let arc = db.clone();
-	router.post("/fill", move |r: &mut Request|
-		fill(r, &arc.lock().unwrap()), "fill");
+	router.post("/set_wish", move |r: &mut Request|
+		set_wish(r, &arc.lock().unwrap()), "set_wish");
 
 	let arc = db.clone();
-	router.post("/info", move |r: &mut Request|
-		info(r, &arc.lock().unwrap()), "info");
+	router.post("/get_data", move |r: &mut Request|
+		get_data(r, &arc.lock().unwrap()), "get_data");
+
+	let arc = db.clone();
+	router.post("/get_admin_data", move |r: &mut Request|
+		get_admin_data(r, &arc.lock().unwrap()), "get_admin_data");
+
+	let arc = db.clone();
+	router.post("/admin_update", move |r: &mut Request|
+		admin_update(r, &arc.lock().unwrap()), "admin_update");
 
 	let arc = db.clone();
 	let handler = std::thread::spawn(move || {
@@ -56,7 +65,7 @@ fn main() {
 		}
 	});
 
-	Iron::new(router).http(env::args().nth(1).unwrap_or("localhost:3000".to_string()).as_str()).unwrap();
+	Iron::new(router).http(env::args().nth(1).unwrap_or("api:3000".to_string()).as_str()).unwrap();
 	handler.join().unwrap();
 }
 
@@ -64,8 +73,8 @@ fn main() {
 fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	println!("create");
 
-	#[derive(RustcEncodable, RustcDecodable)]
-	struct InputCreate {
+	#[derive(RustcDecodable)]
+	struct Input {
 		name: String,
 		deadline: i64,
 		mails: Vec<String>,
@@ -76,7 +85,7 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 
 	let mut payload = String::new();
 	req.body.read_to_string(&mut payload).unwrap();
-	let data: InputCreate = match json::decode(&payload) {
+	let data: Input = match json::decode(&payload) {
 		Ok(x) => x,
 		Err(e) => {
 			println!("create: {}", e);
@@ -184,23 +193,23 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	Ok(Response::with((status::Ok, payload, Header(AccessControlAllowOrigin::Any))))
 }
 
-fn fill(req: &mut Request, db: &Database) -> IronResult<Response> {
-	println!("fill");
+fn set_wish(req: &mut Request, db: &Database) -> IronResult<Response> {
+	println!("set_wishes");
 
-	#[derive(RustcEncodable, RustcDecodable)]
-	struct InputFill {
+	#[derive(RustcDecodable)]
+	struct Input {
 		key: String,
+		admin_key: String,
 		wish: Vec<i32>,
-		admin_key: String
 	}
 
 	let mut payload = String::new();
 	req.body.read_to_string(&mut payload).unwrap();
 
-	let data: InputFill = match json::decode(&payload) {
+	let data: Input = match json::decode(&payload) {
 		Ok(x) => x,
 		Err(e) => {
-			println!("fill: {}", e);
+			println!("set_wishes: {}", e);
 			return Ok(Response::with((status::BadRequest, format!(r#"{{"error": "request error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 		}
 	};
@@ -210,7 +219,7 @@ fn fill(req: &mut Request, db: &Database) -> IronResult<Response> {
 		c.sort();
 		for i in 0..c.len() {
 			if c[i] > i as i32 {
-				println!("fill: illegal data");
+				println!("set_wishes: illegal data");
 				return Ok(Response::with((status::BadRequest, r#"{"error": "illegal data"}"#, Header(AccessControlAllowOrigin::Any))));
 			}
 		}
@@ -221,7 +230,7 @@ fn fill(req: &mut Request, db: &Database) -> IronResult<Response> {
 	match db.collection("events").update_one(doc!{"people.key" => (data.key.clone())}, doc!{"$set" => {"people.$.wish" => wish}}, None) {
 		Ok(_) => {},
 		Err(e) => {
-			println!("info: {}", e);
+			println!("set_wishes: {}", e);
 			return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 		}
 	};
@@ -229,16 +238,16 @@ fn fill(req: &mut Request, db: &Database) -> IronResult<Response> {
 	Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
 }
 
-fn info(req: &mut Request, db: &Database) -> IronResult<Response> {
-	println!("info");
+fn get_data(req: &mut Request, db: &Database) -> IronResult<Response> {
+	println!("get_data");
 
-	#[derive(RustcEncodable, RustcDecodable)]
-	struct InputInfo {
+	#[derive(RustcDecodable)]
+	struct Input {
 		key: String,
 	}
 
-	#[derive(RustcEncodable, RustcDecodable)]
-	struct OutputInfo {
+	#[derive(RustcEncodable)]
+	struct Output {
 		name: String,
 		mail: String,
 		mails: Vec<String>,
@@ -251,10 +260,10 @@ fn info(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let mut payload = String::new();
 	req.body.read_to_string(&mut payload).unwrap();
 
-	let data: InputInfo = match json::decode(&payload) {
+	let data: Input = match json::decode(&payload) {
 		Ok(x) => x,
 		Err(e) => {
-			println!("info: {}\n{}", e, payload);
+			println!("get_data: {}\n{}", e, payload);
 			return Ok(Response::with((status::BadRequest, Header(AccessControlAllowOrigin::Any))));
 		}
 	};
@@ -267,7 +276,7 @@ fn info(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let event = match db.collection("events").find_one(Some(query), Some(options)) {
 		Ok(x) => x,
 		Err(e) => {
-			println!("info: {}", e);
+			println!("get_data: {}", e);
 			return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 		}
 	};
@@ -289,7 +298,7 @@ fn info(req: &mut Request, db: &Database) -> IronResult<Response> {
 			match person {
 				None => Ok(Response::with((status::NotFound, r#"{"error": "database"}"#, Header(AccessControlAllowOrigin::Any)))),
 				Some(person) => {
-					let json = json::encode(&OutputInfo {
+					let json = json::encode(&Output {
 						name: event.get_str("name").unwrap_or("").to_string(),
 						deadline: event.get_i64("deadline").unwrap_or(0),
 						mails: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p| match p {&Bson::Document(ref x) => x.get_str("mail").unwrap_or("@").to_owned(), _ => "@".to_owned()}).collect(),
@@ -301,7 +310,7 @@ fn info(req: &mut Request, db: &Database) -> IronResult<Response> {
 					let payload = match json {
 						Ok(x) => x,
 						Err(e) => {
-							println!("info: {}", e);
+							println!("get_data: {}", e);
 							return Ok(Response::with((status::NotFound, format!(r#"{{"error": "json error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 						}
 					};
@@ -310,6 +319,133 @@ fn info(req: &mut Request, db: &Database) -> IronResult<Response> {
 			}
 		}
 	}
+}
+
+fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
+	println!("get_admin_data");
+
+	#[derive(RustcDecodable)]
+	struct Input {
+		key: String,
+	}
+
+	#[derive(RustcEncodable)]
+	struct Output {
+		name: String,
+		mails: Vec<String>,
+		keys: Vec<String>,
+		slots: Vec<String>,
+		vmin: Vec<i32>,
+		vmax: Vec<i32>,
+		wishes: Vec<Vec<i32>>,
+		deadline: i64,
+	}
+
+	let mut payload = String::new();
+	req.body.read_to_string(&mut payload).unwrap();
+
+	let data: Input = match json::decode(&payload) {
+		Ok(x) => x,
+		Err(e) => {
+			println!("get_admin_data: {}\n{}", e, payload);
+			return Ok(Response::with((status::BadRequest, Header(AccessControlAllowOrigin::Any))));
+		}
+	};
+
+	let query = doc!{"admin_key" => (data.key.clone())};
+	let mut options = mongodb::coll::options::FindOptions::new();
+	options.projection = Some(doc!{"_id" => false});
+
+	let event = match db.collection("events").find_one(Some(query), Some(options)) {
+		Ok(x) => x,
+		Err(e) => {
+			println!("get_admin_data: {}", e);
+			return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
+		}
+	};
+
+	match event {
+		None => Ok(Response::with((status::NotFound, r#"{"error": "database"}"#, Header(AccessControlAllowOrigin::Any)))),
+		Some(event) => {
+			let json = json::encode(&Output {
+				name: event.get_str("name").unwrap_or("").to_string(),
+				deadline: event.get_i64("deadline").unwrap_or(0),
+				mails:  event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
+					match p {
+						&Bson::Document(ref x) => x.get_str("mail").unwrap_or("").to_owned(),
+						_ => "".to_owned()
+					}
+				).collect(),
+				keys:  event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
+					match p {
+						&Bson::Document(ref x) => x.get_str("key").unwrap_or("").to_owned(),
+						_ => "".to_owned()
+					}
+				).collect(),
+				wishes: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
+					match p {
+						&Bson::Document(ref x) => x.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x|
+							match x {
+								&Bson::I32(v) => v,
+								_ => 0
+							}
+						).collect(),
+						_ => Vec::new()
+					}
+				).collect(),
+				slots: event.get_array("slots").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::String(ref v) => v.clone(), _ => "".to_owned()}).collect(),
+				vmin: event.get_array("vmin").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(ref v) => v.clone(), _ => 0}).collect(),
+				vmax: event.get_array("vmax").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(ref v) => v.clone(), _ => 0}).collect(),
+			});
+			let payload = match json {
+				Ok(x) => x,
+				Err(e) => {
+					println!("get_admin_data: {}", e);
+					return Ok(Response::with((status::NotFound, format!(r#"{{"error": "json error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
+				}
+			};
+			Ok(Response::with((status::Ok, payload, Header(AccessControlAllowOrigin::Any))))
+		}
+	}
+}
+
+
+fn admin_update(req: &mut Request, db: &Database) -> IronResult<Response> {
+	println!("admin_update");
+
+	#[derive(RustcDecodable)]
+	struct Input {
+		key: String,
+		deadline: i64,
+		slots: Vec<String>,
+		vmin: Vec<i32>,
+		vmax: Vec<i32>
+	}
+
+	let mut payload = String::new();
+	req.body.read_to_string(&mut payload).unwrap();
+
+	let data: Input = match json::decode(&payload) {
+		Ok(x) => x,
+		Err(e) => {
+			println!("admin_update: {}\n{}", e, payload);
+			return Ok(Response::with((status::BadRequest, Header(AccessControlAllowOrigin::Any))));
+		}
+	};
+
+	let mut document = Document::new();
+	document.insert("deadline", Bson::I64(data.deadline));
+	document.insert("slots", Bson::Array(data.slots.iter().map(|s| Bson::String(s.clone())).collect()));
+	document.insert("vmin", Bson::Array(data.vmin.iter().map(|&x| Bson::I32(x)).collect()));
+	document.insert("vmax", Bson::Array(data.vmax.iter().map(|&x| Bson::I32(x)).collect()));
+
+	return match db.collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => document}, None) {
+		Ok(_) => Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any)))),
+		Err(e) => {
+			println!("admin_update: {}", e);
+			Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))))
+		}
+	};
 }
 
 fn process(db: &Arc<Mutex<Database>>) {

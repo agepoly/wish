@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Wish</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
+  <link rel="stylesheet" type="text/css" href="/static/style.css">
+  <script src="/static/home.js"></script>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1 style="text-align: center">Wish</h1>
+    <div class="row">
+      <div class="eight columns">
+        <label for="nameInput">Activity name</label>
+        <input class="u-full-width" type="text" id="nameInput" name="name" placeholder="Business meeting @Sat" value="">
+      </div>
+      <div class="four columns">
+        <label for="numberInput">Number of slots</label>
+        <input type="number" name="nslots" class="u-full-width" min="1" max="100" step="1" value="2" id="numberInput">
+      </div>
+    </div>
+
+    <div id="slots" style="width: 100%">
+    </div>
+
+    <label for="mails">Mail list</label>
+    <textarea id="mails" rows="5" class="u-full-width" placeholder="mario.geiger@epfl.ch, louis.merlin@epfl.ch"></textarea>
+
+    <label for="deadlineInput">Deadline</label>
+    <input type="date" name="deadline" id="deadlineInput" class="u-full-width" placeholder="dd/mm/yyyy">
+
+    <button type="button" id="send" class="u-full-width">Create</button>
+
+    <br/>
+    <br/>
+    <div style="border-top: 1px solid lightgrey"></div>
+    <br/>
+
+    <label for="output">Users urls</label>
+    <textarea readonly id="output" rows="5" class="u-full-width"></textarea>
+
+    <label for="admin_url">Admin url</label>
+    <p id="admin_url" class="u-full-width"></p>
+  </div>
+
+</body>
+
+</html>
