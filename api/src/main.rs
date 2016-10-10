@@ -54,6 +54,10 @@ fn main() {
 		get_admin_data(r, &arc.lock().unwrap()), "get_admin_data");
 
 	let arc = db.clone();
+	router.post("/admin_update", move |r: &mut Request|
+		admin_update(r, &arc.lock().unwrap()), "admin_update");
+
+	let arc = db.clone();
 	let handler = std::thread::spawn(move || {
 		loop {
 			process(&arc);
@@ -331,6 +335,8 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 		mails: Vec<String>,
 		keys: Vec<String>,
 		slots: Vec<String>,
+		vmin: Vec<i32>,
+		vmax: Vec<i32>,
 		wishes: Vec<Vec<i32>>,
 		deadline: i64,
 	}
@@ -388,6 +394,8 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 					}
 				).collect(),
 				slots: event.get_array("slots").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::String(ref v) => v.clone(), _ => "".to_owned()}).collect(),
+				vmin: event.get_array("vmin").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(ref v) => v.clone(), _ => 0}).collect(),
+				vmax: event.get_array("vmax").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(ref v) => v.clone(), _ => 0}).collect(),
 			});
 			let payload = match json {
 				Ok(x) => x,
@@ -399,6 +407,45 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 			Ok(Response::with((status::Ok, payload, Header(AccessControlAllowOrigin::Any))))
 		}
 	}
+}
+
+
+fn admin_update(req: &mut Request, db: &Database) -> IronResult<Response> {
+	println!("admin_update");
+
+	#[derive(RustcDecodable)]
+	struct Input {
+		key: String,
+		deadline: i64,
+		slots: Vec<String>,
+		vmin: Vec<i32>,
+		vmax: Vec<i32>
+	}
+
+	let mut payload = String::new();
+	req.body.read_to_string(&mut payload).unwrap();
+
+	let data: Input = match json::decode(&payload) {
+		Ok(x) => x,
+		Err(e) => {
+			println!("admin_update: {}\n{}", e, payload);
+			return Ok(Response::with((status::BadRequest, Header(AccessControlAllowOrigin::Any))));
+		}
+	};
+
+	let mut document = Document::new();
+	document.insert("deadline", Bson::I64(data.deadline));
+	document.insert("slots", Bson::Array(data.slots.iter().map(|s| Bson::String(s.clone())).collect()));
+	document.insert("vmin", Bson::Array(data.vmin.iter().map(|&x| Bson::I32(x)).collect()));
+	document.insert("vmax", Bson::Array(data.vmax.iter().map(|&x| Bson::I32(x)).collect()));
+
+	return match db.collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => document}, None) {
+		Ok(_) => Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any)))),
+		Err(e) => {
+			println!("admin_update: {}", e);
+			Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))))
+		}
+	};
 }
 
 fn process(db: &Arc<Mutex<Database>>) {

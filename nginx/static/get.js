@@ -1,4 +1,3 @@
-//var key = window.location.pathname.split("/")[2];
 var hash = window.location.hash.substring(1);
 var hash = hash.split("+");
 
@@ -6,8 +5,6 @@ var key = hash[0];
 var admin_key = hash[1];
 
 var x = null;
-var deadline = null;
-var now = new Date();
 
 $(document).ready(function() {
 	console.log("get.js running");
@@ -20,7 +17,8 @@ $(document).ready(function() {
 			$("#name").html('<b>Activity name: </b>'+x.name);
 			$("#mail").html('<b>Your email: </b>'+x.mail);
 
-			deadline = new Date(x.deadline * 1000);
+			var deadline = new Date(x.deadline * 1000);
+			var now = new Date();
 			// x.deadline [seconds]
 			// deadline [milliseconds]
 
@@ -53,7 +51,6 @@ $(document).ready(function() {
 				var content = '<table style="width:100%"><tr><th>Slot Name</th><th>Wish</th></tr>';
 				var n = x.slots.length;
 				for (i=0; i< n; ++i) {
-					//content += '<tr><th>'+x.slots[i]+'</th><th><input type="number" name="wish'+i+'" min="1" max="'+n+'" step="1" value="'+(n-x.wish[i])+'"></th></tr>';
 					content += '<tr><th>'+x.slots[i]+'</th><th>wanted <input type="range" name="wish'+i+'" min="0" max="'+(n-1)+'" step="1" value="'+x.wish[i]+'" /> hated</th></tr>';
 				}
 				content += '</table>';
@@ -62,8 +59,6 @@ $(document).ready(function() {
 				if (admin_key == undefined) {
 					$("input").bind('input propertychange', check);
 				}
-				//$("input").bind('input propertychange', color_wish);
-				//color_wish();
 			}
 		} else {
 			console.log("status != success");
@@ -124,21 +119,9 @@ function send() {
 			$("#error").fadeOut(1000);
 		},
 		error: function(data) {
+			$("#error").show();
 			$("#error").text('The set did not succeed');
 		},
 	});
 }
 
-/*
-function color_wish() {
-	var colormap = ['#40ff00', '#80ff00', '#bfff00', '#ffff00', '#ffbf00', '#ff8000', '#ff4000', '#ff0000'];
-	var n = x.slots.length;
-	for (var i = 0; i < n; ++i) {
-		var v = n - Number($("input[name='wish"+i+"']").val());
-		// v = 0 .. n-1
-		v = v * (colormap.length - 1) / (n - 1);
-		v = Math.round(v);
-		$("input[name='wish"+i+"']").css({'background-color' : colormap[v]});
-	}
-}
-*/

@@ -33,7 +33,9 @@ function send() {
 				content += x.people[i].mail+" "+url+"get#"+x.people[i].key+"\n";
 			}
 			$("#output").html(content);
-			$("#admin_url").html(url+"admin#"+x.admin_key);
+			
+			var aurl = url+"admin#"+x.admin_key;
+			$("#admin_url").html('<a href="http://'+aurl+'">'+aurl+'</a>');
 		}
 	});
 }
