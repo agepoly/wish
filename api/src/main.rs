@@ -8,6 +8,7 @@ extern crate mongodb;
 extern crate rustc_serialize;
 extern crate rand;
 extern crate time;
+extern crate lettre;
 
 mod solver;
 
@@ -27,6 +28,11 @@ use rand::Rng;
 use std::env;
 use iron::headers::AccessControlAllowOrigin;
 use iron::modifiers::Header;
+
+use lettre::email::EmailBuilder;
+use lettre::transport::smtp::{SecurityLevel, SmtpTransportBuilder};
+use lettre::transport::smtp::authentication::Mechanism;
+use lettre::transport::EmailTransport;
 
 fn main() {
 	let client = Client::connect("db", 27017)
@@ -80,7 +86,8 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		mails: Vec<String>,
 		slots: Vec<String>,
 		vmin: Vec<i32>,
-		vmax: Vec<i32>
+		vmax: Vec<i32>,
+		url: String
 	}
 
 	let mut payload = String::new();
@@ -108,7 +115,7 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		return Ok(Response::with((status::BadRequest, r#"{"error": "there are vmin bigger than vmax"}"#, Header(AccessControlAllowOrigin::Any))));
 	}
 
-	let mut keys = Vec::with_capacity(data.mails.len());
+	let mut keys : Vec<String> = Vec::with_capacity(data.mails.len());
 	for _ in 0..data.mails.len() {
 		loop {
 			let mut key: [u8; 16] = [0; 16];
@@ -166,6 +173,36 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		println!("create: {}", e);
 		return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 	}
+
+	// Connect to a remote server on a custom port
+	let mut mailer = SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)).unwrap()
+	    // Add credentials for authentication
+	    .credentials("wish.agepoly@epfl.ch", include_str!("mail_password"))
+	    // Specify a TLS security level. You can also specify an SslContext with
+	    // .ssl_context(SslContext::Ssl23)
+	    .security_level(SecurityLevel::AlwaysEncrypt)
+	    // Enable SMTPUTF8 if the server supports it
+	    .smtp_utf8(true)
+	    // Configure expected authentication mechanism
+	    .authentication_mechanism(Mechanism::CramMd5)
+	    // Enable connection reuse
+	    .connection_reuse(true).build();
+
+	for i in 0..data.mails.len() {
+		let email = EmailBuilder::new()
+	                    .to(data.mails[i].as_str())
+	                    .from("wish.agepoly@epfl.ch")
+	                    .body(format!("{}/get#{}", data.url.as_str(), keys[i].as_str()).as_str())
+	                    .subject(format!("Wish : {}", data.name).as_str())
+	                    .build()
+	                    .unwrap();
+
+		let result = mailer.send(email);
+		assert!(result.is_ok());
+	}
+
+	// Explicitly close the SMTP transaction as we enabled connection reuse
+	mailer.close();
 
 	let json = Json::Object({
 		let mut bt = BTreeMap::new();

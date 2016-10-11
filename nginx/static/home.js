@@ -19,7 +19,8 @@ function send() {
 		+'"mails"    : ["'+$("#mails").val().split(/[\s,]+/).join('","')+'"], '
 		+'"slots"    : ["'+slots.slot.join('","')+'"], '
 		+'"vmin"     : ['+ slots.vmin.join(',')  +'], '
-		+'"vmax"     : ['+ slots.vmax.join(',')  +']'
+		+'"vmax"     : ['+ slots.vmax.join(',')  +'], '
+		+'"url"      : "'+ window.location.hostname + ':' + window.location.port + '"'
 		+'}';
 
 	console.log(payload);

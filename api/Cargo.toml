@@ -11,4 +11,4 @@ mongodb = "*"
 rustc-serialize = "*"
 rand = "*"
 time = "*"
-
+lettre = "*"
