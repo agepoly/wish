@@ -16,7 +16,9 @@ With the url the participant can enter his own wish by sorting the slots by pref
 ## Todolist
 
 - [x] Admin page
-- [ ] Send automatic mail
+- [x] Send automatic mail
+- [ ] Ask for admin mail and check it before sending mails
+- [ ] Unsubscribe link in mails
 - [ ] Anti flood
 
 ## Screenshots
