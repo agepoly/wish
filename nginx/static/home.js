@@ -16,6 +16,7 @@ function send() {
 	var payload = '{'
 		+'"name"     : "'+$("input[name='name']").val()+'", '
 		+'"deadline" : '+deadline+', '
+		+'"amail"    : "'+$("input[name='amail']").val+'", '
 		+'"mails"    : ["'+$("#mails").val().split(/[\s,]+/).join('","')+'"], '
 		+'"slots"    : ["'+slots.slot.join('","')+'"], '
 		+'"vmin"     : ['+ slots.vmin.join(',')  +'], '
@@ -24,20 +25,17 @@ function send() {
 		+'}';
 
 	console.log(payload);
-
-	$.post("http://localhost:3000/create", payload, function(data,status) {
-		if (status == "success") {
-			var x = eval('(' + data + ')');
-			var url = window.location.hostname + ":" + window.location.port + "/";
-			var content = "";
-			for (i=0; i < x.people.length; ++i) {
-				content += x.people[i].mail+" "+url+"get#"+x.people[i].key+"\n";
-			}
-			$("#output").html(content);
-			
-			var aurl = url+"admin#"+x.admin_key;
-			$("#admin_url").html('<a href="http://'+aurl+'">'+aurl+'</a>');
-		}
+	
+	$.ajax({
+		type: "POST",
+		url: "http://localhost:3000/create",
+		data: payload,
+		success: function(data) {
+			console.log("creation success");
+		},
+		error: function(data) {
+			console.log("creation failed");
+		},
 	});
 }
 

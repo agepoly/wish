@@ -19,19 +19,18 @@ use std::sync::{Arc, Mutex};
 use mongodb::{Client, ThreadedClient};
 use mongodb::db::{Database, ThreadedDatabase};
 use rustc_serialize::json;
-use rustc_serialize::json::Json;
+//use rustc_serialize::json::Json;
 use bson::{Document, Bson};
 use std::io::Read;
 use rustc_serialize::hex::ToHex;
-use std::collections::btree_map::BTreeMap;
+//use std::collections::btree_map::BTreeMap;
 use rand::Rng;
 use std::env;
 use iron::headers::AccessControlAllowOrigin;
 use iron::modifiers::Header;
 
 use lettre::email::EmailBuilder;
-use lettre::transport::smtp::{SecurityLevel, SmtpTransportBuilder};
-use lettre::transport::smtp::authentication::Mechanism;
+use lettre::transport::smtp::SmtpTransportBuilder;
 use lettre::transport::EmailTransport;
 
 fn main() {
@@ -83,6 +82,7 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	struct Input {
 		name: String,
 		deadline: i64,
+		amail: String,
 		mails: Vec<String>,
 		slots: Vec<String>,
 		vmin: Vec<i32>,
@@ -146,8 +146,11 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	};
 
 	let mut doc = Document::new();
+	doc.insert_bson("send".to_owned(), Bson::Boolean(false));
+	doc.insert_bson("url".to_owned(), Bson::String(data.url.clone()));
 	doc.insert_bson("name".to_owned(), Bson::String(data.name.clone()));
 	doc.insert_bson("admin_key".to_owned(), Bson::String(admin_key.clone()));
+	doc.insert_bson("amail".to_owned(), Bson::String(data.amail.clone()));
 	doc.insert_bson("deadline".to_owned(), Bson::I64(data.deadline));
 	doc.insert_bson("slots".to_owned(), Bson::Array(data.slots.iter().map(|s| Bson::String(s.clone())).collect()));
 	doc.insert_bson("vmin".to_owned(), Bson::Array(data.vmin.iter().map(|&v| Bson::I32(v)).collect()));
@@ -174,36 +177,27 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 	}
 
-	// Connect to a remote server on a custom port
-	let mut mailer = SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)).unwrap()
-	    // Add credentials for authentication
-	    .credentials("wish.agepoly@epfl.ch", include_str!("mail_password"))
-	    // Specify a TLS security level. You can also specify an SslContext with
-	    // .ssl_context(SslContext::Ssl23)
-	    .security_level(SecurityLevel::AlwaysEncrypt)
-	    // Enable SMTPUTF8 if the server supports it
-	    .smtp_utf8(true)
-	    // Configure expected authentication mechanism
-	    .authentication_mechanism(Mechanism::CramMd5)
-	    // Enable connection reuse
-	    .connection_reuse(true).build();
+	let mut mailer = SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)).unwrap().connection_reuse(true).build();
 
-	for i in 0..data.mails.len() {
-		let email = EmailBuilder::new()
-	                    .to(data.mails[i].as_str())
-	                    .from("wish.agepoly@epfl.ch")
-	                    .body(format!("{}/get#{}", data.url.as_str(), keys[i].as_str()).as_str())
-	                    .subject(format!("Wish : {}", data.name).as_str())
-	                    .build()
-	                    .unwrap();
+	let email = EmailBuilder::new()
+					.from("wish@epfl.ch")
+                    .to(data.amail.as_str())
+                    .body(format!("{}/admin#{}", data.url.as_str(), admin_key.as_str()).as_str())
+                    .subject(format!("Wish : {}", data.name).as_str())
+                    .build()
+                    .unwrap();
 
-		let result = mailer.send(email);
-		assert!(result.is_ok());
-	}
+	let result = mailer.send(email);
 
 	// Explicitly close the SMTP transaction as we enabled connection reuse
 	mailer.close();
 
+	if let Err(ref e) = result {
+		println!("create: {}", e);
+		return Ok(Response::with((status::NotFound, format!(r#"{{"error": "mail error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
+	}
+
+	/*
 	let json = Json::Object({
 		let mut bt = BTreeMap::new();
 		bt.insert("people".to_owned(), Json::Array({
@@ -226,8 +220,8 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 			return Ok(Response::with((status::NotFound, format!(r#"{{"error": "json error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 		}
 	};
-
-	Ok(Response::with((status::Ok, payload, Header(AccessControlAllowOrigin::Any))))
+	*/
+	Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
 }
 
 fn set_wish(req: &mut Request, db: &Database) -> IronResult<Response> {
@@ -404,6 +398,42 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	match event {
 		None => Ok(Response::with((status::NotFound, r#"{"error": "database"}"#, Header(AccessControlAllowOrigin::Any)))),
 		Some(event) => {
+			if event.get_bool("send").unwrap_or(false) == false {
+				let url = event.get_str("url").unwrap_or("wish.com");
+				let name = event.get_str("name").unwrap_or("no name");
+
+				let mut mailer = SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)).unwrap().connection_reuse(true).build();
+
+				for p in event.get_array("people").unwrap_or(&Vec::new()).iter() {
+					let address = match p {
+						&Bson::Document(ref x) => x.get_str("mail").unwrap_or("").to_owned(),
+						_ => "".to_owned()
+					};
+					let key = match p {
+						&Bson::Document(ref x) => x.get_str("key").unwrap_or("").to_owned(),
+						_ => "".to_owned()
+					};
+
+					let email = EmailBuilder::new()
+						.to(address.as_str())
+						.from("wish@epfl.ch")
+						.body(format!("{}/get#{}", url, key.as_str()).as_str())
+						.subject(format!("Wish : {}", name).as_str())
+						.build()
+						.unwrap();
+
+					mailer.send(email).unwrap();
+				}
+
+				// Explicitly close the SMTP transaction as we enabled connection reuse
+				mailer.close();
+
+				if let Err(e) = db.collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => {"send" => true}}, None) {
+					println!("get_admin_data: {}", e);
+					return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
+				}
+			}
+
 			let json = json::encode(&Output {
 				name: event.get_str("name").unwrap_or("").to_string(),
 				deadline: event.get_i64("deadline").unwrap_or(0),
