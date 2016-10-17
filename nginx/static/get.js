@@ -115,8 +115,10 @@ function send() {
 		data: data,
 		success: function(data) {
 			$("#error").show();
-			$("#error").text('Set success');
-			$("#error").fadeOut(1000);
+			$("#error").text('Set success !');
+			setTimeout(function() {
+				$("#error").fadeOut();
+			}, 2000);
 		},
 		error: function(data) {
 			$("#error").show();

@@ -32,9 +32,16 @@ function send() {
 		data: payload,
 		success: function(data) {
 			console.log("creation success");
+			$("#error").show();
+			$("#error").text('Creation success ! Look your mails.');
+			setTimeout(function() {
+				$("#error").fadeOut();
+			}, 2000);
 		},
 		error: function(data) {
 			console.log("creation failed");
+			$("#error").show();
+			$("#error").text('Creation failed');
 		},
 	});
 }

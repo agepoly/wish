@@ -179,7 +179,7 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 	}
 
-	let mut mailer = SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)).unwrap().connection_reuse(true).build();
+	let mut mailer = SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)).unwrap().build();
 
 	let email = EmailBuilder::new()
 					.from("wish@epfl.ch")
@@ -191,38 +191,11 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 
 	let result = mailer.send(email);
 
-	// Explicitly close the SMTP transaction as we enabled connection reuse
-	mailer.close();
-
 	if let Err(ref e) = result {
 		println!("create: {}", e);
 		return Ok(Response::with((status::NotFound, format!(r#"{{"error": "mail error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 	}
 
-	/*
-	let json = Json::Object({
-		let mut bt = BTreeMap::new();
-		bt.insert("people".to_owned(), Json::Array({
-			let mut v = Vec::with_capacity(data.mails.len());
-			for i in 0..data.mails.len() {
-				let mut obj = BTreeMap::new();
-				obj.insert("mail".to_owned(), Json::String(data.mails[i].clone()));
-				obj.insert("key".to_owned(), Json::String(keys[i].clone()));
-				v.push(Json::Object(obj));
-			}
-			v
-		}));
-		bt.insert("admin_key".to_string(), Json::String(admin_key.clone()));
-		bt
-	});
-	let payload = match json::encode(&json) {
-		Ok(x) => x,
-		Err(e) => {
-			println!("create: {}", e);
-			return Ok(Response::with((status::NotFound, format!(r#"{{"error": "json error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
-		}
-	};
-	*/
 	Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
 }
 
