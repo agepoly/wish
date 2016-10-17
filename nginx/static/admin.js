@@ -32,7 +32,7 @@ $(document).ready(function() {
 			for (i=0; i < m; ++i) {
 				var key = x.keys[i];
 				var url = "http://" + window.location.hostname + ":" + window.location.port + "/get#"+key+"+"+admin_key;
-				content += '<tr><th>'+x.mails[i]+'</th><th><a href="'+url+'">'+url+'</a></th></tr>';
+				content += '<tr><th>'+x.mails[i]+'</th><th><a href="'+url+'">'+url+'</a> '+(x.sent[i] ? '' : 'sent failed')+'</th></tr>';
 			}
 			content += '</table>';
 			$("#people").html(content);

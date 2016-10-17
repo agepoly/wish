@@ -33,6 +33,7 @@ use lettre::email::EmailBuilder;
 use lettre::transport::smtp::SmtpTransportBuilder;
 use lettre::transport::EmailTransport;
 
+
 fn main() {
 	let client = Client::connect("db", 27017)
 		.expect("Failed to initialize mongodb client.");
@@ -146,7 +147,7 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	};
 
 	let mut doc = Document::new();
-	doc.insert_bson("send".to_owned(), Bson::Boolean(false));
+//	doc.insert_bson("sent".to_owned(), Bson::Boolean(false));
 	doc.insert_bson("url".to_owned(), Bson::String(data.url.clone()));
 	doc.insert_bson("name".to_owned(), Bson::String(data.name.clone()));
 	doc.insert_bson("admin_key".to_owned(), Bson::String(admin_key.clone()));
@@ -161,6 +162,7 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 			let mut p = Document::new();
 			p.insert_bson("mail".to_owned(), Bson::String(data.mails[i].clone()));
 			p.insert_bson("key".to_owned(), Bson::String(keys[i].clone()));
+			p.insert_bson("sent".to_owned(), Bson::Boolean(false));
 
 			p.insert_bson("wish".to_owned(), {
 				let mut v = Vec::new();
@@ -182,7 +184,7 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let email = EmailBuilder::new()
 					.from("wish@epfl.ch")
                     .to(data.amail.as_str())
-                    .body(format!("{}/admin#{}", data.url.as_str(), admin_key.as_str()).as_str())
+                    .body(format!("http://{}/admin#{}", data.url.as_str(), admin_key.as_str()).as_str())
                     .subject(format!("Wish : {}", data.name).as_str())
                     .build()
                     .unwrap();
@@ -364,6 +366,7 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	struct Output {
 		name: String,
 		mails: Vec<String>,
+		sent: Vec<bool>,
 		keys: Vec<String>,
 		slots: Vec<String>,
 		vmin: Vec<i32>,
@@ -398,52 +401,58 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	match event {
 		None => Ok(Response::with((status::NotFound, r#"{"error": "database"}"#, Header(AccessControlAllowOrigin::Any)))),
 		Some(event) => {
-			if event.get_bool("send").unwrap_or(false) == false {
-				let url = event.get_str("url").unwrap_or("wish.com");
-				let name = event.get_str("name").unwrap_or("no name");
+			let url = event.get_str("url").unwrap_or("wish.com");
+			let name = event.get_str("name").unwrap_or("no name");
 
-				let mut mailer = SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)).unwrap().connection_reuse(true).build();
+			let mut mailer = SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)).unwrap().connection_reuse(true).build();
+			
+			let mut people = event.get_array("people").unwrap().clone();
 
-				for p in event.get_array("people").unwrap_or(&Vec::new()).iter() {
-					let address = match p {
-						&Bson::Document(ref x) => x.get_str("mail").unwrap_or("").to_owned(),
-						_ => "".to_owned()
-					};
-					let key = match p {
-						&Bson::Document(ref x) => x.get_str("key").unwrap_or("").to_owned(),
-						_ => "".to_owned()
-					};
+			for p in people.iter_mut() {
+				if let &mut Bson::Document(ref mut x) = p {
+					if !x.get_bool("sent").unwrap_or(false) {
+						let email = EmailBuilder::new()
+							.to(x.get_str("mail").unwrap())
+							.from("wish@epfl.ch")
+							.body(format!("http://{}/get#{}", url, x.get_str("key").unwrap()).as_str())
+							.subject(format!("Wish : {}", name).as_str())
+							.build()
+							.unwrap();
 
-					let email = EmailBuilder::new()
-						.to(address.as_str())
-						.from("wish@epfl.ch")
-						.body(format!("{}/get#{}", url, key.as_str()).as_str())
-						.subject(format!("Wish : {}", name).as_str())
-						.build()
-						.unwrap();
-
-					mailer.send(email).unwrap();
+						let result = mailer.send(email);
+				
+						x.insert("sent", result.is_ok());
+					}
 				}
+			}
 
-				// Explicitly close the SMTP transaction as we enabled connection reuse
-				mailer.close();
-
-				if let Err(e) = db.collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => {"send" => true}}, None) {
-					println!("get_admin_data: {}", e);
-					return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
-				}
+			// Explicitly close the SMTP transaction as we enabled connection reuse
+			mailer.close();
+			
+			let mut document = Document::new();
+			document.insert("people", Bson::Array(people.clone()));
+			
+			if let Err(e) = db.collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => document}, None) {
+				println!("get_admin_data: {}", e);
+				return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
 			}
 
 			let json = json::encode(&Output {
 				name: event.get_str("name").unwrap_or("").to_string(),
 				deadline: event.get_i64("deadline").unwrap_or(0),
-				mails:  event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
+				mails: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
 					match p {
 						&Bson::Document(ref x) => x.get_str("mail").unwrap_or("").to_owned(),
 						_ => "".to_owned()
 					}
 				).collect(),
-				keys:  event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
+				sent: people.iter().map(|p|
+					match p {
+						&Bson::Document(ref x) => x.get_bool("sent").unwrap_or(false),
+						_ => false
+					}
+				).collect(),
+				keys: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
 					match p {
 						&Bson::Document(ref x) => x.get_str("key").unwrap_or("").to_owned(),
 						_ => "".to_owned()

@@ -16,7 +16,7 @@ function send() {
 	var payload = '{'
 		+'"name"     : "'+$("input[name='name']").val()+'", '
 		+'"deadline" : '+deadline+', '
-		+'"amail"    : "'+$("input[name='amail']").val+'", '
+		+'"amail"    : "'+$("input[name='amail']").val()+'", '
 		+'"mails"    : ["'+$("#mails").val().split(/[\s,]+/).join('","')+'"], '
 		+'"slots"    : ["'+slots.slot.join('","')+'"], '
 		+'"vmin"     : ['+ slots.vmin.join(',')  +'], '
