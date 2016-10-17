@@ -17,7 +17,7 @@ With the url the participant can enter his own wish by sorting the slots by pref
 
 - [x] Admin page
 - [x] Send automatic mail
-- [ ] Ask for admin mail and check it before sending mails
+- [x] Ask for admin mail and check it before sending mails
 - [ ] Unsubscribe link in mails
 - [ ] Anti flood
 
