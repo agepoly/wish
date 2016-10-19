@@ -487,6 +487,7 @@ fn admin_update(req: &mut Request, db: &Database) -> IronResult<Response> {
 	document.insert("slots", Bson::Array(data.slots.iter().map(|s| Bson::String(s.clone())).collect()));
 	document.insert("vmin", Bson::Array(data.vmin.iter().map(|&x| Bson::I32(x)).collect()));
 	document.insert("vmax", Bson::Array(data.vmax.iter().map(|&x| Bson::I32(x)).collect()));
+	document.insert("results", Bson::Null);
 
 	return match db.collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => document}, None) {
 		Ok(_) => Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any)))),

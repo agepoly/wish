@@ -32,7 +32,7 @@ $(document).ready(function() {
 				$("#deadline").html('<b>Deadline: </b>'+deadline.toJSON().split('T')[0]+' ('+days+' days ago)');
 			}
 
-			if (x.results.length > 0) {
+			if (deadline < now && x.results.length > 0) {
 				var content = '<table style="width:100%"><tr><th>Slot Name</th><th>Mail</th></tr>';
 				var n = x.slots.length;
 				for (i=0; i< n; ++i) {
@@ -47,7 +47,7 @@ $(document).ready(function() {
 				content += '</table>';
 				$("#content").html(content);
 				$("button[name='send']").hide();
-			} else {
+			} else if (deadline > now) {
 				var content = '<table style="width:100%"><tr><th>Slot Name</th><th>Wish</th></tr>';
 				var n = x.slots.length;
 				for (i=0; i< n; ++i) {
@@ -59,6 +59,9 @@ $(document).ready(function() {
 				if (admin_key == undefined) {
 					$("input").bind('input propertychange', check);
 				}
+			} else {
+				$("#content").html("The deadline is over, the result will be generated soon");
+				$("button[name='send']").hide();
 			}
 		} else {
 			console.log("status != success");
