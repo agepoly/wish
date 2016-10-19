@@ -19,11 +19,9 @@ use std::sync::{Arc, Mutex};
 use mongodb::{Client, ThreadedClient};
 use mongodb::db::{Database, ThreadedDatabase};
 use rustc_serialize::json;
-//use rustc_serialize::json::Json;
 use bson::{Document, Bson};
 use std::io::Read;
 use rustc_serialize::hex::ToHex;
-//use std::collections::btree_map::BTreeMap;
 use rand::Rng;
 use std::env;
 use iron::headers::AccessControlAllowOrigin;
@@ -147,7 +145,6 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	};
 
 	let mut doc = Document::new();
-//	doc.insert_bson("sent".to_owned(), Bson::Boolean(false));
 	doc.insert_bson("url".to_owned(), Bson::String(data.url.clone()));
 	doc.insert_bson("name".to_owned(), Bson::String(data.name.clone()));
 	doc.insert_bson("admin_key".to_owned(), Bson::String(admin_key.clone()));

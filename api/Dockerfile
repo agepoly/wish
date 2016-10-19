@@ -29,7 +29,9 @@ RUN curl -fsOSL $RUST_DOWNLOAD_URL \
 RUN mkdir -p /rust/app
 WORKDIR /rust/app
 
-COPY . /rust/app
-RUN cargo build # --release
-
-CMD cargo run # --release
+COPY Cargo.toml .
+COPY Cargo.lock .
+RUN mkdir src && touch src/lib.rs && cargo build --release --lib
+COPY src src
+RUN cargo build --release
+CMD cargo run --release
