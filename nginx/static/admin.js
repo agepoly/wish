@@ -31,7 +31,7 @@ $(document).ready(function() {
 			var content = '<table style="width:100%"><tr><th>Mail</th> <th>Wish</th> <th>Admin link</th> <th>Mail status</th>';
 			for (i=0; i < m; ++i) {
 				var key = x.keys[i];
-				var url = "http://" + window.location.hostname + ":" + window.location.port + "/get#"+key;
+				var url = "http://" + window.location.hostname + ":" + window.location.port + "/wish#"+key;
 				var aurl = url+"+"+admin_key;
 				content += '<tr>'
 					+'<th>'+x.mails[i]+'</th>'

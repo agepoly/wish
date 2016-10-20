@@ -37,7 +37,7 @@ $(document).ready(function() {
 				var n = x.slots.length;
 				for (i=0; i< n; ++i) {
 					var list = [];
-					for (j=0; j < x.mails.length; ++j) {
+					for (var j = 0; j < x.mails.length; ++j) {
 						if (x.results[j] == i) {
 							list.push(x.mails[j]);
 						}
@@ -50,15 +50,13 @@ $(document).ready(function() {
 			} else if (deadline > now) {
 				var content = '<table style="width:100%"><tr><th>Slot Name</th><th>Wish</th></tr>';
 				var n = x.slots.length;
-				for (i=0; i< n; ++i) {
+				for (var i = 0; i < n; ++i) {
 					content += '<tr><th>'+x.slots[i]+'</th><th>wanted <input type="range" name="wish'+i+'" min="0" max="'+(n-1)+'" step="1" value="'+x.wish[i]+'" /> hated</th></tr>';
 				}
 				content += '</table>';
 				$("#content").html(content);
 				
-				if (admin_key == undefined) {
-					$("input").bind('input propertychange', check);
-				}
+				$("input").bind('input propertychange', check);
 			} else {
 				$("#content").html("The deadline is over, the result will be generated soon");
 				$("button[name='send']").hide();
@@ -70,46 +68,47 @@ $(document).ready(function() {
 });
 
 function check(event) {
-	var wish = [];
-	var n = x.slots.length;
-	for (var i = 0; i < n; ++i) {
-		wish.push(Number($("input[name='wish"+i+"']").val()));
+	var n = x.wish.length;
+	
+	if (admin_key != undefined) {
+		for (var i = 0; i < n; ++i) {
+			x.wish[i] = $("input[name='wish"+i+"']").val();
+		}
+		return;
 	}
 	
+	var wish = x.wish;
+
 	var target = Number(event.target.name.substring(4));
 	console.log("event from wish #"+target);
 	
 	var value = Number($(event.target).val());
-	console.log(value);
+		
+	for (var v = x.wish[target] + 1; v <= value; ++v) {
+		wish[target] = v;
 	
-	var count = 0;
-	for (var i = 0; i < n; ++i) {
-		if (wish[i] >= value) count++;
-	}
-	
-	if (count > n - value) {
+		var count = 0;
 		for (var i = 0; i < n; ++i) {
-			if (i == target) continue;
-			if (wish[i] == value) {
-				$("input[name='wish"+i+"']").val(value - 1);
-				wish[i] = value - 1;
-				
-				check(event);
-				break;
+			if (wish[i] >= v) count++;
+		}
+	
+		if (count > n - v) {
+			for (var i = 0; i < n; ++i) {
+				if (i == target) continue;
+				if (wish[i] == v) {
+					$("input[name='wish"+i+"']").val(v - 1);
+					wish[i] = v - 1;
+				}
 			}
 		}
 	}
+	wish[target] = value;
+	
+	x.wish = wish;
 }
 
 function send() {
-	var wish = [];
-	var n = x.slots.length;
-	for (var i = 0; i < n; ++i) {
-		wish.push(Number($("input[name='wish"+i+"']").val()));
-	}
-
-
-	var data = '{ "key" : "'+key+'", "wish" : ['+wish.join(",")+'], "admin_key" : "'+admin_key+'" }';
+	var data = '{ "key" : "'+key+'", "wish" : ['+x.wish.join(",")+'], "admin_key" : "'+admin_key+'" }';
 	console.log(data);
 
 	$.ajax({
