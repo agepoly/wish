@@ -28,7 +28,7 @@ function send() {
 	
 	$.ajax({
 		type: "POST",
-		url: "http://localhost:3000/create",
+		url: "http://"+window.location.hostname+":3000/create",
 		data: payload,
 		success: function(data) {
 			console.log("creation success");

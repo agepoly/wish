@@ -11,7 +11,7 @@ $(document).ready(function() {
 	
 	$("button[name='send']").bind("click", send);
 
-	$.post("http://localhost:3000/get_data", '{ "key" : "'+key+'" }', function(data,status) {
+	$.post("http://"+window.location.hostname+":3000/get_data", '{ "key" : "'+key+'" }', function(data,status) {
 		if (status == "success") {
 			x = eval('(' + data + ')');
 			$("#name").html('<b>Activity name: </b>'+x.name);
@@ -114,7 +114,7 @@ function send() {
 
 	$.ajax({
 		type: "POST",
-		url: "http://localhost:3000/set_wish",
+		url: "http://"+window.location.hostname+":3000/set_wish",
 		data: data,
 		success: function(data) {
 			$("#error").show();

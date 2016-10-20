@@ -11,7 +11,7 @@ $(document).ready(function() {
 	
 	$("button[name='save']").bind("click", save);
 	
-	$.post("http://localhost:3000/get_admin_data", '{ "key" : "'+admin_key+'" }', function(data,status) {
+	$.post("http://"+window.location.hostname+":3000/get_admin_data", '{ "key" : "'+admin_key+'" }', function(data,status) {
 		if (status == "success") {
 			x = eval('(' + data + ')');
 			$("#name").html('<b>Activity name: </b>'+x.name);
@@ -85,7 +85,7 @@ function save() {
 	
 	$.ajax({
 		type: "POST",
-		url: "http://localhost:3000/admin_update",
+		url: "http://"+window.location.hostname+":3000/admin_update",
 		data: payload,
 		success: function(data) {
 			$("#error").show();
