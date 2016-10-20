@@ -117,15 +117,15 @@ function send() {
 		url: "http://"+window.location.hostname+":3000/set_wish",
 		data: data,
 		success: function(data) {
-			$("#error").show();
-			$("#error").text('Set success !');
+			$("#status").show();
+			$("#status").text('Set success !');
 			setTimeout(function() {
-				$("#error").fadeOut();
+				$("#status").fadeOut();
 			}, 2000);
 		},
 		error: function(data) {
-			$("#error").show();
-			$("#error").text('The set did not succeed');
+			$("#status").show();
+			$("#status").text('The set did not succeed');
 		},
 	});
 }

@@ -373,6 +373,7 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 		Some(event) => {
 			let url = event.get_str("url").unwrap_or("wish.com");
 			let name = event.get_str("name").unwrap_or("no name");
+			let amail = event.get_str("amail").unwrap_or("");
 
 			let mut mailer = SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)).unwrap().connection_reuse(true).build();
 			
@@ -384,7 +385,8 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 						let email = EmailBuilder::new()
 							.to(x.get_str("mail").unwrap())
 							.from("wish@epfl.ch")
-							.body(format!("http://{}/get#{}", url, x.get_str("key").unwrap()).as_str())
+							.reply_to(amail)
+							.body(format!("http://{}/wish#{}", url, x.get_str("key").unwrap()).as_str())
 							.subject(format!("Wish : {}", name).as_str())
 							.build()
 							.unwrap();
@@ -512,9 +514,9 @@ fn process(db: &Arc<Mutex<Database>>) {
 	println!("check {:?}", event);
 
 	if let Ok(Some(event)) = event {
-		let vmin = event.get_array("vmin").unwrap_or(&Vec::new()).iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();
-		let vmax = event.get_array("vmax").unwrap_or(&Vec::new()).iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();
-		let wishes = event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p| {
+		let vmin : Vec<u32> = event.get_array("vmin").unwrap_or(&Vec::new()).iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();
+		let vmax : Vec<u32> = event.get_array("vmax").unwrap_or(&Vec::new()).iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();
+		let wishes : Vec<Vec<u32>> = event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p| {
 			match p {
 				&Bson::Document(ref p) => p.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x| {
 					match x {
@@ -525,6 +527,14 @@ fn process(db: &Arc<Mutex<Database>>) {
 				_ => Vec::new()
 			}
 		}).collect();
+		
+		let vmin_total : u32 = vmin.iter().sum();
+		let vmax_total : u32 = vmax.iter().sum();
+		let user_total = wishes.len() as u32;
+		
+		if user_total > vmax_total || user_total < vmin_total {
+			return;
+		}
 
 		let results = solver::search_solution(&vmin, &vmax, &wishes, 20f64);
 		if results.is_empty() { return; }
