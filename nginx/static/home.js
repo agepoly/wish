@@ -32,16 +32,16 @@ function send() {
 		data: payload,
 		success: function(data) {
 			console.log("creation success");
-			$("#error").show();
-			$("#error").text('Creation success ! Look your mails.');
+			$("#status").show();
+			$("#status").text('Creation success ! Look your mails.');
 			setTimeout(function() {
-				$("#error").fadeOut();
+				$("#status").fadeOut();
 			}, 2000);
 		},
 		error: function(data) {
 			console.log("creation failed");
-			$("#error").show();
-			$("#error").text('Creation failed');
+			$("#status").show();
+			$("#status").text('Creation failed');
 		},
 	});
 }
@@ -55,7 +55,7 @@ function create_slots() {
 	content += '<div class="three columns"><label>Max people</label></div></div>'
 	for (i=0; i < n; ++i) {
 		var values = {
-			name: "Slot "+(i+1),
+			name: "",
 			vmin: "0",
 			vmax: "10"
 		};
@@ -101,6 +101,12 @@ function check_validity() {
 		}
 		var vmin = Number($("input[name='vmin"+i+"']").val());
 		var vmax = Number($("input[name='vmax"+i+"']").val());
+		if (vmin < 0) {
+			$("input[name='vmin"+i+"']").css({'border-color' : '#FF0000'});
+		}
+		if (vmax <= 0) {
+			$("input[name='vmax"+i+"']").css({'border-color' : '#FF0000'});
+		}
 		if (vmin > vmax) {
 			$("input[name='vmin"+i+"']").css({'border-color' : '#FF0000'});
 			$("input[name='vmax"+i+"']").css({'border-color' : '#FF0000'});
@@ -110,6 +116,10 @@ function check_validity() {
 
 	if ($("#mails").val() == "") {
 		$("#mails").css({'border-color' : '#FF0000'});
+	}
+
+	if ($("input[name='amail']").val() == "") {
+		$("input[name='amail']").css({'border-color' : '#FF0000'});
 	}
 
 	var mails = $("#mails").val().split(/[\s,]+/);
@@ -131,7 +141,6 @@ function check_validity() {
 			$("#mails").css({'border-color' : '#FF0000'});
 		}
 	}
-
 
 	if ($("input[name='deadline']").val() == "") {
 		$("input[name='deadline']").css({'border-color' : '#FF0000'});

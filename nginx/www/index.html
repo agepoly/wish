@@ -18,7 +18,7 @@
     <div class="row">
       <div class="eight columns">
         <label for="nameInput">Activity name</label>
-        <input class="u-full-width" type="text" id="nameInput" name="name" placeholder="Business meeting @Sat" value="">
+        <input class="u-full-width" type="text" id="nameInput" name="name" placeholder="Exam of ..." value="">
       </div>
       <div class="four columns">
         <label for="numberInput">Number of slots</label>
@@ -30,22 +30,24 @@
     </div>
 
     <label for="mails">Admin mail</label>
-    <input type="text" name="amail" class="u-full-width" id="amailInput">
+    <input id="amailInput" type="text" name="amail" class="u-full-width" placeholder="your.mail@epfl.ch">
 
     <label for="mails">Mail list</label>
-    <textarea id="mails" rows="5" class="u-full-width" placeholder="mario.geiger@epfl.ch, louis.merlin@epfl.ch"></textarea>
+    <textarea id="mails" rows="5" class="u-full-width" placeholder="user1@epfl.ch, user2@epfl.ch, ..."></textarea>
 
     <label for="deadlineInput">Deadline</label>
     <input type="date" name="deadline" id="deadlineInput" class="u-full-width" placeholder="dd/mm/yyyy">
 
     <button type="button" id="send" class="u-full-width">Create</button>
 
+	<!--
     <br/>
     <br/>
     <div style="border-top: 1px solid lightgrey"></div>
     <br/>
+    -->
 
-    <p id="error"></p>
+    <p id="status"></p>
   </div>
 
 </body>

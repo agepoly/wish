@@ -65,7 +65,7 @@ fn main() {
 	let handler = std::thread::spawn(move || {
 		loop {
 			process(&arc);
-			std::thread::sleep(std::time::Duration::from_secs(15));
+			std::thread::sleep(std::time::Duration::from_secs(10));
 		}
 	});
 
@@ -514,15 +514,24 @@ fn process(db: &Arc<Mutex<Database>>) {
 	if let Ok(Some(event)) = event {
 		let vmin = event.get_array("vmin").unwrap_or(&Vec::new()).iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();
 		let vmax = event.get_array("vmax").unwrap_or(&Vec::new()).iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();
-		let wishes = event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p| match p { &Bson::Document(ref p) => p.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(v) => v as u32, _ => 0}).collect(), _ => Vec::new()} ).collect();
+		let wishes = event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p| {
+			match p {
+				&Bson::Document(ref p) => p.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x| {
+					match x {
+						&Bson::I32(v) => v as u32, 
+						_ => 0
+					}
+				}).collect(), 
+				_ => Vec::new()
+			}
+		}).collect();
 
 		let results = solver::search_solution(&vmin, &vmax, &wishes, 20f64);
 		if results.is_empty() { return; }
 
 		let results = Bson::Array(results[0].iter().map(|&x| Bson::I32(x as i32)).collect());
-		match db.lock() {
-			Ok(x) => x,
-			Err(_) => return
-		}.collection("events").update_one(doc!{"_id" => (event.get_object_id("_id").unwrap().clone())}, doc!{"$set" => {"results" => results}}, None).unwrap();
+		if let Ok(db) = db.lock() {
+			db.collection("events").update_one(doc!{"_id" => (event.get_object_id("_id").unwrap().clone())}, doc!{"$set" => {"results" => results}}, None).unwrap();
+		}
 	}
 }

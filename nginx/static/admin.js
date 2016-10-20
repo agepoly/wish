@@ -28,11 +28,17 @@ $(document).ready(function() {
 			var n = x.slots.length;
 			var m = x.mails.length;
 
-			var content = '<table style="width:100%"><tr><th>Mail</th><th>Wish</th></tr>';
+			var content = '<table style="width:100%"><tr><th>Mail</th> <th>Wish</th> <th>Admin link</th> <th>Mail status</th>';
 			for (i=0; i < m; ++i) {
 				var key = x.keys[i];
-				var url = "http://" + window.location.hostname + ":" + window.location.port + "/get#"+key+"+"+admin_key;
-				content += '<tr><th>'+x.mails[i]+'</th><th><a href="'+url+'">'+url+'</a> '+(x.sent[i] ? '' : 'sent failed')+'</th></tr>';
+				var url = "http://" + window.location.hostname + ":" + window.location.port + "/get#"+key;
+				var aurl = url+"+"+admin_key;
+				content += '<tr>'
+					+'<th>'+x.mails[i]+'</th>'
+					+'<th><a href="'+url+'">user page</a></th>'
+					+'<th><a href="'+aurl+'">admin user page</a></th>'
+					+'<th>'+(x.sent[i] ? 'mail sent' : 'mail failed')+'</th>'
+					+'</tr>';
 			}
 			content += '</table>';
 			$("#people").html(content);
