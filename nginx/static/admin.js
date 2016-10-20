@@ -93,8 +93,9 @@ function save() {
 			$("#error").fadeOut(1000);
 		},
 		error: function(data) {
+			console.log(data);
 			$("#error").show();
-			$("#error").text('The update did not succeed');
+			$("#error").text('Fail : ' + data.responseText);
 		},
 	});
 }

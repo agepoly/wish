@@ -123,8 +123,9 @@ function send() {
 			}, 2000);
 		},
 		error: function(data) {
+			console.log(data);
 			$("#status").show();
-			$("#status").text('The set did not succeed');
+			$("#status").text('Fail : ' + data.responseText);
 		},
 	});
 }

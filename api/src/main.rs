@@ -90,28 +90,34 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	}
 
 	let mut payload = String::new();
-	req.body.read_to_string(&mut payload).unwrap();
+	if let Err(e) = req.body.read_to_string(&mut payload) {
+		println!("create: {}", e);
+		return Ok(Response::with((status::NotFound, format!("request error : {}", e), Header(AccessControlAllowOrigin::Any))));
+	}
 	let data: Input = match json::decode(&payload) {
 		Ok(x) => x,
 		Err(e) => {
 			println!("create: {}", e);
-			return Ok(Response::with((status::BadRequest, format!(r#"{{"error": "request error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
+			return Ok(Response::with((status::NotFound, format!("request error : {}", e), Header(AccessControlAllowOrigin::Any))));
 		}
 	};
 
 	if data.vmax.iter().fold(0, |acc, &x| acc + x) < (data.mails.len() as i32) {
-		println!("create: not enough room");
-		return Ok(Response::with((status::BadRequest, r#"{"error": "more mails than slots"}"#, Header(AccessControlAllowOrigin::Any))));
+		return Ok(Response::with((status::NotFound, "not enough room for people", Header(AccessControlAllowOrigin::Any))));
+	}
+
+	if data.vmin.iter().fold(0, |acc, &x| acc + x) > (data.mails.len() as i32) {
+		return Ok(Response::with((status::NotFound, "not enough people", Header(AccessControlAllowOrigin::Any))));
 	}
 
 	if data.vmax.len() != data.vmin.len() || data.vmax.len() != data.slots.len() {
 		println!("create: array size problem");
-		return Ok(Response::with((status::BadRequest, r#"{"error": "vmin, vmax and slots must have the same size"}"#, Header(AccessControlAllowOrigin::Any))));
+		return Ok(Response::with((status::NotFound, "vmin, vmax and slots must have the same size", Header(AccessControlAllowOrigin::Any))));
 	}
 
 	if data.vmin.iter().zip(data.vmax.iter()).any(|(&xmin, &xmax)| xmin > xmax) {
 		println!("create: vmin > vmax");
-		return Ok(Response::with((status::BadRequest, r#"{"error": "there are vmin bigger than vmax"}"#, Header(AccessControlAllowOrigin::Any))));
+		return Ok(Response::with((status::NotFound, "there are vmin bigger than vmax", Header(AccessControlAllowOrigin::Any))));
 	}
 
 	let mut keys : Vec<String> = Vec::with_capacity(data.mails.len());
@@ -173,24 +179,34 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 
 	if let Err(e) = db.collection("events").insert_one(doc, None) {
 		println!("create: {}", e);
-		return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
+		return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))));
 	}
 
-	let mut mailer = SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)).unwrap().build();
+	let mut mailer = match SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)) {
+		Ok(x) => x.build(),
+		Err(e) => {
+			println!("create: {}", e);
+			return Ok(Response::with((status::NotFound, format!("mail error : {}", e), Header(AccessControlAllowOrigin::Any))))
+		}
+	};
 
 	let email = EmailBuilder::new()
 					.from("wish@epfl.ch")
-                    .to(data.amail.as_str())
-                    .body(format!("http://{}/admin#{}", data.url.as_str(), admin_key.as_str()).as_str())
-                    .subject(format!("Wish : {}", data.name).as_str())
-                    .build()
-                    .unwrap();
+					.to(data.amail.as_str())
+					.body(format!("http://{}/admin#{}", data.url.as_str(), admin_key.as_str()).as_str())
+					.subject(format!("Wish : {}", data.name).as_str())
+					.build();
+	let email = match email {
+		Ok(x) => x,
+		Err(e) => {
+			println!("create: {}", e);
+			return Ok(Response::with((status::NotFound, format!("mail error : {}", e), Header(AccessControlAllowOrigin::Any))))
+		}
+	};
 
-	let result = mailer.send(email);
-
-	if let Err(ref e) = result {
+	if let Err(e) = mailer.send(email) {
 		println!("create: {}", e);
-		return Ok(Response::with((status::NotFound, format!(r#"{{"error": "mail error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
+		return Ok(Response::with((status::NotFound, format!("mail error : {}", e), Header(AccessControlAllowOrigin::Any))));
 	}
 
 	Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
@@ -213,7 +229,7 @@ fn set_wish(req: &mut Request, db: &Database) -> IronResult<Response> {
 		Ok(x) => x,
 		Err(e) => {
 			println!("set_wishes: {}", e);
-			return Ok(Response::with((status::BadRequest, format!(r#"{{"error": "request error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
+			return Ok(Response::with((status::BadRequest, format!("request error : {}", e), Header(AccessControlAllowOrigin::Any))));
 		}
 	};
 
@@ -222,8 +238,8 @@ fn set_wish(req: &mut Request, db: &Database) -> IronResult<Response> {
 		c.sort();
 		for i in 0..c.len() {
 			if c[i] > i as i32 {
-				println!("set_wishes: illegal data");
-				return Ok(Response::with((status::BadRequest, r#"{"error": "illegal data"}"#, Header(AccessControlAllowOrigin::Any))));
+				println!("set_wishes: unfair wish");
+				return Ok(Response::with((status::BadRequest, "unfair wish", Header(AccessControlAllowOrigin::Any))));
 			}
 		}
 	}
@@ -234,7 +250,7 @@ fn set_wish(req: &mut Request, db: &Database) -> IronResult<Response> {
 		Ok(_) => {},
 		Err(e) => {
 			println!("set_wishes: {}", e);
-			return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
+			return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))));
 		}
 	};
 
@@ -277,49 +293,48 @@ fn get_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	options.projection = Some(doc!{"_id" => false});
 
 	let event = match db.collection("events").find_one(Some(query), Some(options)) {
-		Ok(x) => x,
+		Ok(Some(x)) => x,
+		Ok(None) => {
+			println!("get_data: invalid key");
+			return Ok(Response::with((status::NotFound, "invalid key", Header(AccessControlAllowOrigin::Any))));			
+		}
 		Err(e) => {
 			println!("get_data: {}", e);
-			return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
+			return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))));
 		}
 	};
 
-	match event {
-		None => Ok(Response::with((status::NotFound, r#"{"error": "database"}"#, Header(AccessControlAllowOrigin::Any)))),
-		Some(event) => {
-			let people = event.get_array("people").unwrap();
-			let mut person = None;
-			for p in people.iter() {
-				if let &Bson::Document(ref p) = p {
-					if let Ok(k) = p.get_str("key") {
-						if k == &(data.key) {
-							person = Some(p);
-						}
-					}
+	let people = event.get_array("people").unwrap();
+	let mut person = None;
+	for p in people.iter() {
+		if let &Bson::Document(ref p) = p {
+			if let Ok(k) = p.get_str("key") {
+				if k == &(data.key) {
+					person = Some(p);
 				}
 			}
-			match person {
-				None => Ok(Response::with((status::NotFound, r#"{"error": "database"}"#, Header(AccessControlAllowOrigin::Any)))),
-				Some(person) => {
-					let json = json::encode(&Output {
-						name: event.get_str("name").unwrap_or("").to_string(),
-						deadline: event.get_i64("deadline").unwrap_or(0),
-						mails: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p| match p {&Bson::Document(ref x) => x.get_str("mail").unwrap_or("@").to_owned(), _ => "@".to_owned()}).collect(),
-						mail: person.get_str("mail").unwrap_or("@").to_owned(),
-						wish: person.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(v) => v, _ => 0}).collect(),
-						slots: event.get_array("slots").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::String(ref v) => v.clone(), _ => "".to_owned()}).collect(),
-						results: event.get_array("results").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(v) => v, _ => 0}).collect()
-					});
-					let payload = match json {
-						Ok(x) => x,
-						Err(e) => {
-							println!("get_data: {}", e);
-							return Ok(Response::with((status::NotFound, format!(r#"{{"error": "json error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
-						}
-					};
-					Ok(Response::with((status::Ok, payload, Header(AccessControlAllowOrigin::Any))))
+		}
+	}
+	match person {
+		None => Ok(Response::with((status::NotFound, "strange error person in None", Header(AccessControlAllowOrigin::Any)))),
+		Some(person) => {
+			let json = json::encode(&Output {
+				name: event.get_str("name").unwrap_or("").to_string(),
+				deadline: event.get_i64("deadline").unwrap_or(0),
+				mails: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p| match p {&Bson::Document(ref x) => x.get_str("mail").unwrap_or("@").to_owned(), _ => "@".to_owned()}).collect(),
+				mail: person.get_str("mail").unwrap_or("@").to_owned(),
+				wish: person.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(v) => v, _ => 0}).collect(),
+				slots: event.get_array("slots").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::String(ref v) => v.clone(), _ => "".to_owned()}).collect(),
+				results: event.get_array("results").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(v) => v, _ => 0}).collect()
+			});
+			let payload = match json {
+				Ok(x) => x,
+				Err(e) => {
+					println!("get_data: {}", e);
+					return Ok(Response::with((status::NotFound, format!("json error : {}", e), Header(AccessControlAllowOrigin::Any))));
 				}
-			}
+			};
+			Ok(Response::with((status::Ok, payload, Header(AccessControlAllowOrigin::Any))))
 		}
 	}
 }
@@ -352,109 +367,108 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 		Ok(x) => x,
 		Err(e) => {
 			println!("get_admin_data: {}\n{}", e, payload);
-			return Ok(Response::with((status::BadRequest, Header(AccessControlAllowOrigin::Any))));
+			return Ok(Response::with((status::BadRequest, "input data parsing", Header(AccessControlAllowOrigin::Any))));
 		}
 	};
 
-	let query = doc!{"admin_key" => (data.key.clone())};
 	let mut options = mongodb::coll::options::FindOptions::new();
 	options.projection = Some(doc!{"_id" => false});
 
-	let event = match db.collection("events").find_one(Some(query), Some(options)) {
-		Ok(x) => x,
+	let event = match db.collection("events").find_one(Some(doc!{"admin_key" => (data.key.clone())}), Some(options)) {
+		Ok(Some(x)) => x,
+		Ok(None) => {
+			println!("get_admin_data: invalid key");
+			return Ok(Response::with((status::NotFound, "invalid key", Header(AccessControlAllowOrigin::Any))));			
+		}
 		Err(e) => {
 			println!("get_admin_data: {}", e);
-			return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
+			return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))))
 		}
 	};
 
-	match event {
-		None => Ok(Response::with((status::NotFound, r#"{"error": "database"}"#, Header(AccessControlAllowOrigin::Any)))),
-		Some(event) => {
-			let url = event.get_str("url").unwrap_or("wish.com");
-			let name = event.get_str("name").unwrap_or("no name");
-			let amail = event.get_str("amail").unwrap_or("");
+	let url = event.get_str("url").unwrap_or("wish.com");
+	let name = event.get_str("name").unwrap_or("no name");
+	let amail = event.get_str("amail").unwrap_or("");
 
-			let mut mailer = SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)).unwrap().connection_reuse(true).build();
-			
-			let mut people = event.get_array("people").unwrap().clone();
+	let mut mailer =  match SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)) {
+		Ok(x) => x.connection_reuse(true).build(),
+		Err(e) => return Ok(Response::with((status::NotFound, format!("mail : {}", e), Header(AccessControlAllowOrigin::Any))))
+	};
+	
+	let mut people = event.get_array("people").unwrap_or(&Vec::new()).clone();
 
-			for p in people.iter_mut() {
-				if let &mut Bson::Document(ref mut x) = p {
-					if !x.get_bool("sent").unwrap_or(false) {
-						let email = EmailBuilder::new()
-							.to(x.get_str("mail").unwrap())
-							.from("wish@epfl.ch")
-							.reply_to(amail)
-							.body(format!("http://{}/wish#{}", url, x.get_str("key").unwrap()).as_str())
-							.subject(format!("Wish : {}", name).as_str())
-							.build()
-							.unwrap();
-
-						let result = mailer.send(email);
-				
-						x.insert("sent", result.is_ok());
-					}
-				}
+	for p in people.iter_mut() {
+		if let &mut Bson::Document(ref mut x) = p {
+			if !x.get_bool("sent").unwrap_or(false) {
+				match EmailBuilder::new()
+									.to(x.get_str("mail").unwrap_or(""))
+									.from("wish@epfl.ch")
+									.reply_to(amail)
+									.body(format!("http://{}/wish#{}", url, x.get_str("key").unwrap_or("")).as_str())
+									.subject(format!("Wish : {}", name).as_str())
+									.build() {
+					Ok(email) => x.insert("sent", mailer.send(email).is_ok()),	
+					Err(e) => return Ok(Response::with((status::NotFound, format!("mail : {}", e), Header(AccessControlAllowOrigin::Any))))
+				};
 			}
-
-			// Explicitly close the SMTP transaction as we enabled connection reuse
-			mailer.close();
-			
-			let mut document = Document::new();
-			document.insert("people", Bson::Array(people.clone()));
-			
-			if let Err(e) = db.collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => document}, None) {
-				println!("get_admin_data: {}", e);
-				return Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
-			}
-
-			let json = json::encode(&Output {
-				name: event.get_str("name").unwrap_or("").to_string(),
-				deadline: event.get_i64("deadline").unwrap_or(0),
-				mails: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
-					match p {
-						&Bson::Document(ref x) => x.get_str("mail").unwrap_or("").to_owned(),
-						_ => "".to_owned()
-					}
-				).collect(),
-				sent: people.iter().map(|p|
-					match p {
-						&Bson::Document(ref x) => x.get_bool("sent").unwrap_or(false),
-						_ => false
-					}
-				).collect(),
-				keys: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
-					match p {
-						&Bson::Document(ref x) => x.get_str("key").unwrap_or("").to_owned(),
-						_ => "".to_owned()
-					}
-				).collect(),
-				wishes: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
-					match p {
-						&Bson::Document(ref x) => x.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x|
-							match x {
-								&Bson::I32(v) => v,
-								_ => 0
-							}
-						).collect(),
-						_ => Vec::new()
-					}
-				).collect(),
-				slots: event.get_array("slots").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::String(ref v) => v.clone(), _ => "".to_owned()}).collect(),
-				vmin: event.get_array("vmin").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(ref v) => v.clone(), _ => 0}).collect(),
-				vmax: event.get_array("vmax").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(ref v) => v.clone(), _ => 0}).collect(),
-			});
-			let payload = match json {
-				Ok(x) => x,
-				Err(e) => {
-					println!("get_admin_data: {}", e);
-					return Ok(Response::with((status::NotFound, format!(r#"{{"error": "json error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))));
-				}
-			};
-			Ok(Response::with((status::Ok, payload, Header(AccessControlAllowOrigin::Any))))
 		}
 	}
+
+	// Explicitly close the SMTP transaction as we enabled connection reuse
+	mailer.close();
+	
+	let mut document = Document::new();
+	document.insert("people", Bson::Array(people.clone()));
+	
+	if let Err(e) = db.collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => document}, None) {
+		println!("get_admin_data: {}", e);
+		return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))));
+	}
+
+	let json = json::encode(&Output {
+		name: event.get_str("name").unwrap_or("").to_string(),
+		deadline: event.get_i64("deadline").unwrap_or(0),
+		mails: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
+			match p {
+				&Bson::Document(ref x) => x.get_str("mail").unwrap_or("").to_owned(),
+				_ => "".to_owned()
+			}
+		).collect(),
+		sent: people.iter().map(|p|
+			match p {
+				&Bson::Document(ref x) => x.get_bool("sent").unwrap_or(false),
+				_ => false
+			}
+		).collect(),
+		keys: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
+			match p {
+				&Bson::Document(ref x) => x.get_str("key").unwrap_or("").to_owned(),
+				_ => "".to_owned()
+			}
+		).collect(),
+		wishes: event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p|
+			match p {
+				&Bson::Document(ref x) => x.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x|
+					match x {
+						&Bson::I32(v) => v,
+						_ => 0
+					}
+				).collect(),
+				_ => Vec::new()
+			}
+		).collect(),
+		slots: event.get_array("slots").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::String(ref v) => v.clone(), _ => "".to_owned()}).collect(),
+		vmin: event.get_array("vmin").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(ref v) => v.clone(), _ => 0}).collect(),
+		vmax: event.get_array("vmax").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(ref v) => v.clone(), _ => 0}).collect(),
+	});
+	let payload = match json {
+		Ok(x) => x,
+		Err(e) => {
+			println!("get_admin_data: {}", e);
+			return Ok(Response::with((status::NotFound, format!("json error : {}", e), Header(AccessControlAllowOrigin::Any))));
+		}
+	};
+	Ok(Response::with((status::Ok, payload, Header(AccessControlAllowOrigin::Any))))
 }
 
 
@@ -481,6 +495,38 @@ fn admin_update(req: &mut Request, db: &Database) -> IronResult<Response> {
 		}
 	};
 
+	let event = match db.collection("events").find_one(Some(doc!{"admin_key" => (data.key.clone())}), None) {
+		Ok(Some(x)) => x,
+		Ok(None) => {
+			println!("admin_update: invalid key");
+			return Ok(Response::with((status::BadRequest, "invalid key", Header(AccessControlAllowOrigin::Any))))			
+		}
+		Err(e) => {
+			println!("admin_update: {}", e);
+			return Ok(Response::with((status::BadRequest, format!("database {}", e), Header(AccessControlAllowOrigin::Any))))
+		}
+	};
+		
+	if data.vmax.iter().fold(0, |acc, &x| acc + x) < (event.get_array("people").unwrap_or(&Vec::new()).len() as i32) {
+		return Ok(Response::with((status::NotFound, "not enough room for people", Header(AccessControlAllowOrigin::Any))));
+	}
+
+	if data.vmin.iter().fold(0, |acc, &x| acc + x) > (event.get_array("people").unwrap_or(&Vec::new()).len() as i32) {
+		return Ok(Response::with((status::NotFound, "not enough people", Header(AccessControlAllowOrigin::Any))));
+	}
+
+
+	if data.vmax.len() != data.vmin.len() || data.vmax.len() != data.slots.len() {
+		println!("admin_update: array size problem");
+		return Ok(Response::with((status::BadRequest, "vmin, vmax and slots must have the same size", Header(AccessControlAllowOrigin::Any))));
+	}
+
+	if data.vmin.iter().zip(data.vmax.iter()).any(|(&xmin, &xmax)| xmin > xmax) {
+		println!("admin_update: vmin > vmax");
+		return Ok(Response::with((status::BadRequest, "there are vmin bigger than vmax", Header(AccessControlAllowOrigin::Any))));
+	}
+
+
 	let mut document = Document::new();
 	document.insert("deadline", Bson::I64(data.deadline));
 	document.insert("slots", Bson::Array(data.slots.iter().map(|s| Bson::String(s.clone())).collect()));
@@ -492,7 +538,7 @@ fn admin_update(req: &mut Request, db: &Database) -> IronResult<Response> {
 		Ok(_) => Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any)))),
 		Err(e) => {
 			println!("admin_update: {}", e);
-			Ok(Response::with((status::NotFound, format!(r#"{{"error": "database error : {}"}}"#, e), Header(AccessControlAllowOrigin::Any))))
+			Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))))
 		}
 	};
 }

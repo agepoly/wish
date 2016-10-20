@@ -39,9 +39,9 @@ function send() {
 			}, 2000);
 		},
 		error: function(data) {
-			console.log("creation failed");
+			console.log(data);
 			$("#status").show();
-			$("#status").text('Creation failed');
+			$("#status").text('Creation failed : ' + data.responseText);
 		},
 	});
 }
