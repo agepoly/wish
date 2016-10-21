@@ -182,8 +182,12 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))));
 	}
 
-	let mut mailer = match SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)) {
-		Ok(x) => x.build(),
+	//let mut mailer = match SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)) {
+	let mut mailer = match SmtpTransportBuilder::new(("mail.epfl.ch", 465)) {
+		Ok(x) => x
+			.credentials("mgeiger", include_str!("private").trim())
+			.ssl_wrapper()
+			.build(),
 		Err(e) => {
 			println!("create: {}", e);
 			return Ok(Response::with((status::NotFound, format!("mail error : {}", e), Header(AccessControlAllowOrigin::Any))))
@@ -193,7 +197,12 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let email = EmailBuilder::new()
 					.from("wish@epfl.ch")
 					.to(data.amail.as_str())
-					.body(format!("http://{}/admin#{}", data.url.as_str(), admin_key.as_str()).as_str())
+					.body(format!(r#"An event has been created with your email address.
+If you are not concerned, please do not click on the following url.
+The url to activate the event is : http://{}/admin#{}
+
+Have a good day,
+The Wish team"#, data.url.as_str(), admin_key.as_str()).as_str())
 					.subject(format!("Wish : {}", data.name).as_str())
 					.build();
 	let email = match email {
@@ -390,8 +399,12 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let name = event.get_str("name").unwrap_or("no name");
 	let amail = event.get_str("amail").unwrap_or("");
 
-	let mut mailer =  match SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)) {
-		Ok(x) => x.connection_reuse(true).build(),
+	//let mut mailer =  match SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)) {
+	let mut mailer = match SmtpTransportBuilder::new(("mail.epfl.ch", 465)) {
+		Ok(x) => x
+			.credentials("mgeiger", include_str!("private").trim())
+			.ssl_wrapper()
+			.connection_reuse(true).build(),
 		Err(e) => return Ok(Response::with((status::NotFound, format!("mail : {}", e), Header(AccessControlAllowOrigin::Any))))
 	};
 	
@@ -404,7 +417,12 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 									.to(x.get_str("mail").unwrap_or(""))
 									.from("wish@epfl.ch")
 									.reply_to(amail)
-									.body(format!("http://{}/wish#{}", url, x.get_str("key").unwrap_or("")).as_str())
+									.body(format!(r#"You has been invited by {} to give your wishes about the event :
+{}
+url to set your wishes : http://{}/wish#{}
+
+Have a good day,
+The Wish team"#, amail, name, url, x.get_str("key").unwrap_or("")).as_str())
 									.subject(format!("Wish : {}", name).as_str())
 									.build() {
 					Ok(email) => x.insert("sent", mailer.send(email).is_ok()),	
