@@ -57,14 +57,21 @@ function send() {
 	});
 }
 
+var oldvalues = { slot : [], vmin : [], vmax : [] };
+
 function create_slots() {
 	var n = $("input[name='nslots']").val();
-	var oldvalues = get_slot_val();
+	var old = get_slot_val();
+	for (var i = 0; i < old.slot.length; ++i) {
+		oldvalues.slot[i] = old.slot[i];
+		oldvalues.vmin[i] = old.vmin[i];
+		oldvalues.vmax[i] = old.vmax[i];
+	}
 
 	var content = '<div class="row"><div class="six columns"><label>Time slots</label></div>'
 	content += '<div class="three columns"><label>Min people</label></div>'
 	content += '<div class="three columns"><label>Max people</label></div></div>'
-	for (i=0; i < n; ++i) {
+	for (var i = 0; i < n; ++i) {
 		var values = {
 			name: "",
 			vmin: "0",
@@ -83,18 +90,20 @@ function create_slots() {
 	$("input").bind('input propertychange', check_validity);
 }
 
+
 function get_slot_val() {
 	var slot = [];
 	var vmin = [];
 	var vmax = [];
 	for (var i = 0; $("input[name='slot"+i+"']").length; ++i) {
-		slot.push($("input[name='slot"+i+"']").val());
-		vmin.push($("input[name='vmin"+i+"']").val());
-		vmax.push($("input[name='vmax"+i+"']").val());
+		slot[i] = $("input[name='slot"+i+"']").val();
+		vmin[i] = $("input[name='vmin"+i+"']").val();
+		vmax[i] = $("input[name='vmax"+i+"']").val();
 	}
 
 	return { slot: slot, vmin: vmin, vmax: vmax };
 }
+
 
 function check_validity() {
 	var err_color = '#FF9000';

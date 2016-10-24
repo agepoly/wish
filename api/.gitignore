@@ -10,4 +10,5 @@ Cargo.lock
 **/*.rs.bk
 
 # The following file may content private informations and should ne be commited with private informations
+# To make git ignore changed files : git update-index --assume-unchanged src/config.rs
 src/config.rs
