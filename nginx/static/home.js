@@ -29,22 +29,26 @@ function send() {
 
 	console.log(payload);
 	
+	$('#send').prop('disabled', true);
+	$('#send').text('Request sent...');
+	$("#status").hide();
+
 	$.ajax({
 		type: "POST",
 		url: "http://"+window.location.hostname+":3000/create",
 		data: payload,
 		success: function(data) {
 			console.log("creation success");
-			$("#status").show();
-			$("#status").text('Creation success ! Look your mails.');
-			setTimeout(function() {
-				$("#status").fadeOut();
-			}, 2000);
+			alert('Creation success ! A mail has been sent to '+$("input[name='amail']").val()+' to validate the activity.');
+			$('#send').prop('disabled', false);
+			$('#send').text('Re create');
 		},
 		error: function(data) {
 			console.log(data);
 			$("#status").show();
 			$("#status").text('Creation failed : ' + data.responseText);
+			$('#send').prop('disabled', false);
+			$('#send').text('Re create');
 		},
 	});
 }
@@ -89,63 +93,65 @@ function get_slot_val() {
 }
 
 function check_validity() {
+	var err_color = '#FF9000';
+
 	$("input").removeAttr('style');
 	$("#mails").removeAttr('style');
 
 	if ($("input[name='name']").val() == "") {
-		$("input[name='name']").css({'border-color' : '#FF0000'});
+		$("input[name='name']").css({'border-color' : err_color});
 	}
 
 	var max_capacity = 0;
 
 	for (var i = 0; $("input[name='slot"+i+"']").length; ++i) {
 		if ($("input[name='slot"+i+"']").val() == "") {
-			$("input[name='slot"+i+"']").css({'border-color' : '#FF0000'});
+			$("input[name='slot"+i+"']").css({'border-color' : err_color});
 		}
 		var vmin = Number($("input[name='vmin"+i+"']").val());
 		var vmax = Number($("input[name='vmax"+i+"']").val());
 		if (vmin < 0) {
-			$("input[name='vmin"+i+"']").css({'border-color' : '#FF0000'});
+			$("input[name='vmin"+i+"']").css({'border-color' : err_color});
 		}
 		if (vmax <= 0) {
-			$("input[name='vmax"+i+"']").css({'border-color' : '#FF0000'});
+			$("input[name='vmax"+i+"']").css({'border-color' : err_color});
 		}
 		if (vmin > vmax) {
-			$("input[name='vmin"+i+"']").css({'border-color' : '#FF0000'});
-			$("input[name='vmax"+i+"']").css({'border-color' : '#FF0000'});
+			$("input[name='vmin"+i+"']").css({'border-color' : err_color});
+			$("input[name='vmax"+i+"']").css({'border-color' : err_color});
 		}
 		max_capacity += vmax;
 	}
 
 	if ($("#mails").val() == "") {
-		$("#mails").css({'border-color' : '#FF0000'});
+		$("#mails").css({'border-color' : err_color});
 	}
 
 	if ($("input[name='amail']").val() == "") {
-		$("input[name='amail']").css({'border-color' : '#FF0000'});
+		$("input[name='amail']").css({'border-color' : err_color});
 	}
 
 	var mails = $("#mails").val().split(/[\s,]+/);
 
 	for (var i = 0; i < mails.length; ++i) {
 		if (mails[i] == "") {
-			$("#mails").css({'border-color' : '#FF0000'});
+			$("#mails").css({'border-color' : err_color});
 		}
 	}
 
 	if (mails.length > max_capacity) {
-		$(".vmax").css({'border-color' : '#FF0000'});
-		$("#mails").css({'border-color' : '#FF0000'});
+		$(".vmax").css({'border-color' : err_color});
+		$("#mails").css({'border-color' : err_color});
 	}
 
 	mails.sort();
 	for (var i = 1; i < mails.length; ++i) {
 		if (mails[i-1] == mails[i]) {
-			$("#mails").css({'border-color' : '#FF0000'});
+			$("#mails").css({'border-color' : err_color});
 		}
 	}
 
 	if ($("input[name='deadline']").val() == "") {
-		$("input[name='deadline']").css({'border-color' : '#FF0000'});
+		$("input[name='deadline']").css({'border-color' : err_color});
 	}
 }
