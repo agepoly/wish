@@ -86,7 +86,8 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		slots: Vec<String>,
 		vmin: Vec<i32>,
 		vmax: Vec<i32>,
-		url: String
+		url: String,
+		message: String
 	}
 
 	let mut payload = String::new();
@@ -151,6 +152,7 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	};
 
 	let mut doc = Document::new();
+	doc.insert_bson("message".to_string(), Bson::String(data.message.clone()));
 	doc.insert_bson("url".to_owned(), Bson::String(data.url.clone()));
 	doc.insert_bson("name".to_owned(), Bson::String(data.name.clone()));
 	doc.insert_bson("admin_key".to_owned(), Bson::String(admin_key.clone()));
@@ -197,12 +199,16 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let email = EmailBuilder::new()
 					.from("wish@epfl.ch")
 					.to(data.amail.as_str())
-					.body(format!(r#"An event has been created with your email address.
+					.body(format!(
+r#"An event has been created with your email address.
 If you are not concerned, please do not click on the following url.
-The url to activate the event is : http://{}/admin#{}
+The url to activate the event is : http://{url}/admin#{key}
 
 Have a good day,
-The Wish team"#, data.url.as_str(), admin_key.as_str()).as_str())
+The Wish team"#,
+						url = data.url.as_str(), 
+						key = admin_key.as_str()
+					).as_str())
 					.subject(format!("Wish : {}", data.name).as_str())
 					.build();
 	let email = match email {
@@ -398,6 +404,7 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let url = event.get_str("url").unwrap_or("wish.com");
 	let name = event.get_str("name").unwrap_or("no name");
 	let amail = event.get_str("amail").unwrap_or("");
+	let message = event.get_str("message").unwrap_or("");
 
 	//let mut mailer =  match SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)) {
 	let mut mailer = match SmtpTransportBuilder::new(("mail.epfl.ch", 465)) {
@@ -414,17 +421,26 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 		if let &mut Bson::Document(ref mut x) = p {
 			if !x.get_bool("sent").unwrap_or(false) {
 				match EmailBuilder::new()
-									.to(x.get_str("mail").unwrap_or(""))
-									.from("wish@epfl.ch")
-									.reply_to(amail)
-									.body(format!(r#"You has been invited by {} to give your wishes about the event :
-{}
-url to set your wishes : http://{}/wish#{}
+						.to(x.get_str("mail").unwrap_or(""))
+						.from("wish@epfl.ch")
+						.reply_to(amail)
+						.body(format!(
+r#"You has been invited by {amail} to give your wishes about the event : {name}
+
+{message}
+
+Here is the url to set your wishes : http://{url}/wish#{key}
 
 Have a good day,
-The Wish team"#, amail, name, url, x.get_str("key").unwrap_or("")).as_str())
-									.subject(format!("Wish : {}", name).as_str())
-									.build() {
+The Wish team"#,
+							amail = amail, 
+							name = name, 
+							message = message, 
+							url = url, 
+							key = x.get_str("key").unwrap_or("")
+						).as_str())
+						.subject(format!("Wish : {}", name).as_str())
+						.build() {
 					Ok(email) => x.insert("sent", mailer.send(email).is_ok()),	
 					Err(e) => return Ok(Response::with((status::NotFound, format!("mail : {}", e), Header(AccessControlAllowOrigin::Any))))
 				};

@@ -12,6 +12,8 @@ $(document).ready(function() {
 function send() {
 	var slots = get_slot_val();
 	var deadline = new Date($("input[name='deadline']").val()).getTime() / 1000;
+	var message = $("#message").val()
+		.replace(/\n/g, "\\n").replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\t/g, "\\t");
 
 	var payload = '{'
 		+'"name"     : "'+$("input[name='name']").val()+'", '
@@ -21,7 +23,8 @@ function send() {
 		+'"slots"    : ["'+slots.slot.join('","')+'"], '
 		+'"vmin"     : ['+ slots.vmin.join(',')  +'], '
 		+'"vmax"     : ['+ slots.vmax.join(',')  +'], '
-		+'"url"      : "'+ window.location.hostname + ':' + window.location.port + '"'
+		+'"url"      : "'+ window.location.hostname + ':' + window.location.port + '", '
+		+'"message"  : "'+message+'"'
 		+'}';
 
 	console.log(payload);
