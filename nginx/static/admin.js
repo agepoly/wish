@@ -58,6 +58,9 @@ $(document).ready(function() {
 					+ '<div class="three columns"><input type="number" class="vmax u-full-width" name="vmax'+i+'" min="0" max="100" step="1" value="'+values.vmax+'"></div></div>'
 			}
 			$("#slots").html(content);
+
+			check_validity();
+			$("input").bind('input propertychange', check_validity);
 		}
 	});
 });
@@ -83,6 +86,10 @@ function save() {
 
 	console.log(payload);
 	
+	$("button[name='save']").prop('disabled', true);
+	$("button[name='save']").text('Request sent...');
+	$("#error").hide();
+
 	$.ajax({
 		type: "POST",
 		url: "http://"+window.location.hostname+":3000/admin_update",
@@ -90,12 +97,47 @@ function save() {
 		success: function(data) {
 			$("#error").show();
 			$("#error").text('Set success');
-			$("#error").fadeOut(1000);
+			setTimeout(function() {
+				$("#error").fadeOut();
+			}, 5000);
+			$("button[name='save']").prop('disabled', false);
+			$("button[name='save']").text('Save');
 		},
 		error: function(data) {
 			console.log(data);
 			$("#error").show();
-			$("#error").text('Fail : ' + data.responseText);
+			$("#error").text('Error : ' + data.responseText);
+			$("button[name='save']").prop('disabled', false);
+			$("button[name='save']").text('Save');
 		},
 	});
+}
+
+
+function check_validity() {
+	var err_color = '#FF9000';
+
+	$("input").removeAttr('style');
+
+	for (var i = 0; $("input[name='slot"+i+"']").length; ++i) {
+		if ($("input[name='slot"+i+"']").val() == "") {
+			$("input[name='slot"+i+"']").css({'border-color' : err_color});
+		}
+		var vmin = Number($("input[name='vmin"+i+"']").val());
+		var vmax = Number($("input[name='vmax"+i+"']").val());
+		if (vmin < 0) {
+			$("input[name='vmin"+i+"']").css({'border-color' : err_color});
+		}
+		if (vmax <= 0) {
+			$("input[name='vmax"+i+"']").css({'border-color' : err_color});
+		}
+		if (vmin > vmax) {
+			$("input[name='vmin"+i+"']").css({'border-color' : err_color});
+			$("input[name='vmax"+i+"']").css({'border-color' : err_color});
+		}
+	}
+
+	if ($("input[name='deadline']").val() == "") {
+		$("input[name='deadline']").css({'border-color' : err_color});
+	}
 }
