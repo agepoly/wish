@@ -11,6 +11,7 @@ extern crate time;
 extern crate lettre;
 
 mod solver;
+mod config;
 
 use iron::prelude::*;
 use iron::status;
@@ -151,43 +152,10 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		admin_key
 	};
 
-	let mut doc = Document::new();
-	doc.insert_bson("message".to_string(), Bson::String(data.message.clone()));
-	doc.insert_bson("url".to_owned(), Bson::String(data.url.clone()));
-	doc.insert_bson("name".to_owned(), Bson::String(data.name.clone()));
-	doc.insert_bson("admin_key".to_owned(), Bson::String(admin_key.clone()));
-	doc.insert_bson("amail".to_owned(), Bson::String(data.amail.clone()));
-	doc.insert_bson("deadline".to_owned(), Bson::I64(data.deadline));
-	doc.insert_bson("slots".to_owned(), Bson::Array(data.slots.iter().map(|s| Bson::String(s.clone())).collect()));
-	doc.insert_bson("vmin".to_owned(), Bson::Array(data.vmin.iter().map(|&v| Bson::I32(v)).collect()));
-	doc.insert_bson("vmax".to_owned(), Bson::Array(data.vmax.iter().map(|&v| Bson::I32(v)).collect()));
-	doc.insert_bson("people".to_owned(), {
-		let mut x = Vec::with_capacity(data.mails.len());
-		for i in 0..data.mails.len() {
-			let mut p = Document::new();
-			p.insert_bson("mail".to_owned(), Bson::String(data.mails[i].clone()));
-			p.insert_bson("key".to_owned(), Bson::String(keys[i].clone()));
-			p.insert_bson("sent".to_owned(), Bson::Boolean(false));
-
-			p.insert_bson("wish".to_owned(), {
-				let mut v = Vec::new();
-				v.resize(data.slots.len(), Bson::I32(0));
-				Bson::Array(v)
-			});
-			x.push(Bson::Document(p));
-		}
-		Bson::Array(x)
-	});
-
-	if let Err(e) = db.collection("events").insert_one(doc, None) {
-		println!("create: {}", e);
-		return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))));
-	}
-
 	//let mut mailer = match SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)) {
-	let mut mailer = match SmtpTransportBuilder::new(("mail.epfl.ch", 465)) {
+	let mut mailer = match SmtpTransportBuilder::new((config::MAIL_SERVER, config::MAIL_PORT)) {
 		Ok(x) => x
-			.credentials("mgeiger", include_str!("private").trim())
+			.credentials(config::MAIL_USER, config::MAIL_PASSWORD)
 			.ssl_wrapper()
 			.build(),
 		Err(e) => {
@@ -202,7 +170,7 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 					.body(format!(
 r#"An event has been created with your email address.
 If you are not concerned, please do not click on the following url.
-The url to activate the event is : http://{url}/admin#{key}
+The url to activate the activity is : http://{url}/admin#{key}
 
 Have a good day,
 The Wish team"#,
@@ -222,6 +190,40 @@ The Wish team"#,
 	if let Err(e) = mailer.send(email) {
 		println!("create: {}", e);
 		return Ok(Response::with((status::NotFound, format!("mail error : {}", e), Header(AccessControlAllowOrigin::Any))));
+	}
+	
+	
+	let mut doc = Document::new();
+	doc.insert_bson("message".to_string(), Bson::String(data.message.clone()));
+	doc.insert_bson("url".to_owned(), Bson::String(data.url.clone()));
+	doc.insert_bson("name".to_owned(), Bson::String(data.name.clone()));
+	doc.insert_bson("admin_key".to_owned(), Bson::String(admin_key.clone()));
+	doc.insert_bson("amail".to_owned(), Bson::String(data.amail.clone()));
+	doc.insert_bson("deadline".to_owned(), Bson::I64(data.deadline));
+	doc.insert_bson("slots".to_owned(), Bson::Array(data.slots.iter().map(|s| Bson::String(s.clone())).collect()));
+	doc.insert_bson("vmin".to_owned(), Bson::Array(data.vmin.iter().map(|&v| Bson::I32(v)).collect()));
+	doc.insert_bson("vmax".to_owned(), Bson::Array(data.vmax.iter().map(|&v| Bson::I32(v)).collect()));
+	doc.insert_bson("people".to_owned(), {
+		let mut x : Vec<Bson> = Vec::with_capacity(data.mails.len());
+		for i in 0..data.mails.len() {
+			let mut p = Document::new();
+			p.insert_bson("mail".to_owned(), Bson::String(data.mails[i].clone()));
+			p.insert_bson("key".to_owned(), Bson::String(keys[i].clone()));
+			p.insert_bson("sent".to_owned(), Bson::Boolean(false));
+
+			p.insert_bson("wish".to_owned(), {
+				let mut v = Vec::new();
+				v.resize(data.slots.len(), Bson::I32(0));
+				Bson::Array(v)
+			});
+			x.push(Bson::Document(p));
+		}
+		Bson::Array(x)
+	});
+
+	if let Err(e) = db.collection("events").insert_one(doc, None) {
+		println!("create: {}", e);
+		return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))));
 	}
 
 	Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
@@ -407,9 +409,9 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let message = event.get_str("message").unwrap_or("");
 
 	//let mut mailer =  match SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)) {
-	let mut mailer = match SmtpTransportBuilder::new(("mail.epfl.ch", 465)) {
+	let mut mailer = match SmtpTransportBuilder::new((config::MAIL_SERVER, config::MAIL_PORT)) {
 		Ok(x) => x
-			.credentials("mgeiger", include_str!("private").trim())
+			.credentials(config::MAIL_USER, config::MAIL_PASSWORD)
 			.ssl_wrapper()
 			.connection_reuse(true).build(),
 		Err(e) => return Ok(Response::with((status::NotFound, format!("mail : {}", e), Header(AccessControlAllowOrigin::Any))))

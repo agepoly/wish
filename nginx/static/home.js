@@ -12,6 +12,10 @@ $(document).ready(function() {
 function send() {
 	var slots = get_slot_val();
 	var deadline = new Date($("input[name='deadline']").val()).getTime() / 1000;
+	if (isNaN(deadline)) {
+		deadline = 0;
+	}
+	
 	var message = $("#message").val()
 		.replace(/\n/g, "\\n").replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\t/g, "\\t");
 
