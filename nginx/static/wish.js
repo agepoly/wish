@@ -11,8 +11,11 @@ $(document).ready(function() {
 	
 	$("button[name='send']").bind("click", send);
 
-	$.post("http://"+window.location.hostname+":3000/get_data", '{ "key" : "'+key+'" }', function(data,status) {
-		if (status == "success") {
+	$.ajax({
+		type: "POST",
+		url: "http://"+window.location.hostname+":3000/get_data",
+		data: '{ "key" : "'+key+'" }',
+		success: function(data) {
 			x = eval('(' + data + ')');
 			$("#name").html('<b>Activity name: </b>'+x.name);
 			$("#mail").html('<b>Your email: </b>'+x.mail);
@@ -61,9 +64,11 @@ $(document).ready(function() {
 				$("#content").html("The deadline is over, the results will be generated soon !");
 				$("button[name='send']").hide();
 			}
-		} else {
-			console.log("status != success");
-		}
+		},
+		error: function(data) {
+			console.log(data);
+			$("#name").text('Error : ' + data.responseText);
+		},
 	});
 });
 

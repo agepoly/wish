@@ -61,6 +61,9 @@ var oldvalues = { slot : [], vmin : [], vmax : [] };
 
 function create_slots() {
 	var n = $("input[name='nslots']").val();
+	if (n > Number($("input[name='nslots']").prop('max'))) {
+		return;
+	}
 	var old = get_slot_val();
 	for (var i = 0; i < old.slot.length; ++i) {
 		oldvalues.slot[i] = old.slot[i];

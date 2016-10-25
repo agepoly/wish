@@ -11,8 +11,11 @@ $(document).ready(function() {
 	
 	$("button[name='save']").bind("click", save);
 	
-	$.post("http://"+window.location.hostname+":3000/get_admin_data", '{ "key" : "'+admin_key+'" }', function(data,status) {
-		if (status == "success") {
+	$.ajax({
+		type: "POST",
+		url: "http://"+window.location.hostname+":3000/get_admin_data",
+		data: '{ "key" : "'+admin_key+'" }',
+		success: function(data) {
 			x = eval('(' + data + ')');
 			$("#name").html('<b>Activity name: </b>'+x.name);
 
@@ -61,7 +64,15 @@ $(document).ready(function() {
 
 			check_validity();
 			$("input").bind('input propertychange', check_validity);
-		}
+			
+			$("button").show();
+			$("#explanation").show();
+			$("input[name='deadline']").show();
+		},
+		error: function(data) {
+			console.log(data);
+			$("#name").text('Error : ' + data.responseText);
+		},
 	});
 });
 

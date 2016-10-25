@@ -22,13 +22,13 @@
     <div id="people" style="width:100%"></div>
     <div id="slots" style="width:100%"></div>
     
-    <input type="date" name="deadline" id="deadlineInput" class="u-full-width" placeholder="dd/mm/yyyy">
+    <input type="date" name="deadline" id="deadlineInput" class="u-full-width" placeholder="dd/mm/yyyy" hidden>
 
 	<div class="row">
-	  <button type="button" name="save" class="one-half column">Save</button><div id="error" class="one-half column"></div>
+	  <button type="button" name="save" class="one-half column" hidden>Save</button><div id="error" class="one-half column"></div>
 	</div>
 
-   	<p>By saving you reset the current results if any and they will be recomputed as soon as the deadline is over.</p>
+   	<p id="explanation" hidden>By saving you reset the current results if any and they will be recomputed as soon as the deadline is over.</p>
   </div>
 
 </body>
