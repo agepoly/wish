@@ -43,7 +43,7 @@ function send() {
 		data: payload,
 		success: function(data) {
 			console.log("creation success");
-			alert('Creation success ! A mail has been sent to '+$("input[name='amail']").val()+' to validate the activity.');
+			swal("Creation success!", "A mail has been sent to "+$("input[name='amail']").val()+" to validate the activity.", "success");
 			$('#send').prop('disabled', false);
 			$('#send').text('Re create');
 		},

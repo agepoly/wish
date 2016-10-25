@@ -33,7 +33,7 @@ $(document).ready(function() {
 			}
 
 			if (deadline < now && x.results.length > 0) {
-				var content = '<table style="width:100%"><tr><th>Slot Name</th><th>Mail</th></tr>';
+				var content = '<table style="width:100%"><tr><th>Slot</th><th>Mail</th></tr>';
 				var n = x.slots.length;
 				for (i=0; i< n; ++i) {
 					var list = [];
@@ -48,7 +48,7 @@ $(document).ready(function() {
 				$("#content").html(content);
 				$("button[name='send']").hide();
 			} else if (deadline > now) {
-				var content = '<table style="width:100%"><tr><th>Slot Name</th><th>Wish</th></tr>';
+				var content = '<table style="width:100%"><tr><th>Slot</th><th>Wish</th></tr>';
 				var n = x.slots.length;
 				for (var i = 0; i < n; ++i) {
 					content += '<tr><th>'+x.slots[i]+'</th><th>wanted <input type="range" name="wish'+i+'" min="0" max="'+(n-1)+'" step="1" value="'+x.wish[i]+'" /> hated</th></tr>';
@@ -58,7 +58,7 @@ $(document).ready(function() {
 				
 				$("input").bind('input propertychange', check);
 			} else {
-				$("#content").html("The deadline is over, the result will be generated soon");
+				$("#content").html("The deadline is over, the results will be generated soon !");
 				$("button[name='send']").hide();
 			}
 		} else {
