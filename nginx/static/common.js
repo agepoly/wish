@@ -49,7 +49,7 @@ function check_validity() {
 			$(".vmax").css({'border-color' : err_color});
 			$("#mails").css({'border-color' : err_color});
 		}
-		if (mails.length > total_vmin) {
+		if (mails.length < total_vmin) {
 			$(".vmin").css({'border-color' : err_color});
 			$("#mails").css({'border-color' : err_color});
 		}

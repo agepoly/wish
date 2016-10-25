@@ -115,7 +115,9 @@ function check(event) {
 function send() {
 	var data = '{ "key" : "'+key+'", "wish" : ['+x.wish.join(",")+'], "admin_key" : "'+admin_key+'" }';
 	console.log(data);
-
+	
+	$("button[name='send']").css({"background-color" : "#0f56c6"});
+	
 	$.ajax({
 		type: "POST",
 		url: "http://"+window.location.hostname+":3000/set_wish",

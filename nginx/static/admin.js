@@ -6,7 +6,7 @@ var admin_key = hash[0];
 var x = null;
 
 $(document).ready(function() {
-	console.log("admin.js running");
+	$("input[name='deadline']").hide();
 	
 	$("button[name='save']").bind("click", save);
 	$("input[name='deadline']").datepicker({
@@ -71,8 +71,7 @@ $(document).ready(function() {
 			$("input[name='deadline']").show();
 		},
 		error: function(data) {
-			console.log(data);
-			$("#name").text('Error : ' + data.responseText);
+			swal("Oops...", "Something went wrong!\n" + data.responseText, "error");
 		},
 	});
 });

@@ -58,8 +58,9 @@ function send() {
 		},
 		error: function(data) {
 			console.log(data);
-			$("#error").show();
-			$("#error").text('Creation failed : ' + data.responseText);
+			swal("Oops...", "Something went wrong!\n" + data.responseText, "error");
+			//$("#error").show();
+			//$("#error").text('Creation failed : ' + data.responseText);
 			$('#send').prop('disabled', false);
 			$('#send').text('Re create');
 		},
