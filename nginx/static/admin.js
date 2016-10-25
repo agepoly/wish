@@ -10,7 +10,12 @@ $(document).ready(function() {
 	console.log("admin.js running");
 	
 	$("button[name='save']").bind("click", save);
-	
+	$("input[name='deadline']").datepicker({
+      showOtherMonths: true,
+      selectOtherMonths: true,
+      dateFormat: "yy-mm-dd"
+    });
+
 	$.ajax({
 		type: "POST",
 		url: "http://"+window.location.hostname+":3000/get_admin_data",
@@ -20,13 +25,7 @@ $(document).ready(function() {
 			$("#name").html('<b>Activity name: </b>'+x.name);
 
 			deadline = new Date(x.deadline * 1000);
-			// x.deadline [seconds]
-			// deadline [milliseconds]
-			var day = ("0" + deadline.getDate()).slice(-2);
-			var month = ("0" + (deadline.getMonth() + 1)).slice(-2);
-			var date = deadline.getFullYear()+"-"+(month)+"-"+(day);
-			console.log(date);
-			$("input[name='deadline']").val(date);
+			$("input[name='deadline']").datepicker("setDate", deadline);
 
 			var n = x.slots.length;
 			var m = x.mails.length;
@@ -85,7 +84,12 @@ function save() {
 		vmin.push($("input[name='vmin"+i+"']").val());
 		vmax.push($("input[name='vmax"+i+"']").val());
 	}
-	var deadline = new Date($("input[name='deadline']").val()).getTime() / 1000;
+	var deadline = $("input[name='deadline']").datepicker("getDate");
+	if (deadline == null) {
+		deadline = 0;
+	} else {
+		deadline = deadline.getTime() / 1000;
+	}
 
 	var payload = '{'
 		+'"key": "'+admin_key+'", '

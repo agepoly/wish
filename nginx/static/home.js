@@ -4,16 +4,22 @@ $(document).ready(function() {
 	$("#send").click(send);
 	$("input").bind('input propertychange', check_validity);
 	$("textarea").bind('input propertychange', check_validity);
-	$("input[name='deadline']").prop('min', new Date().toJSON().split('T')[0]);
+	$("input[name='deadline']").datepicker({
+      showOtherMonths: true,
+      selectOtherMonths: true,
+      dateFormat: "yy-mm-dd"
+    });
 	create_slots();
 	check_validity();
 });
 
 function send() {
 	var slots = get_slot_val();
-	var deadline = new Date($("input[name='deadline']").val()).getTime() / 1000;
-	if (isNaN(deadline)) {
+	var deadline = $("input[name='deadline']").datepicker("getDate");
+	if (deadline == null) {
 		deadline = 0;
+	} else {
+		deadline = deadline.getTime() / 1000;
 	}
 	
 	var message = $("#message").val()
@@ -169,7 +175,7 @@ function check_validity() {
 		}
 	}
 
-	if ($("input[name='deadline']").val() == "") {
+	if ($("input[name='deadline']").datepicker("getDate") == null) {
 		$("input[name='deadline']").css({'border-color' : err_color});
 	}
 	
