@@ -118,7 +118,8 @@ function check_validity() {
 		$("input[name='name']").css({'border-color' : err_color});
 	}
 
-	var max_capacity = 0;
+	var total_vmin = 0;
+	var total_vmax = 0;
 
 	for (var i = 0; $("input[name='slot"+i+"']").length; ++i) {
 		if ($("input[name='slot"+i+"']").val() == "") {
@@ -136,15 +137,12 @@ function check_validity() {
 			$("input[name='vmin"+i+"']").css({'border-color' : err_color});
 			$("input[name='vmax"+i+"']").css({'border-color' : err_color});
 		}
-		max_capacity += vmax;
+		total_vmin += vmin;
+		total_vmax += vmax;
 	}
 
 	if ($("#mails").val() == "") {
 		$("#mails").css({'border-color' : err_color});
-	}
-
-	if ($("input[name='amail']").val() == "") {
-		$("input[name='amail']").css({'border-color' : err_color});
 	}
 
 	var mails = $("#mails").val().split(/[\s,]+/);
@@ -155,8 +153,12 @@ function check_validity() {
 		}
 	}
 
-	if (mails.length > max_capacity) {
+	if (mails.length > total_vmax) {
 		$(".vmax").css({'border-color' : err_color});
+		$("#mails").css({'border-color' : err_color});
+	}
+	if (mails.length > total_vmin) {
+		$(".vmin").css({'border-color' : err_color});
 		$("#mails").css({'border-color' : err_color});
 	}
 
@@ -169,5 +171,9 @@ function check_validity() {
 
 	if ($("input[name='deadline']").val() == "") {
 		$("input[name='deadline']").css({'border-color' : err_color});
+	}
+	
+	if ($("input[name='amail']").val() == "") {
+		$("input[name='amail']").css({'border-color' : err_color});
 	}
 }
