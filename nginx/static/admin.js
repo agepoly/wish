@@ -1,4 +1,3 @@
-//var key = window.location.pathname.split("/")[2];
 var hash = window.location.hash.substring(1);
 var hash = hash.split("+");
 
@@ -11,9 +10,12 @@ $(document).ready(function() {
 	
 	$("button[name='save']").bind("click", save);
 	$("input[name='deadline']").datepicker({
-      showOtherMonths: true,
-      selectOtherMonths: true,
-      dateFormat: "yy-mm-dd"
+		showOtherMonths: true,
+		selectOtherMonths: true,
+		dateFormat: "yy-mm-dd",
+		onSelect: function() {
+			check_validity();
+		}
     });
 
 	$.ajax({
@@ -76,14 +78,7 @@ $(document).ready(function() {
 });
 
 function save() {
-	var slot = [];
-	var vmin = [];
-	var vmax = [];
-	for (var i = 0; $("input[name='slot"+i+"']").length; ++i) {
-		slot.push($("input[name='slot"+i+"']").val());
-		vmin.push($("input[name='vmin"+i+"']").val());
-		vmax.push($("input[name='vmax"+i+"']").val());
-	}
+	var slots = get_slot_val();
 	var deadline = $("input[name='deadline']").datepicker("getDate");
 	if (deadline == null) {
 		deadline = 0;
@@ -94,9 +89,9 @@ function save() {
 	var payload = '{'
 		+'"key": "'+admin_key+'", '
 		+'"deadline" : '+deadline+', '
-		+'"slots"    : ["'+slot.join('","')+'"], '
-		+'"vmin"     : ['+ vmin.join(',')  +'], '
-		+'"vmax"     : ['+ vmax.join(',')  +']'
+		+'"slots"    : ["'+slots.slot.join('","')+'"], '
+		+'"vmin"     : ['+ slots.vmin.join(',')  +'], '
+		+'"vmax"     : ['+ slots.vmax.join(',')  +']'
 		+'}';
 
 	console.log(payload);
@@ -128,31 +123,3 @@ function save() {
 	});
 }
 
-
-function check_validity() {
-	var err_color = '#FF9000';
-
-	$("input").removeAttr('style');
-
-	for (var i = 0; $("input[name='slot"+i+"']").length; ++i) {
-		if ($("input[name='slot"+i+"']").val() == "") {
-			$("input[name='slot"+i+"']").css({'border-color' : err_color});
-		}
-		var vmin = Number($("input[name='vmin"+i+"']").val());
-		var vmax = Number($("input[name='vmax"+i+"']").val());
-		if (vmin < 0) {
-			$("input[name='vmin"+i+"']").css({'border-color' : err_color});
-		}
-		if (vmax <= 0) {
-			$("input[name='vmax"+i+"']").css({'border-color' : err_color});
-		}
-		if (vmin > vmax) {
-			$("input[name='vmin"+i+"']").css({'border-color' : err_color});
-			$("input[name='vmax"+i+"']").css({'border-color' : err_color});
-		}
-	}
-
-	if ($("input[name='deadline']").val() == "") {
-		$("input[name='deadline']").css({'border-color' : err_color});
-	}
-}

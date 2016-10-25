@@ -121,16 +121,15 @@ function send() {
 		url: "http://"+window.location.hostname+":3000/set_wish",
 		data: data,
 		success: function(data) {
-			$("#status").show();
-			$("#status").text('Set success !');
+			$("button[name='send']").css({"background-color" : "#68ff98"});
 			setTimeout(function() {
-				$("#status").fadeOut();
-			}, 2000);
+				$("button[name='send']").removeAttr('style');
+			}, 3000);
 		},
 		error: function(data) {
 			console.log(data);
-			$("#status").show();
-			$("#status").text('Fail : ' + data.responseText);
+			$("button[name='send']").css({"background-color" : "#c42b2b"});
+			$("#error").text(data.responseText);
 		},
 	});
 }
