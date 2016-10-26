@@ -7,9 +7,9 @@ var admin_key = hash[1];
 var x = null;
 
 $(document).ready(function() {
-	console.log("get.js running");
-	
-	$("button[name='send']").bind("click", send);
+	if (admin_key != undefined) {
+		$("#asadmin").text("As admin you can modify the wishes without constraints");
+	}
 
 	$.ajax({
 		type: "POST",
@@ -17,6 +17,8 @@ $(document).ready(function() {
 		data: '{ "key" : "'+key+'" }',
 		success: function(data) {
 			x = eval('(' + data + ')');
+			$("button[name='send']").bind("click", send);
+
 			$("#name").html('<b>Activity name: </b>'+x.name);
 			$("#mail").html('<b>Your email: </b>'+x.mail);
 
@@ -68,6 +70,7 @@ $(document).ready(function() {
 		error: function(data) {
 			console.log(data);
 			$("#name").text('Error : ' + data.responseText);
+			$("button[name='send']").hide();
 		},
 	});
 });
