@@ -152,12 +152,15 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		admin_key
 	};
 
-	//let mut mailer = match SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)) {
 	let mut mailer = match SmtpTransportBuilder::new((config::MAIL_SERVER, config::MAIL_PORT)) {
-		Ok(x) => x
-			.credentials(config::MAIL_USER, config::MAIL_PASSWORD)
-			.ssl_wrapper()
-			.build(),
+		Ok(x) => {
+			if config::MAIL_USER.len() > 0 && config::MAIL_PASSWORD.len() > 0 {
+				x.credentials(config::MAIL_USER, config::MAIL_PASSWORD)
+					.ssl_wrapper()
+			} else {
+				x
+			}.build()
+		}
 		Err(e) => {
 			println!("create: {}", e);
 			return Ok(Response::with((status::NotFound, format!("mail error : {}", e), Header(AccessControlAllowOrigin::Any))))
@@ -408,12 +411,15 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let amail = event.get_str("amail").unwrap_or("");
 	let message = event.get_str("message").unwrap_or("");
 
-	//let mut mailer =  match SmtpTransportBuilder::new(("smtp1.epfl.ch", 25)) {
 	let mut mailer = match SmtpTransportBuilder::new((config::MAIL_SERVER, config::MAIL_PORT)) {
-		Ok(x) => x
-			.credentials(config::MAIL_USER, config::MAIL_PASSWORD)
-			.ssl_wrapper()
-			.connection_reuse(true).build(),
+		Ok(x) => {
+			if config::MAIL_USER.len() > 0 && config::MAIL_PASSWORD.len() > 0 {
+				x.credentials(config::MAIL_USER, config::MAIL_PASSWORD)
+					.ssl_wrapper()
+			} else {
+				x
+			}.connection_reuse(true).build()
+		}
 		Err(e) => return Ok(Response::with((status::NotFound, format!("mail : {}", e), Header(AccessControlAllowOrigin::Any))))
 	};
 	
