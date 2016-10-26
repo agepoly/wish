@@ -87,7 +87,7 @@ function create_slots() {
 		oldvalues.vmax[i] = old.vmax[i];
 	}
 
-	var content = '<div class="row"><div class="six columns"><label>Time slots</label></div>'
+	var content = '<div class="row"><div class="six columns"><label>Slots</label></div>'
 	content += '<div class="three columns"><label>Min people</label></div>'
 	content += '<div class="three columns"><label>Max people</label></div></div>'
 	for (var i = 0; i < n; ++i) {
