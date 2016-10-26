@@ -117,6 +117,7 @@ function send() {
 	console.log(data);
 	
 	$("button[name='send']").css({"background-color" : "#0f56c6"});
+	$("#error").hide();
 	
 	$.ajax({
 		type: "POST",
@@ -124,8 +125,11 @@ function send() {
 		data: data,
 		success: function(data) {
 			$("button[name='send']").css({"background-color" : "#68ff98"});
+			$("#error").text("Saved !");
+			$("#error").show();
 			setTimeout(function() {
 				$("button[name='send']").removeAttr('style');
+				$("#error").fadeOut();
 			}, 3000);
 		},
 		error: function(data) {
