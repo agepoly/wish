@@ -10,7 +10,8 @@ $(document).ready(function() {
 		dateFormat: "yy-mm-dd",
 		onSelect: function() {
 			check_validity();
-		}
+		},
+		minDate: 0
     });
 	create_slots();
 	check_validity();
