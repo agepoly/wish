@@ -170,13 +170,13 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let email = EmailBuilder::new()
 					.from("wish@epfl.ch")
 					.to(data.amail.as_str())
-					.body(format!(
-r#"An event has been created with your email address.
-If you are not concerned, please do not click on the following url.
-The url to activate the activity is : http://{url}/admin#{key}
-
-Have a good day,
-The Wish team"#,
+					.html(format!(
+	r#"<p>An event has been created with your email address.<br />
+	If you are not concerned, please do not click on the following url.<br />
+	<a href="http://{url}/admin#{key}">Click here</a> to activate and administrate the activity.</p>
+	
+	<p>Have a good day,<br />
+	The Wish team</p>"#,
 						url = data.url.as_str(), 
 						key = admin_key.as_str()
 					).as_str())
@@ -432,15 +432,16 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 						.to(x.get_str("mail").unwrap_or(""))
 						.from("wish@epfl.ch")
 						.reply_to(amail)
-						.body(format!(
-r#"You has been invited by {amail} to give your wishes about the event : {name}
-
+						.html(format!(
+	r#"<p>You has been invited by {amail} to give your wishes about the event : <strong>{name}</strong></p>
+	<pre>
 {message}
+	</pre>
+	
+	<p><a href="http://{url}/wish#{key}">Click here</a> to set your wishes.</p>
 
-Here is the url to set your wishes : http://{url}/wish#{key}
-
-Have a good day,
-The Wish team"#,
+	<p>Have a good day,<br />
+	The Wish team</p>"#,
 							amail = amail, 
 							name = name, 
 							message = message, 
@@ -630,6 +631,57 @@ fn process(db: &Arc<Mutex<Database>>) {
 		let results = Bson::Array(results[0].iter().map(|&x| Bson::I32(x as i32)).collect());
 		if let Ok(db) = db.lock() {
 			db.collection("events").update_one(doc!{"_id" => (event.get_object_id("_id").unwrap().clone())}, doc!{"$set" => {"results" => results}}, None).unwrap();
+			
+			let amail = event.get_str("admin_key").unwrap_or("@");
+			let url = event.get_str("url").unwrap_or("www");
+			let admin_key = event.get_str("key").unwrap_or("");
+			let name = event.get_str("name").unwrap_or("no name");
+			
+			let mut mailer = match SmtpTransportBuilder::new((config::MAIL_SERVER, config::MAIL_PORT)) {
+				Ok(x) => {
+					if config::MAIL_USER.len() > 0 && config::MAIL_PASSWORD.len() > 0 {
+						x.credentials(config::MAIL_USER, config::MAIL_PASSWORD)
+							.ssl_wrapper()
+					} else {
+						x
+					}.build()
+				}
+				Err(e) => {
+					println!("process: {}", e);
+					return;
+				}
+			};
+
+			let email = EmailBuilder::new()
+							.from("wish@epfl.ch")
+							.to(amail)
+							.html(format!(
+	r#"<p>The event {name} has reach the deadline.<br />
+	The results had been computed.<br />
+	They are accessible on any user page.<br />
+	On the admin page, any modification will reset the results and new ones will be computed.</p>
+	
+	<p><a href="http://{url}/admin#{key}">Click here</a> to administrate the event.</p>
+	
+	<p>Have a good day,<br />
+	The Wish team</p>"#,
+								url = url,
+								key = admin_key,
+								name = name
+							).as_str())
+							.subject(format!("Wish : {}", name).as_str())
+							.build();
+			let email = match email {
+				Ok(x) => x,
+				Err(e) => {
+					println!("process: {}", e);
+					return;
+				}
+			};
+
+			if let Err(e) = mailer.send(email) {
+				println!("process: {}", e);
+			}
 		}
 	}
 }
