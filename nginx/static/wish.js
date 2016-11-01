@@ -55,8 +55,14 @@ $(document).ready(function() {
 			} else if (deadline > now) {
 				var content = '<table style="width:100%"><tr><th>Slot</th><th>Wish</th></tr>';
 				var n = x.slots.length;
+				if (n < x.wish.length) {
+					x.wish.length = n;
+				}
 				for (var i = 0; i < n; ++i) {
-					content += '<tr><th>'+x.slots[i]+'</th><th>wanted <input type="range" name="wish'+i+'" min="0" max="'+(n-1)+'" step="1" value="'+x.wish[i]+'" /> hated</th></tr>';
+					var wish = 0;
+					if (i < x.wish.length) wish = x.wish[i];
+					else x.wish[i] = wish;
+					content += '<tr><th>'+x.slots[i]+'</th><th>wanted <input type="range" name="wish'+i+'" min="0" max="'+(n-1)+'" step="1" value="'+wish+'" /> hated</th></tr>';
 				}
 				content += '</table>';
 				$("#content").html(content);
@@ -139,6 +145,7 @@ function send() {
 			console.log(data);
 			$("button[name='send']").css({"background-color" : "#c42b2b"});
 			$("#error").text(data.responseText);
+			$("#error").show();
 		},
 	});
 }

@@ -6,6 +6,7 @@ var admin_key = hash[0];
 var x = null;
 
 $(document).ready(function() {
+	$("input[name='nslots']").bind('input propertychange', create_slots);
 	$("input[name='deadline']").hide();
 	
 	$("button[name='save']").bind("click", save);
@@ -17,7 +18,7 @@ $(document).ready(function() {
 			check_validity();
 		},
 		minDate: 0
-    });
+	});
 
 	$.ajax({
 		type: "POST",
@@ -48,21 +49,11 @@ $(document).ready(function() {
 			content += '</table>';
 			$("#people").html(content);
 			
-			
-			var content = '<div class="row"><div class="six columns"><label>Time slots</label></div>'
-			content += '<div class="three columns"><label>Min people</label></div>'
-			content += '<div class="three columns"><label>Max people</label></div></div>'
-			for (i=0; i < n; ++i) {
-				var values = {
-					name: x.slots[i],
-					vmin: x.vmin[i],
-					vmax: x.vmax[i]
-				};
-				content += '<div class="row"><div class="six columns"><input type="text" placeholder="Tuesday morning" class="slot u-full-width" name="slot'+i+'" value="'+values.name+'"></div>'
-					+ '<div class="three columns"><input type="number" class="vmin u-full-width" name="vmin'+i+'" min="0" max="100" step="1" value="'+values.vmin+'"></div>'
-					+ '<div class="three columns"><input type="number" class="vmax u-full-width" name="vmax'+i+'" min="0" max="100" step="1" value="'+values.vmax+'"></div></div>'
-			}
-			$("#slots").html(content);
+			oldvalues.slot = x.slots;
+			oldvalues.vmin = x.vmin;
+			oldvalues.vmax = x.vmax;
+			$("input[name='nslots']").val(x.slots.length);
+			create_slots();
 
 			check_validity();
 			$("input").bind('input propertychange', check_validity);

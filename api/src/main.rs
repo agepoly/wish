@@ -124,6 +124,10 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		}
 	};
 
+	if data.vmin.len() != data.vmax.len() || data.vmin.len() != data.slots.len() {
+		return Ok(Response::with((status::NotFound, "vmin, vmax, slots, length problem", Header(AccessControlAllowOrigin::Any))));
+	}
+
 	if data.vmax.iter().fold(0, |acc, &x| acc + x) < (data.mails.len() as i32) {
 		return Ok(Response::with((status::NotFound, "not enough room for people", Header(AccessControlAllowOrigin::Any))));
 	}
@@ -265,6 +269,31 @@ fn set_wish(req: &mut Request, db: &Database) -> IronResult<Response> {
 		Err(e) => {
 			println!("set_wishes: {}", e);
 			return Ok(Response::with((status::BadRequest, format!("request error : {}", e), Header(AccessControlAllowOrigin::Any))));
+		}
+	};
+	
+	match db.collection("events").find_one(Some(doc!{"people.key" => (data.key.clone())}), None) {
+		Ok(Some(event)) => {
+			match event.get_array("slots") {
+				Ok(slots) => {
+					if slots.len() != data.wish.len() {
+						println!("set_wishes: wish length does not match with slots length");
+						return Ok(Response::with((status::NotFound, format!("wish length does not match with slots length"), Header(AccessControlAllowOrigin::Any))));
+					}
+				}
+				Err(e) => {
+					println!("set_wishes: {}", e);
+					return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))));
+				}
+			}
+		}
+		Ok(None) => {
+			println!("set_wishes: Wrong user key");
+			return Ok(Response::with((status::NotFound, format!("wrong user key"), Header(AccessControlAllowOrigin::Any))));
+		}
+		Err(e) => {
+			println!("set_wishes: {}", e);
+			return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))));
 		}
 	};
 
@@ -563,7 +592,11 @@ fn admin_update(req: &mut Request, db: &Database) -> IronResult<Response> {
 			return Ok(Response::with((status::BadRequest, format!("database {}", e), Header(AccessControlAllowOrigin::Any))))
 		}
 	};
-		
+	
+	if data.vmin.len() != data.vmax.len() || data.vmin.len() != data.slots.len() {
+		return Ok(Response::with((status::NotFound, "vmin, vmax, slots, length problem", Header(AccessControlAllowOrigin::Any))));
+	}
+
 	if data.vmax.iter().fold(0, |acc, &x| acc + x) < (event.get_array("people").unwrap_or(&Vec::new()).len() as i32) {
 		return Ok(Response::with((status::NotFound, "not enough room for people", Header(AccessControlAllowOrigin::Any))));
 	}
@@ -582,7 +615,6 @@ fn admin_update(req: &mut Request, db: &Database) -> IronResult<Response> {
 		println!("admin_update: vmin > vmax");
 		return Ok(Response::with((status::BadRequest, "there are vmin bigger than vmax", Header(AccessControlAllowOrigin::Any))));
 	}
-
 
 	let mut document = Document::new();
 	document.insert("deadline", Bson::I64(data.deadline));
@@ -619,7 +651,11 @@ fn process(db: &Arc<Mutex<Database>>) {
 	if let Ok(Some(event)) = event {
 		let vmin : Vec<u32> = event.get_array("vmin").unwrap_or(&Vec::new()).iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();
 		let vmax : Vec<u32> = event.get_array("vmax").unwrap_or(&Vec::new()).iter().map(|x| match x { &Bson::I32(v) => v as u32, _ => 0 }).collect();
-		let wishes : Vec<Vec<u32>> = event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p| {
+		if vmin.len() != vmax.len() {
+			println!("process: vmin vmax not same length");
+			return;
+		}
+		let mut wishes : Vec<Vec<u32>> = event.get_array("people").unwrap_or(&Vec::new()).iter().map(|p| {
 			match p {
 				&Bson::Document(ref p) => p.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x| {
 					match x {
@@ -630,6 +666,9 @@ fn process(db: &Arc<Mutex<Database>>) {
 				_ => Vec::new()
 			}
 		}).collect();
+		for wish in wishes.iter_mut() {
+			wish.resize(vmin.len(), 0);
+		}
 		
 		let vmin_total : u32 = vmin.iter().sum();
 		let vmax_total : u32 = vmax.iter().sum();
@@ -646,9 +685,9 @@ fn process(db: &Arc<Mutex<Database>>) {
 		if let Ok(db) = db.lock() {
 			db.collection("events").update_one(doc!{"_id" => (event.get_object_id("_id").unwrap().clone())}, doc!{"$set" => {"results" => results}}, None).unwrap();
 			
-			let amail = event.get_str("admin_key").unwrap_or("@");
+			let amail = event.get_str("amail").unwrap_or("@");
 			let url = event.get_str("url").unwrap_or("www");
-			let admin_key = event.get_str("key").unwrap_or("");
+			let admin_key = event.get_str("admin_key").unwrap_or("");
 			let name = event.get_str("name").unwrap_or("no name");
 			
 			let mut mailer = match create_mailer(false) {
@@ -656,7 +695,7 @@ fn process(db: &Arc<Mutex<Database>>) {
 					x
 				}
 				Err(e) => {
-					println!("process: {}", e);
+					println!("process: mailer {}", e);
 					return;
 				}
 			};
@@ -681,17 +720,18 @@ fn process(db: &Arc<Mutex<Database>>) {
 							).as_str())
 							.subject(format!("Wish : {}", name).as_str())
 							.build();
-			let email = match email {
-				Ok(x) => x,
+			match email {
+				Ok(x) => {
+					if let Err(e) = mailer.send(x) {
+						println!("process: email send {}", e);
+					}
+				},
 				Err(e) => {
-					println!("process: {}", e);
+					println!("process: email build {}", e);
 					return;
 				}
 			};
 
-			if let Err(e) = mailer.send(email) {
-				println!("process: {}", e);
-			}
 		}
 	}
 }
