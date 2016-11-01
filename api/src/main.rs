@@ -74,6 +74,26 @@ fn main() {
 	handler.join().unwrap();
 }
 
+fn create_mailer(reuse : bool) -> Result<lettre::transport::smtp::SmtpTransport, lettre::transport::smtp::error::Error> {
+	match SmtpTransportBuilder::new((config::MAIL_SERVER, config::MAIL_PORT)) {
+		Ok(x) => {
+			let mailer = if config::MAIL_USER.len() > 0 && config::MAIL_PASSWORD.len() > 0 {
+				x.credentials(config::MAIL_USER, config::MAIL_PASSWORD)
+					.ssl_wrapper()
+			} else {
+				x
+			};
+			Ok(if reuse {
+				mailer.connection_reuse(true)
+			} else {
+				mailer
+			}.build())
+		}
+		Err(e) => {
+			Err(e)
+		}
+	}
+}
 
 fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	println!("create");
@@ -152,14 +172,9 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		admin_key
 	};
 
-	let mut mailer = match SmtpTransportBuilder::new((config::MAIL_SERVER, config::MAIL_PORT)) {
+	let mut mailer = match create_mailer(false) {
 		Ok(x) => {
-			if config::MAIL_USER.len() > 0 && config::MAIL_PASSWORD.len() > 0 {
-				x.credentials(config::MAIL_USER, config::MAIL_PASSWORD)
-					.ssl_wrapper()
-			} else {
-				x
-			}.build()
+			x
 		}
 		Err(e) => {
 			println!("create: {}", e);
@@ -411,17 +426,16 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let amail = event.get_str("amail").unwrap_or("");
 	let message = event.get_str("message").unwrap_or("");
 
-	let mut mailer = match SmtpTransportBuilder::new((config::MAIL_SERVER, config::MAIL_PORT)) {
+	let mut mailer = match create_mailer(true) {
 		Ok(x) => {
-			if config::MAIL_USER.len() > 0 && config::MAIL_PASSWORD.len() > 0 {
-				x.credentials(config::MAIL_USER, config::MAIL_PASSWORD)
-					.ssl_wrapper()
-			} else {
-				x
-			}.connection_reuse(true).build()
+			x
 		}
-		Err(e) => return Ok(Response::with((status::NotFound, format!("mail : {}", e), Header(AccessControlAllowOrigin::Any))))
+		Err(e) => {
+			println!("get_admin_data: {}", e);
+			return Ok(Response::with((status::NotFound, format!("mail error : {}", e), Header(AccessControlAllowOrigin::Any))))
+		}
 	};
+
 	
 	let mut people = event.get_array("people").unwrap_or(&Vec::new()).clone();
 
@@ -637,20 +651,16 @@ fn process(db: &Arc<Mutex<Database>>) {
 			let admin_key = event.get_str("key").unwrap_or("");
 			let name = event.get_str("name").unwrap_or("no name");
 			
-			let mut mailer = match SmtpTransportBuilder::new((config::MAIL_SERVER, config::MAIL_PORT)) {
+			let mut mailer = match create_mailer(false) {
 				Ok(x) => {
-					if config::MAIL_USER.len() > 0 && config::MAIL_PASSWORD.len() > 0 {
-						x.credentials(config::MAIL_USER, config::MAIL_PASSWORD)
-							.ssl_wrapper()
-					} else {
-						x
-					}.build()
+					x
 				}
 				Err(e) => {
 					println!("process: {}", e);
 					return;
 				}
 			};
+
 
 			let email = EmailBuilder::new()
 							.from("wish@epfl.ch")
