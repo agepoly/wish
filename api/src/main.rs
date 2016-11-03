@@ -44,23 +44,23 @@ fn main() {
 
 	let arc = db.clone();
 	router.post("/create", move |r: &mut Request|
-		create(r, &arc.lock().unwrap()), "create");
+		create(r, &arc), "create");
 
 	let arc = db.clone();
 	router.post("/set_wish", move |r: &mut Request|
-		set_wish(r, &arc.lock().unwrap()), "set_wish");
+		set_wish(r, &arc), "set_wish");
 
 	let arc = db.clone();
 	router.post("/get_data", move |r: &mut Request|
-		get_data(r, &arc.lock().unwrap()), "get_data");
+		get_data(r, &arc), "get_data");
 
 	let arc = db.clone();
 	router.post("/get_admin_data", move |r: &mut Request|
-		get_admin_data(r, &arc.lock().unwrap()), "get_admin_data");
+		get_admin_data(r, &arc), "get_admin_data");
 
 	let arc = db.clone();
 	router.post("/admin_update", move |r: &mut Request|
-		admin_update(r, &arc.lock().unwrap()), "admin_update");
+		admin_update(r, &arc), "admin_update");
 
 	let arc = db.clone();
 	let handler = std::thread::spawn(move || {
@@ -95,7 +95,7 @@ fn create_mailer(reuse : bool) -> Result<lettre::transport::smtp::SmtpTransport,
 	}
 }
 
-fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
+fn create(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Response> {
 	println!("create");
 
 	#[derive(RustcDecodable)]
@@ -147,23 +147,30 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	}
 
 	let mut keys : Vec<String> = Vec::with_capacity(data.mails.len());
-	for _ in 0..data.mails.len() {
-		loop {
-			let mut key: [u8; 16] = [0; 16];
-			rand::thread_rng().fill_bytes(&mut key);
-			let key = key.to_hex();
-			if keys.contains(&key) {
-				continue;
+	{
+		let db = db.clone();
+		let db = db.lock().unwrap();
+		for _ in 0..data.mails.len() {
+			loop {
+				let mut key: [u8; 16] = [0; 16];
+				rand::thread_rng().fill_bytes(&mut key);
+				let key = key.to_hex();
+				if keys.contains(&key) {
+					continue;
+				}
+				if db.collection("events").find_one(Some(doc!{"people.key" => (key.clone())}), None).unwrap_or(None).is_some() {
+					continue;
+				}
+				keys.push(key);
+				break;
 			}
-			if db.collection("events").find_one(Some(doc!{"people.key" => (key.clone())}), None).unwrap_or(None).is_some() {
-				continue;
-			}
-			keys.push(key);
-			break;
 		}
 	}
-
+	
 	let admin_key = {
+		let db = db.clone();
+		let db = db.lock().unwrap();
+		
 		let mut admin_key : String;
 		loop {
 			let mut key : [u8; 16] = [0; 16];
@@ -190,12 +197,12 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 					.from("wish@epfl.ch")
 					.to(data.amail.as_str())
 					.html(format!(
-	r#"<p>An event has been created with your email address.<br />
-	If you are not concerned, please do not click on the following url.<br />
-	<a href="http://{url}/admin#{key}">Click here</a> to activate and administrate the activity.</p>
+						r#"<p>An event has been created with your email address.<br />
+						If you are not concerned, please do not click on the following url.<br />
+						<a href="http://{url}/admin#{key}">Click here</a> to activate and administrate the activity.</p>
 	
-	<p>Have a good day,<br />
-	The Wish team</p>"#,
+						<p>Have a good day,<br />
+						The Wish team</p>"#,
 						url = data.url.as_str(), 
 						key = admin_key.as_str()
 					).as_str())
@@ -243,7 +250,7 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 		Bson::Array(x)
 	});
 
-	if let Err(e) = db.collection("events").insert_one(doc, None) {
+	if let Err(e) = db.lock().unwrap().collection("events").insert_one(doc, None) {
 		println!("create: {}", e);
 		return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))));
 	}
@@ -251,7 +258,7 @@ fn create(req: &mut Request, db: &Database) -> IronResult<Response> {
 	Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
 }
 
-fn set_wish(req: &mut Request, db: &Database) -> IronResult<Response> {
+fn set_wish(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Response> {
 	println!("set_wishes");
 
 	#[derive(RustcDecodable)]
@@ -271,6 +278,8 @@ fn set_wish(req: &mut Request, db: &Database) -> IronResult<Response> {
 			return Ok(Response::with((status::BadRequest, format!("request error : {}", e), Header(AccessControlAllowOrigin::Any))));
 		}
 	};
+	
+	let db = db.lock().unwrap();
 	
 	match db.collection("events").find_one(Some(doc!{"people.key" => (data.key.clone())}), None) {
 		Ok(Some(event)) => {
@@ -321,7 +330,7 @@ fn set_wish(req: &mut Request, db: &Database) -> IronResult<Response> {
 	Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
 }
 
-fn get_data(req: &mut Request, db: &Database) -> IronResult<Response> {
+fn get_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Response> {
 	println!("get_data");
 
 	#[derive(RustcDecodable)]
@@ -356,7 +365,7 @@ fn get_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let mut options = mongodb::coll::options::FindOptions::new();
 	options.projection = Some(doc!{"_id" => false});
 
-	let event = match db.collection("events").find_one(Some(query), Some(options)) {
+	let event = match db.lock().unwrap().collection("events").find_one(Some(query), Some(options)) {
 		Ok(Some(x)) => x,
 		Ok(None) => {
 			println!("get_data: invalid key");
@@ -403,7 +412,7 @@ fn get_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	}
 }
 
-fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
+fn get_admin_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Response> {
 	println!("get_admin_data");
 
 	#[derive(RustcDecodable)]
@@ -438,15 +447,19 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let mut options = mongodb::coll::options::FindOptions::new();
 	options.projection = Some(doc!{"_id" => false});
 
-	let event = match db.collection("events").find_one(Some(doc!{"admin_key" => (data.key.clone())}), Some(options)) {
-		Ok(Some(x)) => x,
-		Ok(None) => {
-			println!("get_admin_data: invalid key");
-			return Ok(Response::with((status::NotFound, "invalid key", Header(AccessControlAllowOrigin::Any))));			
-		}
-		Err(e) => {
-			println!("get_admin_data: {}", e);
-			return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))))
+	let event = {
+		let db = db.clone();
+		let db = db.lock().unwrap();
+		match db.collection("events").find_one(Some(doc!{"admin_key" => (data.key.clone())}), Some(options)) {
+			Ok(Some(x)) => x,
+			Ok(None) => {
+				println!("get_admin_data: invalid key");
+				return Ok(Response::with((status::NotFound, "invalid key", Header(AccessControlAllowOrigin::Any))));			
+			}
+			Err(e) => {
+				println!("get_admin_data: {}", e);
+				return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))))
+			}
 		}
 	};
 
@@ -476,15 +489,13 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 						.from("wish@epfl.ch")
 						.reply_to(amail)
 						.html(format!(
-	r#"<p>You has been invited by {amail} to give your wishes about the event : <strong>{name}</strong></p>
-	<pre>
-{message}
-	</pre>
+							r#"<p>You has been invited by {amail} to give your wishes about the event : <strong>{name}</strong></p>
+							<pre>{message}</pre>
 	
-	<p><a href="http://{url}/wish#{key}">Click here</a> to set your wishes.</p>
+							<p><a href="http://{url}/wish#{key}">Click here</a> to set your wishes.</p>
 
-	<p>Have a good day,<br />
-	The Wish team</p>"#,
+							<p>Have a good day,<br />
+							The Wish team</p>"#,
 							amail = amail, 
 							name = name, 
 							message = message, 
@@ -506,7 +517,7 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 	let mut document = Document::new();
 	document.insert("people", Bson::Array(people.clone()));
 	
-	if let Err(e) = db.collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => document}, None) {
+	if let Err(e) = db.lock().unwrap().collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => document}, None) {
 		println!("get_admin_data: {}", e);
 		return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))));
 	}
@@ -558,7 +569,7 @@ fn get_admin_data(req: &mut Request, db: &Database) -> IronResult<Response> {
 }
 
 
-fn admin_update(req: &mut Request, db: &Database) -> IronResult<Response> {
+fn admin_update(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Response> {
 	println!("admin_update");
 
 	#[derive(RustcDecodable)]
@@ -581,15 +592,19 @@ fn admin_update(req: &mut Request, db: &Database) -> IronResult<Response> {
 		}
 	};
 
-	let event = match db.collection("events").find_one(Some(doc!{"admin_key" => (data.key.clone())}), None) {
-		Ok(Some(x)) => x,
-		Ok(None) => {
-			println!("admin_update: invalid key");
-			return Ok(Response::with((status::BadRequest, "invalid key", Header(AccessControlAllowOrigin::Any))))			
-		}
-		Err(e) => {
-			println!("admin_update: {}", e);
-			return Ok(Response::with((status::BadRequest, format!("database {}", e), Header(AccessControlAllowOrigin::Any))))
+	let event = {
+		let db = db.clone();
+		let db = db.lock().unwrap();
+		match db.collection("events").find_one(Some(doc!{"admin_key" => (data.key.clone())}), None) {
+			Ok(Some(x)) => x,
+			Ok(None) => {
+				println!("admin_update: invalid key");
+				return Ok(Response::with((status::BadRequest, "invalid key", Header(AccessControlAllowOrigin::Any))))			
+			}
+			Err(e) => {
+				println!("admin_update: {}", e);
+				return Ok(Response::with((status::BadRequest, format!("database {}", e), Header(AccessControlAllowOrigin::Any))))
+			}
 		}
 	};
 	
@@ -623,7 +638,7 @@ fn admin_update(req: &mut Request, db: &Database) -> IronResult<Response> {
 	document.insert("vmax", Bson::Array(data.vmax.iter().map(|&x| Bson::I32(x)).collect()));
 	document.insert("results", Bson::Null);
 
-	return match db.collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => document}, None) {
+	return match db.lock().unwrap().collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => document}, None) {
 		Ok(_) => Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any)))),
 		Err(e) => {
 			println!("admin_update: {}", e);
@@ -684,7 +699,10 @@ fn process(db: &Arc<Mutex<Database>>) {
 		let results = Bson::Array(results[0].iter().map(|&x| Bson::I32(x as i32)).collect());
 		if let Ok(db) = db.lock() {
 			db.collection("events").update_one(doc!{"_id" => (event.get_object_id("_id").unwrap().clone())}, doc!{"$set" => {"results" => results}}, None).unwrap();
-			
+		} else {
+			return;
+		}
+
 			let amail = event.get_str("amail").unwrap_or("@");
 			let url = event.get_str("url").unwrap_or("www");
 			let admin_key = event.get_str("admin_key").unwrap_or("");
@@ -701,37 +719,35 @@ fn process(db: &Arc<Mutex<Database>>) {
 			};
 
 
-			let email = EmailBuilder::new()
-							.from("wish@epfl.ch")
-							.to(amail)
-							.html(format!(
-	r#"<p>The event {name} has reach the deadline.<br />
-	The results had been computed.<br />
-	They are accessible on any user page.<br />
-	On the admin page, any modification will reset the results and new ones will be computed.</p>
-	
-	<p><a href="http://{url}/admin#{key}">Click here</a> to administrate the event.</p>
-	
-	<p>Have a good day,<br />
-	The Wish team</p>"#,
-								url = url,
-								key = admin_key,
-								name = name
-							).as_str())
-							.subject(format!("Wish : {}", name).as_str())
-							.build();
-			match email {
-				Ok(x) => {
-					if let Err(e) = mailer.send(x) {
-						println!("process: email send {}", e);
-					}
-				},
-				Err(e) => {
-					println!("process: email build {}", e);
-					return;
-				}
-			};
+		let email = EmailBuilder::new()
+						.from("wish@epfl.ch")
+						.to(amail)
+						.html(format!(
+							r#"<p>The event {name} has reach the deadline.<br />
+							The results had been computed.<br />
+							They are accessible on any user page.<br />
+							On the admin page, any modification will reset the results and new ones will be computed.</p>
 
-		}
+							<p><a href="http://{url}/admin#{key}">Click here</a> to administrate the event.</p>
+
+							<p>Have a good day,<br />
+							The Wish team</p>"#,
+							url = url,
+							key = admin_key,
+							name = name
+						).as_str())
+						.subject(format!("Wish : {}", name).as_str())
+						.build();
+		match email {
+			Ok(x) => {
+				if let Err(e) = mailer.send(x) {
+					println!("process: email send {}", e);
+				}
+			},
+			Err(e) => {
+				println!("process: email build {}", e);
+				return;
+			}
+		};
 	}
 }
