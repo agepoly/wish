@@ -8,6 +8,8 @@ var x = null;
 $(document).ready(function() {
 	$("input[name='nslots']").bind('input propertychange', create_slots);
 	$("input[name='deadline']").hide();
+	$("label").hide();
+	$("input[name='nslots']").hide();
 	
 	$("button[name='save']").bind("click", save);
 	$("input[name='deadline']").datepicker({
@@ -61,6 +63,8 @@ $(document).ready(function() {
 			$("button").show();
 			$("#explanation").show();
 			$("input[name='deadline']").show();
+			$("label").show();
+			$("input[name='nslots']").show();
 		},
 		error: function(data) {
 			swal("Oops...", "Something went wrong!\n" + data.responseText, "error");
