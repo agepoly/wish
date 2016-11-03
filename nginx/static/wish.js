@@ -8,7 +8,7 @@ var x = null;
 
 $(document).ready(function() {
 	if (admin_key != undefined) {
-		$("#asadmin").text("As admin you can modify the wishes without constraints");
+		$("#redtext").text("As admin you can modify the wishes without constraints");
 	}
 
 	$.ajax({
@@ -26,15 +26,17 @@ $(document).ready(function() {
 			var now = new Date();
 			// x.deadline [seconds]
 			// deadline [milliseconds]
-
+			
+			var minutes = Math.floor(Math.abs(deadline - now) / 1000 / 60);
+			var hours = Math.floor(minutes / 60);
+			var days = Math.floor(hours / 24);
+			minutes = minutes % 60;
+			hours = hours % 24;
+			
 			if (deadline > now) {
-				var hours = Math.floor((deadline-now)/1000/3600);
-				var days = Math.floor(hours / 24);
-				hours = hours % 24;
-				$("#deadline").html('<b>Deadline: </b>'+deadline.toJSON().split('T')[0]+' (in '+days+' days and '+hours+' hours)');
+				$("#deadline").html('<b>Deadline: </b> in '+days+' days '+hours+' hours and '+minutes+' minutes');
 			} else {
-				var days = Math.floor((now-deadline)/1000/3600/24);
-				$("#deadline").html('<b>Deadline: </b>'+deadline.toJSON().split('T')[0]+' ('+days+' days ago)');
+				$("#deadline").html('<b>Deadline: </b> '+days+' days '+hours+' hours and '+minutes+' minutes ago');
 			}
 
 			if (deadline < now && x.results.length > 0) {
@@ -53,7 +55,7 @@ $(document).ready(function() {
 				$("#content").html(content);
 				$("button[name='send']").hide();
 			} else if (deadline > now) {
-				var content = '<table style="width:100%"><tr><th>Slot</th><th>Wish</th></tr>';
+				var content = '<table style="width:100%"><tr><th>Slot</th><th>Wish</th><th> </th></tr>';
 				var n = x.slots.length;
 				if (n < x.wish.length) {
 					x.wish.length = n;
@@ -62,12 +64,24 @@ $(document).ready(function() {
 					var wish = 0;
 					if (i < x.wish.length) wish = x.wish[i];
 					else x.wish[i] = wish;
-					content += '<tr><th>'+x.slots[i]+'</th><th>wanted <input type="range" name="wish'+i+'" min="0" max="'+(n-1)+'" step="1" value="'+wish+'" /> hated</th></tr>';
+					content += '<tr><th>'+x.slots[i]+'</th><th>wanted <input type="range" name="wish'+i+'" min="0" max="'+(n-1)+'" step="1" value="'+wish+'" /> hated</th>';
+					if (admin_key != undefined) {
+						content += '<th><input type="checkbox" name="impossible'+i+'" '+(wish==1000 ? 'checked':'')+'>avoided</th>'
+					} else {
+						if (wish == 1000) {
+							content += '<th>avoided</th>';
+						} else {
+							content += '<th></th>';
+						}
+					}
+					content += '</tr>';
 				}
 				content += '</table>';
 				$("#content").html(content);
 				
-				$("input").bind('input propertychange', check);
+				//$("input").bind('input propertychange', check);
+				//$("input").bind('input onclick', check);
+				$("input").change(check);
 			} else {
 				$("#content").html("The deadline is over, the results will be generated soon !");
 				$("button[name='send']").hide();
@@ -82,22 +96,28 @@ $(document).ready(function() {
 });
 
 function check(event) {
+	console.log("check event");
 	var n = x.wish.length;
 	
 	if (admin_key != undefined) {
 		for (var i = 0; i < n; ++i) {
-			x.wish[i] = $("input[name='wish"+i+"']").val();
+			if ($("input[name='impossible"+i+"']").prop('checked')) {
+				$("input[name='wish"+i+"']").val(1000);
+				x.wish[i] = 1000;
+			} else {
+				x.wish[i] = $("input[name='wish"+i+"']").val();
+			}
 		}
 		return;
 	}
 	
 	var wish = x.wish;
-
+	
 	var target = Number(event.target.name.substring(4));
 	console.log("event from wish #"+target);
 	
 	var value = Number($(event.target).val());
-		
+	
 	for (var v = x.wish[target] + 1; v <= value; ++v) {
 		wish[target] = v;
 	
@@ -112,6 +132,7 @@ function check(event) {
 				if (wish[i] == v) {
 					$("input[name='wish"+i+"']").val(v - 1);
 					wish[i] = v - 1;
+					break;
 				}
 			}
 		}
