@@ -12,7 +12,7 @@ $(document).ready(function() {
 	$("input[name='nslots']").hide();
 	
 	$("button[name='save']").bind("click", save);
-	$("button[name='export']").bind("click", export);
+	$("button[name='export']").bind("click", exportcsv);
 	$("input[name='deadline']").datepicker({
 		showOtherMonths: true,
 		selectOtherMonths: true,
@@ -61,11 +61,12 @@ $(document).ready(function() {
 			check_validity();
 			if(x.results.length > 0)//Check if results are there now ?
 			{
+				console.log('One have results');
 				$("#export").show();
 			}
 			$("input").bind('input propertychange', check_validity);
 			
-			$("button").show();
+			$("#button").show();
 			$("#explanation").show();
 			$("input[name='deadline']").show();
 			$("label").show();
@@ -123,7 +124,8 @@ function save() {
 	});
 }
 
-function export() {
+function exportcsv() {
+	console.log('Entered export() function');
 	var n = x.slots.length;
 	var m = x.mails.length;
 
@@ -137,10 +139,11 @@ function export() {
 		}
 		content += x.slots[i]+', '+list.join(", ")+'\n';
 	}
-	var encodedURI = encodeURI(content);
+	var encodedURI = encodeURIComponent(content);
 	var link = document.createElement("a");
-	link.setAttribute("href", encodedURI);
-	link.setAttribute("download", "results.csv");
-	//document.body.appendChild(link);//What is it for ?
+	link.href = 'data:attachment/csv,'+encodedURI;
+	link.target = '_blank';
+	link.download = 'Datas.csv';
+	document.body.appendChild(link);//What is it for ?
 	link.click();
 }
