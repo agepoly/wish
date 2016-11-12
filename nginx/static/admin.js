@@ -12,6 +12,7 @@ $(document).ready(function() {
 	$("input[name='nslots']").hide();
 	
 	$("button[name='save']").bind("click", save);
+	$("button[name='export']").bind("click", export);
 	$("input[name='deadline']").datepicker({
 		showOtherMonths: true,
 		selectOtherMonths: true,
@@ -58,6 +59,10 @@ $(document).ready(function() {
 			create_slots();
 
 			check_validity();
+			if(x.results.length > 0)//Check if results are there now ?
+			{
+				$("#export").show();
+			}
 			$("input").bind('input propertychange', check_validity);
 			
 			$("button").show();
@@ -118,3 +123,24 @@ function save() {
 	});
 }
 
+function export() {
+	var n = x.slots.length;
+	var m = x.mails.length;
+
+	var content = '';
+	for (i=0; i< n; ++i) {
+		var list = [];
+		for (var j = 0; j < x.mails.length; ++j) {
+			if (x.results[j] == i) {
+				list.push(x.mails[j]);
+			}
+		}
+		content += x.slots[i]+', '+list.join(", ")+'\n';
+	}
+	var encodedURI = encodeURI(content);
+	var link = document.createElement("a");
+	link.setAttribute("href", encodedURI);
+	link.setAttribute("download", "results.csv");
+	//document.body.appendChild(link);//What is it for ?
+	link.click();
+}
