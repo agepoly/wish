@@ -431,6 +431,7 @@ fn get_admin_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Re
 		vmax: Vec<i32>,
 		wishes: Vec<Vec<i32>>,
 		deadline: i64,
+		results: Vec<i32>
 	}
 
 	let mut payload = String::new();
@@ -557,6 +558,7 @@ fn get_admin_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Re
 		slots: event.get_array("slots").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::String(ref v) => v.clone(), _ => "".to_owned()}).collect(),
 		vmin: event.get_array("vmin").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(ref v) => v.clone(), _ => 0}).collect(),
 		vmax: event.get_array("vmax").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(ref v) => v.clone(), _ => 0}).collect(),
+		results: event.get_array("results").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(v) => v, _ => 0}).collect()
 	});
 	let payload = match json {
 		Ok(x) => x,
