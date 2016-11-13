@@ -12,7 +12,6 @@ $(document).ready(function() {
 	$("input[name='nslots']").hide();
 	
 	$("button[name='save']").bind("click", save);
-	$("button[name='export']").bind("click", exportcsv);
 	$("input[name='deadline']").datepicker({
 		showOtherMonths: true,
 		selectOtherMonths: true,
@@ -61,12 +60,12 @@ $(document).ready(function() {
 			check_validity();
 			if(x.results.length > 0)//Check if results are there now ?
 			{
+				exportcsv();
 				console.log('One have results');
-				$("#export").show();
 			}
 			$("input").bind('input propertychange', check_validity);
 			
-			$("#button").show();
+			$("button[name=save]").show();
 			$("#explanation").show();
 			$("input[name='deadline']").show();
 			$("label").show();
@@ -130,9 +129,9 @@ function exportcsv() {
 	var m = x.mails.length;
 
 	var content = '';
-	for (i=0; i< n; ++i) {
+	for (i=0; i < n; ++i) {
 		var list = [];
-		for (var j = 0; j < x.mails.length; ++j) {
+		for (var j = 0; j < m; ++j) {
 			if (x.results[j] == i) {
 				list.push(x.mails[j]);
 			}
@@ -143,7 +142,11 @@ function exportcsv() {
 	var link = document.createElement("a");
 	link.href = 'data:attachment/csv,'+encodedURI;
 	link.target = '_blank';
-	link.download = 'Datas.csv';
-	document.body.appendChild(link);//What is it for ?
-	link.click();
+	link.download = 'datas.csv';
+	link.innerHTML = "datas.csv";
+	var intro = document.getElementById('intro');
+	var text = document.createTextNode(" Results are there : ");
+	intro.appendChild(text);
+	intro.appendChild(link);
+	console.log(link);
 }
