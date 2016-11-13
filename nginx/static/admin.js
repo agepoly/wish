@@ -58,9 +58,14 @@ $(document).ready(function() {
 			create_slots();
 
 			check_validity();
+			if(x.results.length > 0)//Check if results are there now ?
+			{
+				exportcsv();
+				console.log('One have results');
+			}
 			$("input").bind('input propertychange', check_validity);
 			
-			$("button").show();
+			$("button[name=save]").show();
 			$("#explanation").show();
 			$("input[name='deadline']").show();
 			$("label").show();
@@ -118,3 +123,30 @@ function save() {
 	});
 }
 
+function exportcsv() {
+	console.log('Entered export() function');
+	var n = x.slots.length;
+	var m = x.mails.length;
+
+	var content = '';
+	for (i=0; i < n; ++i) {
+		var list = [];
+		for (var j = 0; j < m; ++j) {
+			if (x.results[j] == i) {
+				list.push(x.mails[j]);
+			}
+		}
+		content += x.slots[i]+', '+list.join(", ")+'\n';
+	}
+	var encodedURI = encodeURIComponent(content);
+	var link = document.createElement("a");
+	link.href = 'data:attachment/csv,'+encodedURI;
+	link.target = '_blank';
+	link.download = 'datas.csv';
+	link.innerHTML = "datas.csv";
+	var intro = document.getElementById('intro');
+	var text = document.createTextNode(" Results are there : ");
+	intro.appendChild(text);
+	intro.appendChild(link);
+	console.log(link);
+}
