@@ -91,12 +91,10 @@ pub fn search_solution(vmin: &Vec<u32>, vmax: &Vec<u32>, wishes: &Vec<Vec<u32>>,
 	let t0 = time::precise_time_s();
 
 	let mut timeout = t0 + time;
-	let mut best_score = -1;
+	let mut best_score : i32 = -1;
 	let mut best_results = Vec::new();
 	let mut iterations = 0;
 	let mut rand = rand::random::<rand::XorShiftRng>();
-
-	print!("\x1B[31;42m"); // red background green
 
 	loop {
 		let results = shuffle(&vmin, &vmax, wishesf.clone(), &mut rand); // all the load is here
@@ -117,25 +115,17 @@ pub fn search_solution(vmin: &Vec<u32>, vmax: &Vec<u32>, wishes: &Vec<Vec<u32>>,
 			}
 		}
 
-		print!("\x1B[999D"); // clear line
-		print!("\x1B[K");
 		print!("Iter {it:>5} ({rate:>4.0}/s). Actual best score : {bs} x {nbs}. {left:>4.1} seconds left ", 
 			bs   = best_score, 
 			nbs  = best_results.len(),
 			it   = iterations, 
 			rate = iterations as f64 / (time::precise_time_s() - t0), 
 			left = timeout - time::precise_time_s());
-
-		std::io::stdout().flush().ok().unwrap();
 		
-		if time::precise_time_s() > timeout {
+		if best_score == 0 || time::precise_time_s() > timeout {
 			break;
 		}
 	}
-
-	print!("\x1B[0m"); // reset color
-	print!("\x1B[999D"); // clear line
-	print!("\x1B[K");
 
 	best_results.clone()
 }
