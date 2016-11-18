@@ -136,11 +136,6 @@ fn create(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Response> 
 		return Ok(Response::with((status::NotFound, "not enough people", Header(AccessControlAllowOrigin::Any))));
 	}
 
-	if data.vmax.len() != data.vmin.len() || data.vmax.len() != data.slots.len() {
-		println!("create: array size problem");
-		return Ok(Response::with((status::NotFound, "vmin, vmax and slots must have the same size", Header(AccessControlAllowOrigin::Any))));
-	}
-
 	if data.vmin.iter().zip(data.vmax.iter()).any(|(&xmin, &xmax)| xmin > xmax) {
 		println!("create: vmin > vmax");
 		return Ok(Response::with((status::NotFound, "there are vmin bigger than vmax", Header(AccessControlAllowOrigin::Any))));
@@ -505,7 +500,7 @@ fn get_admin_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Re
 						).as_str())
 						.subject(format!("Wish : {}", name).as_str())
 						.build() {
-					Ok(email) => x.insert("sent", mailer.send(email).is_ok()),	
+					Ok(email) => x.insert("sent", mailer.send(email).is_ok()),
 					Err(e) => return Ok(Response::with((status::NotFound, format!("mail : {}", e), Header(AccessControlAllowOrigin::Any))))
 				};
 			}
@@ -687,38 +682,65 @@ fn process(db: &Arc<Mutex<Database>>) {
 			wish.resize(vmin.len(), 0);
 		}
 		
-		let vmin_total : u32 = vmin.iter().sum();
-		let vmax_total : u32 = vmax.iter().sum();
-		let user_total = wishes.len() as u32;
+		let amail = event.get_str("amail").unwrap_or("@");
+		let url = event.get_str("url").unwrap_or("www");
+		let admin_key = event.get_str("admin_key").unwrap_or("");
+		let name = event.get_str("name").unwrap_or("no name");
 		
-		if user_total > vmax_total || user_total < vmin_total {
-			return;
-		}
+		let mut mailer = match create_mailer(false) {
+			Ok(x) => {
+				x
+			}
+			Err(e) => {
+				println!("process: mailer {}", e);
+				return;
+			}
+		};
 
-		let results = solver::search_solution(&vmin, &vmax, &wishes, 20f64);
-		if results.is_empty() { return; }
 
+		let results = match solver::search_solution(&vmin, &vmax, &wishes, 20f64) {
+			Err(e) => {
+				let email = EmailBuilder::new()
+								.from("wish@epfl.ch")
+								.to(amail)
+								.html(format!(
+									r#"<p>The event {name} has reach the deadline.<br />
+									An error has occured : {error}<br />
+									On the admin page, any modification will reset the results and new ones will be computed.</p>
+
+									<p><a href="http://{url}/admin#{key}">Click here</a> to administrate the event.</p>
+
+									<p>Have a good day,<br />
+									The Wish team</p>"#,
+									url = url,
+									key = admin_key,
+									name = name,
+									error = e
+								).as_str())
+								.subject(format!("Wish : {}", name).as_str())
+								.build();
+				match email {
+					Ok(x) => {
+						if let Err(e) = mailer.send(x) {
+							println!("process: email send {}", e);
+						}
+					},
+					Err(e) => {
+						println!("process: email build {}", e);
+						return;
+					}
+				};
+				return;
+			}
+			Ok(x) => x
+		};
+		
 		let results = Bson::Array(results[0].iter().map(|&x| Bson::I32(x as i32)).collect());
 		if let Ok(db) = db.lock() {
 			db.collection("events").update_one(doc!{"_id" => (event.get_object_id("_id").unwrap().clone())}, doc!{"$set" => {"results" => results}}, None).unwrap();
 		} else {
 			return;
 		}
-
-			let amail = event.get_str("amail").unwrap_or("@");
-			let url = event.get_str("url").unwrap_or("www");
-			let admin_key = event.get_str("admin_key").unwrap_or("");
-			let name = event.get_str("name").unwrap_or("no name");
-			
-			let mut mailer = match create_mailer(false) {
-				Ok(x) => {
-					x
-				}
-				Err(e) => {
-					println!("process: mailer {}", e);
-					return;
-				}
-			};
 
 
 		let email = EmailBuilder::new()

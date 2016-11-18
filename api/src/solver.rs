@@ -1,7 +1,5 @@
-use std::io::prelude::*;
 use rand;
 use time;
-use std;
 use rand::Rng;
 
 // Return the position of the minimal value of a vector (the vector must be nonempty)
@@ -80,7 +78,25 @@ fn action(wishes: &Vec<Vec<u32>>, results: &Vec<usize>) -> i32 {
 	score
 }
 
-pub fn search_solution(vmin: &Vec<u32>, vmax: &Vec<u32>, wishes: &Vec<Vec<u32>>, time: f64) -> Vec<Vec<usize>> {
+pub fn search_solution(vmin: &Vec<u32>, vmax: &Vec<u32>, wishes: &Vec<Vec<u32>>, time: f64) -> Result<Vec<Vec<usize>>, String> {
+	if vmin.len() != vmax.len() {
+		return Err("length of vmin != length of vmax".to_string());
+	}
+	if !wishes.iter().all(|x| x.len() == vmin.len()) {
+		return Err("length of vmin != length of wishes".to_string());
+	}
+	if !vmin.iter().zip(vmax.iter()).all(|(x,y)| x <= y) {
+		return Err("vmin > vmax".to_string());
+	}
+	
+	let vmin_total : u32 = vmin.iter().sum();
+	let vmax_total : u32 = vmax.iter().sum();
+	let user_total = wishes.len() as u32;
+	
+	if user_total > vmax_total || user_total < vmin_total {
+		return Err(format!("capacity problem : vmin {} <= total users {} <= vmax {}", vmin_total, user_total, vmax_total));
+	}
+	
 	let mut wishesf = vec![vec![0.0; vmin.len()]; wishes.len()];
 	for i in 0..wishes.len() {
 		for j in 0..vmin.len() {
@@ -90,6 +106,7 @@ pub fn search_solution(vmin: &Vec<u32>, vmax: &Vec<u32>, wishes: &Vec<Vec<u32>>,
 
 	let t0 = time::precise_time_s();
 
+	let mut t_print = t0;
 	let mut timeout = t0 + time;
 	let mut best_score : i32 = -1;
 	let mut best_results = Vec::new();
@@ -114,19 +131,25 @@ pub fn search_solution(vmin: &Vec<u32>, vmax: &Vec<u32>, wishes: &Vec<Vec<u32>>,
 				best_results.push(results);
 			}
 		}
-
-		print!("Iter {it:>5} ({rate:>4.0}/s). Actual best score : {bs} x {nbs}. {left:>4.1} seconds left ", 
-			bs   = best_score, 
-			nbs  = best_results.len(),
-			it   = iterations, 
-			rate = iterations as f64 / (time::precise_time_s() - t0), 
-			left = timeout - time::precise_time_s());
 		
+		if time::precise_time_s() - t_print > 1.0 {
+			t_print = time::precise_time_s();
+			println!("Iter {it:>5} ({rate:>4.0}/s). Actual best score : {bs} x {nbs}. {left:>4.1} seconds left ", 
+				bs   = best_score, 
+				nbs  = best_results.len(),
+				it   = iterations, 
+				rate = iterations as f64 / (time::precise_time_s() - t0), 
+				left = timeout - time::precise_time_s());
+		}
 		if best_score == 0 || time::precise_time_s() > timeout {
 			break;
 		}
 	}
 
-	best_results.clone()
+	if best_results.len() == 0 {
+		Err("empty results".to_string())
+	} else {
+		Ok(best_results.clone())
+	}
 }
 
