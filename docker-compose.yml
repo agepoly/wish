@@ -1,14 +1,17 @@
 version: '2'
 services:
   nginx:
+    restart: always
     build: ./nginx
     ports:
       - "8080:8080"
   api:
+    restart: always
     build: ./api
     ports:
       - "3000:3000"
     depends_on:
       - db
   db:
+    restart: always
     image: mongo
