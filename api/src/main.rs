@@ -426,7 +426,8 @@ fn get_admin_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Re
 		vmax: Vec<i32>,
 		wishes: Vec<Vec<i32>>,
 		deadline: i64,
-		results: Vec<i32>
+		results: Vec<i32>,
+		error: String
 	}
 
 	let mut payload = String::new();
@@ -474,7 +475,7 @@ fn get_admin_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Re
 		}
 	};
 
-	
+	let mut error = String::new();
 	let mut people = event.get_array("people").unwrap_or(&Vec::new()).clone();
 
 	for p in people.iter_mut() {
@@ -500,9 +501,16 @@ fn get_admin_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Re
 						).as_str())
 						.subject(format!("Wish : {}", name).as_str())
 						.build() {
-					Ok(email) => x.insert("sent", mailer.send(email).is_ok()),
+					Ok(email) => {
+						if let Err(e) = mailer.send(email) {
+							x.insert("sent", false);
+							error = format!("error when send mail to {} : {}", x.get_str("mail").unwrap_or(""), e);
+						} else {
+							x.insert("sent", true);
+						}
+					}
 					Err(e) => return Ok(Response::with((status::NotFound, format!("mail : {}", e), Header(AccessControlAllowOrigin::Any))))
-				};
+				}
 			}
 		}
 	}
@@ -553,7 +561,8 @@ fn get_admin_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Re
 		slots: event.get_array("slots").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::String(ref v) => v.clone(), _ => "".to_owned()}).collect(),
 		vmin: event.get_array("vmin").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(ref v) => v.clone(), _ => 0}).collect(),
 		vmax: event.get_array("vmax").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(ref v) => v.clone(), _ => 0}).collect(),
-		results: event.get_array("results").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(v) => v, _ => 0}).collect()
+		results: event.get_array("results").unwrap_or(&Vec::new()).iter().map(|x| match x {&Bson::I32(v) => v, _ => 0}).collect(),
+		error: error
 	});
 	let payload = match json {
 		Ok(x) => x,

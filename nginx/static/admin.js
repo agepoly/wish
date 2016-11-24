@@ -70,6 +70,10 @@ $(document).ready(function() {
 			$("input[name='deadline']").show();
 			$("label").show();
 			$("input[name='nslots']").show();
+			
+			if (x.error != "") {
+				swal("Oops...", "Something went wrong!\n" + x.error, "error");
+			}
 		},
 		error: function(data) {
 			swal("Oops...", "Something went wrong!\n" + data.responseText, "error");
