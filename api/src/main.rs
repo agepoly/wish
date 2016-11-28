@@ -161,11 +161,11 @@ fn create(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Response> 
 			}
 		}
 	}
-	
+
 	let admin_key = {
 		let db = db.clone();
 		let db = db.lock().unwrap();
-		
+
 		let mut admin_key : String;
 		loop {
 			let mut key : [u8; 16] = [0; 16];
@@ -195,10 +195,10 @@ fn create(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Response> 
 						r#"<p>An event has been created with your email address.<br />
 						If you are not concerned, please do not click on the following url.<br />
 						<a href="http://{url}/admin#{key}">Click here</a> to activate and administrate the activity.</p>
-	
+
 						<p>Have a good day,<br />
 						The Wish team</p>"#,
-						url = data.url.as_str(), 
+						url = data.url.as_str(),
 						key = admin_key.as_str()
 					).as_str())
 					.subject(format!("Wish : {}", data.name).as_str())
@@ -215,8 +215,8 @@ fn create(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Response> 
 		println!("create: {}", e);
 		return Ok(Response::with((status::NotFound, format!("mail error : {}", e), Header(AccessControlAllowOrigin::Any))));
 	}
-	
-	
+
+
 	let mut doc = Document::new();
 	doc.insert_bson("message".to_string(), Bson::String(data.message.clone()));
 	doc.insert_bson("url".to_owned(), Bson::String(data.url.clone()));
@@ -273,9 +273,9 @@ fn set_wish(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Response
 			return Ok(Response::with((status::BadRequest, format!("request error : {}", e), Header(AccessControlAllowOrigin::Any))));
 		}
 	};
-	
+
 	let db = db.lock().unwrap();
-	
+
 	match db.collection("events").find_one(Some(doc!{"people.key" => (data.key.clone())}), None) {
 		Ok(Some(event)) => {
 			match event.get_array("slots") {
@@ -364,7 +364,7 @@ fn get_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Response
 		Ok(Some(x)) => x,
 		Ok(None) => {
 			println!("get_data: invalid key");
-			return Ok(Response::with((status::NotFound, "invalid key", Header(AccessControlAllowOrigin::Any))));			
+			return Ok(Response::with((status::NotFound, "invalid key", Header(AccessControlAllowOrigin::Any))));
 		}
 		Err(e) => {
 			println!("get_data: {}", e);
@@ -451,7 +451,7 @@ fn get_admin_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Re
 			Ok(Some(x)) => x,
 			Ok(None) => {
 				println!("get_admin_data: invalid key");
-				return Ok(Response::with((status::NotFound, "invalid key", Header(AccessControlAllowOrigin::Any))));			
+				return Ok(Response::with((status::NotFound, "invalid key", Header(AccessControlAllowOrigin::Any))));
 			}
 			Err(e) => {
 				println!("get_admin_data: {}", e);
@@ -488,15 +488,15 @@ fn get_admin_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Re
 						.html(format!(
 							r#"<p>You has been invited by {amail} to give your wishes about the event : <strong>{name}</strong></p>
 							<pre>{message}</pre>
-	
+
 							<p><a href="http://{url}/wish#{key}">Click here</a> to set your wishes.</p>
 
 							<p>Have a good day,<br />
 							The Wish team</p>"#,
-							amail = amail, 
-							name = name, 
-							message = message, 
-							url = url, 
+							amail = amail,
+							name = name,
+							message = message,
+							url = url,
 							key = x.get_str("key").unwrap_or("")
 						).as_str())
 						.subject(format!("Wish : {}", name).as_str())
@@ -517,10 +517,10 @@ fn get_admin_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Re
 
 	// Explicitly close the SMTP transaction as we enabled connection reuse
 	mailer.close();
-	
+
 	let mut document = Document::new();
 	document.insert("people", Bson::Array(people.clone()));
-	
+
 	if let Err(e) = db.lock().unwrap().collection("events").update_one(doc!{"admin_key" => (data.key.clone())}, doc!{"$set" => document}, None) {
 		println!("get_admin_data: {}", e);
 		return Ok(Response::with((status::NotFound, format!("database error : {}", e), Header(AccessControlAllowOrigin::Any))));
@@ -605,7 +605,7 @@ fn admin_update(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Resp
 			Ok(Some(x)) => x,
 			Ok(None) => {
 				println!("admin_update: invalid key");
-				return Ok(Response::with((status::BadRequest, "invalid key", Header(AccessControlAllowOrigin::Any))))			
+				return Ok(Response::with((status::BadRequest, "invalid key", Header(AccessControlAllowOrigin::Any))))
 			}
 			Err(e) => {
 				println!("admin_update: {}", e);
@@ -613,7 +613,7 @@ fn admin_update(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Resp
 			}
 		}
 	};
-	
+
 	if data.vmin.len() != data.vmax.len() || data.vmin.len() != data.slots.len() {
 		return Ok(Response::with((status::NotFound, "vmin, vmax, slots, length problem", Header(AccessControlAllowOrigin::Any))));
 	}
@@ -680,22 +680,22 @@ fn process(db: &Arc<Mutex<Database>>) {
 			match p {
 				&Bson::Document(ref p) => p.get_array("wish").unwrap_or(&Vec::new()).iter().map(|x| {
 					match x {
-						&Bson::I32(v) => v as u32, 
+						&Bson::I32(v) => v as u32,
 						_ => 0
 					}
-				}).collect(), 
+				}).collect(),
 				_ => Vec::new()
 			}
 		}).collect();
 		for wish in wishes.iter_mut() {
-			wish.resize(vmin.len(), 0);
+			wish.resize(vmin.len(), vmin.len() as u32 - 1);
 		}
-		
+
 		let amail = event.get_str("amail").unwrap_or("@");
 		let url = event.get_str("url").unwrap_or("www");
 		let admin_key = event.get_str("admin_key").unwrap_or("");
 		let name = event.get_str("name").unwrap_or("no name");
-		
+
 		let mut mailer = match create_mailer(false) {
 			Ok(x) => {
 				x
@@ -743,7 +743,7 @@ fn process(db: &Arc<Mutex<Database>>) {
 			}
 			Ok(x) => x
 		};
-		
+
 		let results = Bson::Array(results[0].iter().map(|&x| Bson::I32(x as i32)).collect());
 		if let Ok(db) = db.lock() {
 			db.collection("events").update_one(doc!{"_id" => (event.get_object_id("_id").unwrap().clone())}, doc!{"$set" => {"results" => results}}, None).unwrap();
@@ -762,6 +762,8 @@ fn process(db: &Arc<Mutex<Database>>) {
 							On the admin page, any modification will reset the results and new ones will be computed.</p>
 
 							<p><a href="http://{url}/admin#{key}">Click here</a> to administrate the event.</p>
+							<p>Only you, the admin recieve this notification. Don't forget to inform yourself the users.
+							Unless you want to postone the deadline...</p>
 
 							<p>Have a good day,<br />
 							The Wish team</p>"#,

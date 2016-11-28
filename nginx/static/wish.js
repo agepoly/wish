@@ -61,7 +61,7 @@ $(document).ready(function() {
 					x.wish.length = n;
 				}
 				for (var i = 0; i < n; ++i) {
-					var wish = 0;
+					var wish = n - 1; // default value to [dont want]
 					if (i < x.wish.length) wish = x.wish[i];
 					else x.wish[i] = wish;
 					content += '<tr><th>'+x.slots[i]+'</th><th>wanted <input type="range" name="wish'+i+'" min="0" max="'+(n-1)+'" step="1" value="'+wish+'" /> hated</th>';
