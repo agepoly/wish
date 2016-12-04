@@ -2,34 +2,35 @@
 <html>
 
 <head>
-  <meta charset="utf-8">
-  <title>Wish</title>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
-  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
-  <link rel="stylesheet" type="text/css" href="/static/style.css">
-  <script src="/static/sweetalert.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="/static/sweetalert.css">
-  <script src="/static/common.js"></script>
-  <script src="/static/wish.js"></script>
+    <meta charset="utf-8">
+    <title>Wish</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <script src="/static/sweetalert.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/sweetalert.css">
+    <script src="/static/common.js"></script>
+    <script src="/static/wish.js"></script>
 </head>
 
 <body>
 
-  <div class="container">
-    <h1 style="text-align: center"><a href="/">Wish</a></h1>
+    <div class="container">
+        <h1 style="text-align: center"><a href="/">Wish</a></h1>
 
-    <p id="redtext" style="color: red"></p>
-    <p id="name">Waiting for request...</p>
-    <p id="mail"></p>
+        <p id="redtext" style="color: red"></p>
+        <p id="name">Waiting for request...</p>
+        <p id="mail"></p>
 
-    <div id="content" style="width:100%"></div>
-    <div class="row">
-      <button type="button" name="send" class="one-half column">Save</button><div id="error" class="one-half column"></div>
+        <div id="content" style="width:100%"></div>
+        <div class="row">
+            <button type="button" name="send" class="one-half column">Save</button>
+            <div id="error" class="one-half column"></div>
+        </div>
+
+        <p id="deadline"></p>
     </div>
-    
-    <p id="deadline"></p>
-  </div>
 
 </body>
 

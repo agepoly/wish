@@ -2,43 +2,44 @@
 <html>
 
 <head>
-  <meta charset="utf-8">
-  <title>Wish</title>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-  <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
-  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
-  <link rel="stylesheet" type="text/css" href="/static/style.css">
-  <script src="/static/sweetalert.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="/static/sweetalert.css">
-  <script src="/static/common.js"></script>
-  <script src="/static/admin.js"></script>
+    <meta charset="utf-8">
+    <title>Wish</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <script src="/static/sweetalert.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/sweetalert.css">
+    <script src="/static/common.js"></script>
+    <script src="/static/admin.js"></script>
 </head>
 
 <body>
 
-  <div class="container">
-    <h1 style="text-align: center"><a href="/">Wish</a></h1>
-    <p id="intro">This is the admin page, you have access to the users wishes and you can modify them with the admin link without constraints.</p>
+    <div class="container">
+        <h1 style="text-align: center"><a href="/">Wish</a></h1>
+        <p id="intro">This is the admin page, you have access to the users wishes and you can modify them with the admin link without constraints.</p>
 
-    <p id="name">Waiting for request... It may take time to send the mails</p>
+        <p id="name">Waiting for request... It may take time to send the mails</p>
 
-    <div id="people" style="width:100%"></div>
-    <label for="numberInput">Number of slots</label>
-    <input type="number" name="nslots" class="u-full-width" min="1" max="100" step="1" value="2" id="numberInput">
-    <div id="slots" style="width:100%"></div>
-    <div id="slots_error" class="error"></div>
-    
-    <input type="text" name="deadline" id="deadlineInput" class="u-full-width">
+        <div id="people" style="width:100%"></div>
+        <label for="numberInput">Number of slots</label>
+        <input type="number" name="nslots" class="u-full-width" min="1" max="100" step="1" value="2" id="numberInput">
+        <div id="slots" style="width:100%"></div>
+        <div id="slots_error" class="error"></div>
 
-    <div class="row">
-      <button type="button" name="save" class="one-half column" hidden>Save</button><div id="error" class="one-half column"></div>
+        <input type="text" name="deadline" id="deadlineInput" class="u-full-width">
+
+        <div class="row">
+            <button type="button" name="save" class="one-half column" hidden>Save</button>
+            <div id="error" class="one-half column"></div>
+        </div>
+
+        <p id="explanation" hidden>By saving you reset the current results if any and they will be recomputed as soon as the deadline is over.</p>
+
     </div>
-
-    <p id="explanation" hidden>By saving you reset the current results if any and they will be recomputed as soon as the deadline is over.</p>
-
-  </div>
 
 </body>
 
