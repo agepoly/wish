@@ -35,3 +35,11 @@
 br {
   border-top: 1px solid grey;
 }
+
+label:hover {
+  font-weight: normal;
+}
+
+.error {
+  color: red;
+}

@@ -2,22 +2,26 @@
 $(document).ready(function() {
 	$("input[name='nslots']").bind('input propertychange', create_slots);
 	$("#send").click(send);
-	$("input").bind('input propertychange', check_validity);
-	$("textarea").bind('input propertychange', check_validity);
+	//$("input").bind('input propertychange', check_validity);
+	//$("textarea").bind('input propertychange', check_validity);
 	$("input[name='deadline']").datepicker({
 		showOtherMonths: true,
 		selectOtherMonths: true,
 		dateFormat: "yy-mm-dd",
 		onSelect: function() {
-			check_validity();
+			//check_validity();
 		},
 		minDate: 0
-    });
+	});
 	create_slots();
-	check_validity();
+	//check_validity();
 });
 
 function send() {
+	if (!check_validity()) {
+		return;
+	}
+	
 	var slots = get_slot_val();
 	var deadline = $("input[name='deadline']").datepicker("getDate");
 	if (deadline == null) {

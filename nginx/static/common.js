@@ -1,12 +1,16 @@
 function check_validity() {
 	var err_color = '#FF9000';
+	var valid = true;
 
 	$("input").removeAttr('style');
 	$("#mails").removeAttr('style');
 	$("input[name='deadline']").removeAttr('style');
+	$("#mails_error").empty();
+	$("#slots_error").empty();
 
 	if ($("input[name='name']").val() == "") {
 		$("input[name='name']").css({'border-color' : err_color});
+		valid = false;
 	}
 
 	var total_vmin = 0;
@@ -15,18 +19,26 @@ function check_validity() {
 	for (var i = 0; $("input[name='slot"+i+"']").length; ++i) {
 		if ($("input[name='slot"+i+"']").val() == "") {
 			$("input[name='slot"+i+"']").css({'border-color' : err_color});
+			valid = false;
+			$("#slots_error").text('A name slot is empty.');
 		}
 		var vmin = Number($("input[name='vmin"+i+"']").val());
 		var vmax = Number($("input[name='vmax"+i+"']").val());
 		if (vmin < 0) {
 			$("input[name='vmin"+i+"']").css({'border-color' : err_color});
+			$("#slots_error").text('vmin must be a non-negative number.');
+			valid = false;
 		}
 		if (vmax <= 0) {
 			$("input[name='vmax"+i+"']").css({'border-color' : err_color});
+			$("#slots_error").text('vmax must be as positive number.');
+			valid = false;
 		}
 		if (vmin > vmax) {
 			$("input[name='vmin"+i+"']").css({'border-color' : err_color});
 			$("input[name='vmax"+i+"']").css({'border-color' : err_color});
+			$("#slots_error").text('vmax must be larger or equal to vmin.');
+			valid = false;
 		}
 		total_vmin += vmin;
 		total_vmax += vmax;
@@ -35,6 +47,7 @@ function check_validity() {
 	if ($("#mails").length) {
 		if ($("#mails").val() == "") {
 			$("#mails").css({'border-color' : err_color});
+			valid = false;
 		}
 
 		var mails = $("#mails").val().split(/[\s,]+/);
@@ -42,33 +55,56 @@ function check_validity() {
 		for (var i = 0; i < mails.length; ++i) {
 			if (mails[i] == "") {
 				$("#mails").css({'border-color' : err_color});
+				valid = false;
 			}
 		}
-
+		
 		if (mails.length > total_vmax) {
 			$(".vmax").css({'border-color' : err_color});
 			$("#mails").css({'border-color' : err_color});
+			$("#mails_error").text('Too many participants for the vmax\'s constraints.');
+			valid = false;
 		}
 		if (mails.length < total_vmin) {
 			$(".vmin").css({'border-color' : err_color});
 			$("#mails").css({'border-color' : err_color});
+			$("#mails_error").text('Not enough participants for the vmin\'s constraints.');
+			valid = false;
 		}
 
 		mails.sort();
 		for (var i = 1; i < mails.length; ++i) {
 			if (mails[i-1] == mails[i]) {
 				$("#mails").css({'border-color' : err_color});
+				$("#mails_error").text('A mails address appear more than one time');
+				valid = false;
 			}
+		}
+	}
+	if (typeof x !== 'undefined' && typeof x.mails !== 'undefined') {
+		if (x.mails.length > total_vmax) {
+			$(".vmax").css({'border-color' : err_color});
+			$("#slots_error").text('Too many participants for the vmax\'s constraints.');
+			valid = false;
+		}
+		if (x.mails.length < total_vmin) {
+			$(".vmin").css({'border-color' : err_color});
+			$("#slots_error").text('Not enough participants for the vmin\'s constraints.');
+			valid = false;
 		}
 	}
 
 	if ($("input[name='deadline']").length && $("input[name='deadline']").datepicker("getDate") == null) {
 		$("input[name='deadline']").css({'border-color' : err_color});
+		valid = false;
 	}
 	
 	if ($("input[name='amail']").length && $("input[name='amail']").val() == "") {
 		$("input[name='amail']").css({'border-color' : err_color});
+		valid = false;
 	}
+	
+	return valid;
 }
 
 
@@ -87,9 +123,9 @@ function create_slots() {
 		oldvalues.vmax[i] = old.vmax[i];
 	}
 
-	var content = '<div class="row"><div class="six columns"><label>Slots</label></div>'
-	content += '<div class="three columns"><label>Min people</label></div>'
-	content += '<div class="three columns"><label>Max people</label></div></div>'
+	var content = '<div class="row"><div class="six columns"><label title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform...">Slots</label></div>'
+	content += '<div class="three columns"><label title="The algorithm will ensure that at least this many people are in this slot.">Min people</label></div>'
+	content += '<div class="three columns"><label title="The algorithm will ensure that no more than this many people are in this slot.">Max people</label></div></div>'
 	for (var i = 0; i < n; ++i) {
 		var values = {
 			name: "",
@@ -101,12 +137,12 @@ function create_slots() {
 			values.vmin = oldvalues.vmin[i];
 			values.vmax = oldvalues.vmax[i];
 		}
-		content += '<div class="row"><div class="six columns"><input type="text" placeholder="Tuesday morning" class="slot u-full-width" name="slot'+i+'" value="'+values.name+'"></div>'
-			+ '<div class="three columns"><input type="number" class="vmin u-full-width" name="vmin'+i+'" min="0" max="100" step="1" value="'+values.vmin+'"></div>'
-			+ '<div class="three columns"><input type="number" class="vmax u-full-width" name="vmax'+i+'" min="0" max="100" step="1" value="'+values.vmax+'"></div></div>'
+		content += '<div class="row"><div class="six columns"><input type="text" placeholder="Tuesday morning" class="slot u-full-width" name="slot'+i+'" value="'+values.name+'" title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform..."></div>'
+			+ '<div class="three columns"><input type="number" class="vmin u-full-width" name="vmin'+i+'" min="0" max="100" step="1" value="'+values.vmin+'" title="The algorithm will ensure that at least this many people are in this slot."></div>'
+			+ '<div class="three columns"><input type="number" class="vmax u-full-width" name="vmax'+i+'" min="0" max="100" step="1" value="'+values.vmax+'" title="The algorithm will ensure that no more than this many people are in this slot."></div></div>'
 	}
 	$("#slots").html(content);
-	$("input").bind('input propertychange', check_validity);
+	//$("input").bind('input propertychange', check_validity);
 }
 
 

@@ -6,7 +6,10 @@ var admin_key = hash[0];
 var x = null;
 
 $(document).ready(function() {
-	$("input[name='nslots']").bind('input propertychange', create_slots);
+	$("input[name='nslots']").bind('input propertychange', function() {
+		create_slots();
+		$("input").bind('input propertychange', check_validity);
+	});
 	$("input[name='deadline']").hide();
 	$("label").hide();
 	$("input[name='nslots']").hide();
@@ -56,6 +59,7 @@ $(document).ready(function() {
 			oldvalues.vmax = x.vmax;
 			$("input[name='nslots']").val(x.slots.length);
 			create_slots();
+			$("input").bind('input propertychange', check_validity);
 
 			check_validity();
 			if(x.results.length > 0)//Check if results are there now ?
@@ -82,6 +86,10 @@ $(document).ready(function() {
 });
 
 function save() {
+	if (!check_validity()) {
+		return;
+	}
+
 	var slots = get_slot_val();
 	var deadline = $("input[name='deadline']").datepicker("getDate");
 	if (deadline == null) {

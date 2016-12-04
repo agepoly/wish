@@ -192,7 +192,8 @@ fn create(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Response> 
 					.from("wish@epfl.ch")
 					.to(data.amail.as_str())
 					.html(format!(
-						r#"<p>An event has been created with your email address.<br />
+						r#"<p>Hi,</p>
+						<p>An event has been created with your email address.<br />
 						If you are not concerned, please do not click on the following url.<br />
 						<a href="http://{url}/admin#{key}">Click here</a> to activate and administrate the activity.</p>
 
@@ -486,7 +487,8 @@ fn get_admin_data(req: &mut Request, db: &Arc<Mutex<Database>>) -> IronResult<Re
 						.from("wish@epfl.ch")
 						.reply_to(amail)
 						.html(format!(
-							r#"<p>You has been invited by {amail} to give your wishes about the event : <strong>{name}</strong></p>
+							r#"<p>Hi,</p>
+							<p>You have been invited by {amail} to give your wishes about the event : <strong>{name}</strong></p>
 							<pre>{message}</pre>
 
 							<p><a href="http://{url}/wish#{key}">Click here</a> to set your wishes.</p>
@@ -713,7 +715,8 @@ fn process(db: &Arc<Mutex<Database>>) {
 								.from("wish@epfl.ch")
 								.to(amail)
 								.html(format!(
-									r#"<p>The event {name} has reach the deadline.<br />
+									r#"<p>Hi,</p>
+									<p>The event <strong>{name}</strong> has reach the deadline.<br />
 									An error has occured : {error}<br />
 									On the admin page, any modification will reset the results and new ones will be computed.</p>
 
@@ -756,7 +759,8 @@ fn process(db: &Arc<Mutex<Database>>) {
 						.from("wish@epfl.ch")
 						.to(amail)
 						.html(format!(
-							r#"<p>The event {name} has reach the deadline.<br />
+							r#"<p>Hi,</p>
+							<p>The event {name} has reach the deadline.<br />
 							The results had been computed.<br />
 							They are accessible on any user page.<br />
 							On the admin page, any modification will reset the results and new ones will be computed.</p>
