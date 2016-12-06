@@ -181,7 +181,7 @@ function create_slots() {
             values.vmin = oldvalues.vmin[i];
             values.vmax = oldvalues.vmax[i];
         }
-        content += '<div class="row"><div class="six columns"><input type="text" placeholder="Tuesday morning" class="slot u-full-width" name="slot' + i + '" value="' + values.name + '" title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform..."></div>';
+        content += '<div class="row"><div class="six columns"><input type="text" placeholder="Tuesday morning" class="slot u-full-width" name="slot' + i + '" value="' + values.name.replace('"', '\\"') + '" title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform..."></div>';
         content += '<div class="three columns"><input type="number" class="vmin u-full-width" name="vmin' + i + '" min="0" max="100" step="1" value="' + values.vmin + '" title="The algorithm will ensure that at least this many people are in this slot."></div>';
         content += '<div class="three columns"><input type="number" class="vmax u-full-width" name="vmax' + i + '" min="0" max="100" step="1" value="' + values.vmax + '" title="The algorithm will ensure that no more than this many people are in this slot."></div></div>';
     }

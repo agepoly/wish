@@ -46,9 +46,13 @@ $(document).ready(function() {
                 var aurl = url + "+" + admin_key;
                 content += '<tr>' +
                     '<th>' + x.mails[i] + '</th>' +
-                    '<th><a href="' + url + '">user</a> <a href="' + aurl + '">admin</a></th>' +
-                    '<th>' + (x.sent[i] ? 'mail sent' : 'mail failed') + '</th>' +
-                    '</tr>';
+                    '<th><a href="' + url + '" title="Access the page with user’s rights.">user</a> or <a href="' + aurl + '" title="Access the page with override rights.">admin</a></th>';
+                if (x.sent[i]) {
+                    content += '<th>mail sent</th>';
+                } else {
+                    content += '<th title="If you refresh the page, we will try again to send the invitation mail to this address.">mail not sent</th>';
+                }
+                content += '</tr>';
             }
             content += '</table>';
             $("#people").html(content);
@@ -97,13 +101,13 @@ function save() {
         deadline = deadline.getTime() / 1000;
     }
 
-    var payload = '{' +
-        '"key": "' + admin_key + '", ' +
-        '"deadline" : ' + deadline + ', ' +
-        '"slots"    : ["' + slots.slot.join('","') + '"], ' +
-        '"vmin"     : [' + slots.vmin.join(',') + '], ' +
-        '"vmax"     : [' + slots.vmax.join(',') + ']' +
-        '}';
+    var payload = JSON.stringify({
+        key : admin_key,
+        deadline : deadline,
+        slots : slots.slot,
+        vmin : slots.vmin,
+        vmax : slots.vmax
+    });
 
     console.log(payload);
 
@@ -117,7 +121,7 @@ function save() {
         data: payload,
         success: function(data) {
             $("#error").show();
-            $("#error").text('Set success');
+            $("#error").text('Set successfully');
             setTimeout(function() {
                 $("#error").fadeOut();
             }, 5000);

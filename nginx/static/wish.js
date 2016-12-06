@@ -16,8 +16,7 @@ $(document).ready(function() {
         url: "http://" + window.location.hostname + ":" + API_PORT + "/get_data",
         data: '{ "key" : "' + key + '" }',
         success: function(data) {
-            /*jshint -W061 */
-            x = eval('(' + data + ')');
+            x = JSON.parse(data);
             $("button[name='send']").bind("click", send);
 
             $("#name").html('<b>Activity name: </b>' + x.name);
@@ -146,21 +145,25 @@ function check(event) {
 }
 
 function send() {
-    var data = '{ "key" : "' + key + '", "wish" : [' + x.wish.join(",") + '], "admin_key" : "' + admin_key + '" }';
-    console.log(data);
+    var payload = JSON.stringify({
+        key : key,
+        wish : x.wish,
+        admin_key : admin_key
+    });
+    console.log(payload);
 
     $("button[name='send']").css({
-        "background-color": "#0f56c6"
+        "background-color": "#d1e2ff"
     });
     $("#error").hide();
 
     $.ajax({
         type: "POST",
         url: "http://" + window.location.hostname + ":" + API_PORT + "/set_wish",
-        data: data,
+        data: payload,
         success: function(data) {
             $("button[name='send']").css({
-                "background-color": "#68ff98"
+                "background-color": "#d1ffdf"
             });
             $("#error").text("Saved !");
             $("#error").show();
@@ -172,7 +175,7 @@ function send() {
         error: function(data) {
             console.log(data);
             $("button[name='send']").css({
-                "background-color": "#c42b2b"
+                "background-color": "#fc9e97"
             });
             $("#error").text(data.responseText);
             $("#error").show();
