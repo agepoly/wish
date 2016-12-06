@@ -27,7 +27,7 @@ $(document).ready(function() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":3000/get_admin_data",
+        url: "http://" + window.location.hostname + ":"+API_PORT+"/get_admin_data",
         data: '{ "key" : "' + admin_key + '" }',
         success: function(data) {
             /*jshint -W061 */
@@ -115,7 +115,7 @@ function save() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":3000/admin_update",
+        url: "http://" + window.location.hostname + ":" + API_PORT + "/admin_update",
         data: payload,
         success: function(data) {
             $("#error").show();

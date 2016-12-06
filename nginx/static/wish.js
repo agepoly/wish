@@ -13,7 +13,7 @@ $(document).ready(function() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":3000/get_data",
+        url: "http://" + window.location.hostname + ":" + API_PORT + "/get_data",
         data: '{ "key" : "' + key + '" }',
         success: function(data) {
             /*jshint -W061 */
@@ -156,7 +156,7 @@ function send() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":3000/set_wish",
+        url: "http://" + window.location.hostname + ":" + API_PORT + "/set_wish",
         data: data,
         success: function(data) {
             $("button[name='send']").css({

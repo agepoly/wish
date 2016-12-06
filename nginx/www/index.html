@@ -27,13 +27,13 @@
         <!--<p>Check out more about what Wish exactly allows you to do: follow this short tutorial.</p>-->
 
         <div class="row">
-            <div class="eight columns">
-                <label for="nameInput" title="What you are trying to organize: a selection of activities, an oral exam, a tasks list for a party, ... It will be the subject of the mail.">Activity name</label>
-                <input class="u-full-width" type="text" id="nameInput" name="name" placeholder="" value="" title="What you are trying to organize: a selection of activities, an oral exam, a tasks list for a party, ... It will be the subject of the mail.">
+            <div class="eight columns" title="What you are trying to organize: a selection of activities, an oral exam, a tasks list for a party, ... It will be the subject of the mail.">
+                <label for="nameInput">Activity name</label>
+                <input class="u-full-width" type="text" id="nameInput" name="name" placeholder="" value="">
             </div>
-            <div class="four columns">
-                <label for="numberInput" title="How many activities, time slots, tasks you have.">Number of slots</label>
-                <input type="number" name="nslots" class="u-full-width" min="1" max="100" step="1" value="2" id="numberInput" title="How many activities, time slots, tasks you have.">
+            <div class="four columns" title="How many activities, time slots, tasks you have.">
+                <label for="numberInput">Number of slots</label>
+                <input type="number" name="nslots" class="u-full-width" min="1" max="100" step="1" value="2" id="numberInput">
             </div>
         </div>
 
@@ -41,18 +41,26 @@
         </div>
         <div id="slots_error" class="error"></div>
 
-        <label for="amailInput" title="Your mail... unless you are not organizing this. An activation mail containing a private link to the admin page will be sent to this address.">Admin mail</label>
-        <input id="amailInput" type="email" name="amail" class="u-full-width" placeholder="Your mail address" title="Your mail... unless you are not organizing this. An activation mail containing a private link to the admin page will be sent to this address.">
+        <div class="row" title="Your mail... unless you are not organizing this. An activation mail containing a private link to the admin page will be sent to this address.">
+            <label for="amailInput">Admin mail</label>
+            <input id="amailInput" type="email" name="amail" class="u-full-width" placeholder="Your mail address">
+        </div>
 
-        <label for="mails" title="The addresses of the participants. Each of them will receive a private link to his/her own wish page.">Mail list <a href="https://youtu.be/ZzBglzmUZa0" target="_blank">how to get epfl mail list</a></label>
-        <textarea id="mails" rows="5" class="u-full-width" placeholder="user1@epfl.ch, user2@epfl.ch, ..." title="The addresses of the participants. Each of them will receive a private link to his/her own wish page."></textarea>
-        <div id="mails_error" class="error"></div>
+        <div class="row" title="The addresses of the participants. Each of them will receive a private link to his/her own wish page.">
+            <label for="mails">Mail list <a href="https://youtu.be/ZzBglzmUZa0" target="_blank">how to get epfl mail list</a></label>
+            <textarea id="mails" rows="5" class="u-full-width" placeholder="user1@epfl.ch, user2@epfl.ch, ..."></textarea>
+            <div id="mails_error" class="error"></div>
+        </div>
 
-        <label for="message" title="This text will be added to the invitation mail sent to the participants.">Message</label>
-        <textarea id="message" rows="5" class="u-full-width" placeholder="" title="This text will be added to the invitation mail sent to the participants."></textarea>
+        <div class="row" title="This text will be added to the invitation mail sent to the participants.">
+            <label for="message">Message</label>
+            <textarea id="message" rows="5" class="u-full-width" placeholder=""></textarea>
+        </div>
 
-        <label for="deadlineInput" title="The participants have to fill in their wish page before midnight on this day, when the algorithm is launched.">Deadline</label>
-        <input type="text" name="deadline" id="deadlineInput" class="u-full-width" title="The participants have to fill in their wish page before midnight on this day, when the algorithm is launched.">
+        <div class="row" title="The participants have to fill in their wish page before midnight on this day, when the algorithm is launched.">
+            <label for="deadlineInput">Deadline</label>
+            <input type="text" name="deadline" id="deadlineInput" class="u-full-width">
+        </div>
 
         <button type="button" id="send" class="u-full-width">Create</button>
 
