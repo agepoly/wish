@@ -30,8 +30,7 @@ $(document).ready(function() {
         url: "http://" + window.location.hostname + ":"+API_PORT+"/get_admin_data",
         data: '{ "key" : "' + admin_key + '" }',
         success: function(data) {
-            /*jshint -W061 */
-            x = eval('(' + data + ')');
+            x = JSON.parse(data);
             $("#name").html('<b>Activity name: </b>' + x.name);
 
             deadline = new Date(x.deadline * 1000);

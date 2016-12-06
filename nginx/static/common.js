@@ -196,8 +196,8 @@ function get_slot_val() {
     var vmax = [];
     for (var i = 0; $("input[name='slot" + i + "']").length; ++i) {
         slot[i] = $("input[name='slot" + i + "']").val();
-        vmin[i] = $("input[name='vmin" + i + "']").val();
-        vmax[i] = $("input[name='vmax" + i + "']").val();
+        vmin[i] = Number($("input[name='vmin" + i + "']").val());
+        vmax[i] = Number($("input[name='vmax" + i + "']").val());
     }
 
     return {

@@ -29,20 +29,17 @@ function send() {
         deadline = deadline.getTime() / 1000;
     }
 
-    var message = $("#message").val()
-        .replace(/\n/g, "\\n").replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\t/g, "\\t");
-
-    var payload = '{' +
-        '"name"     : "' + $("input[name='name']").val() + '", ' +
-        '"deadline" : ' + deadline + ', ' +
-        '"amail"    : "' + $("input[name='amail']").val() + '", ' +
-        '"mails"    : ["' + $("#mails").val().split(/[\s,]+/).join('","') + '"], ' +
-        '"slots"    : ["' + slots.slot.join('","') + '"], ' +
-        '"vmin"     : [' + slots.vmin.join(',') + '], ' +
-        '"vmax"     : [' + slots.vmax.join(',') + '], ' +
-        '"url"      : "' + window.location.hostname + ':' + window.location.port + '", ' +
-        '"message"  : "' + message + '"' +
-        '}';
+    var payload = JSON.stringify({
+      name : $("input[name='name']").val(),
+      deadline : deadline,
+      amail : $("input[name='amail']").val(),
+      mails : $("#mails").val().split(/[\s,]+/),
+      slots : slots.slot,
+      vmin : slots.vmin,
+      vmax : slots.vmax,
+      url : window.location.hostname + ':' + window.location.port,
+      message : $("#message").val()
+    });
 
     console.log(payload);
 
