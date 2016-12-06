@@ -27,7 +27,7 @@ $(document).ready(function() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":"+API_PORT+"/get_admin_data",
+        url: "http://" + window.location.hostname + ":" + API_PORT + "/get_admin_data",
         data: '{ "key" : "' + admin_key + '" }',
         success: function(data) {
             x = JSON.parse(data);
@@ -39,15 +39,14 @@ $(document).ready(function() {
             var n = x.slots.length;
             var m = x.mails.length;
 
-            var content = '<table style="width:100%"><tr><th>Mail</th> <th>Wish</th> <th>Admin link</th> <th>Mail status</th>';
+            var content = '<table style="width:100%"><tr><th>Mail</th> <th>Wish page link : view from...</th> <th>Mail status</th></tr>';
             for (i = 0; i < m; ++i) {
                 var key = x.keys[i];
                 var url = "http://" + window.location.hostname + ":" + window.location.port + "/wish#" + key;
                 var aurl = url + "+" + admin_key;
                 content += '<tr>' +
                     '<th>' + x.mails[i] + '</th>' +
-                    '<th><a href="' + url + '">user page</a></th>' +
-                    '<th><a href="' + aurl + '">admin user page</a></th>' +
+                    '<th><a href="' + url + '">user</a> <a href="' + aurl + '">admin</a></th>' +
                     '<th>' + (x.sent[i] ? 'mail sent' : 'mail failed') + '</th>' +
                     '</tr>';
             }
