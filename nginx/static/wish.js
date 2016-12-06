@@ -19,7 +19,7 @@ $(document).ready(function() {
             x = JSON.parse(data);
             $("button[name='send']").bind("click", send);
 
-            $("#name").html('<b>Activity name: </b>' + x.name);
+            $("#name").html('<b>Activity name: </b>' + htmlEntities(x.name));
             $("#mail").html('<b>Your email: </b>' + x.mail);
 
             var deadline = new Date(x.deadline * 1000);
@@ -65,7 +65,7 @@ $(document).ready(function() {
                     var wish = n - 1; // default value to [dont want]
                     if (i < x.wish.length) wish = x.wish[i];
                     else x.wish[i] = wish;
-                    content += '<tr><th>' + x.slots[i] + '</th><th>wanted <input type="range" name="wish' + i + '" min="0" max="' + (n - 1) + '" step="1" value="' + wish + '" /> hated</th>';
+                    content += '<tr><th>' + htmlEntities(x.slots[i]) + '</th><th>wanted <input type="range" name="wish' + i + '" min="0" max="' + (n - 1) + '" step="1" value="' + wish + '" /> hated</th>';
                     if (admin_key !== undefined) {
                         content += '<th><input type="checkbox" name="impossible' + i + '" ' + (wish == 1000 ? 'checked' : '') + '>avoided</th>';
                     } else {

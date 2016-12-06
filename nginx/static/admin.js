@@ -31,7 +31,7 @@ $(document).ready(function() {
         data: '{ "key" : "' + admin_key + '" }',
         success: function(data) {
             x = JSON.parse(data);
-            $("#name").html('<b>Activity name: </b>' + x.name);
+            $("#name").html('<b>Activity name: </b>' + htmlEntities(x.name));
 
             deadline = new Date(x.deadline * 1000);
             $("input[name='deadline']").datepicker("setDate", deadline);
