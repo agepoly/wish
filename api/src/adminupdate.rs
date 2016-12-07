@@ -109,7 +109,12 @@ pub fn admin_update(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<R
         .update_one(doc!{"admin_key" => (data.key.clone())},
                     doc!{"$set" => document},
                     None) {
-        Ok(_) => Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any)))),
+        Ok(_) => {
+            if data.sendmail {
+
+            }
+            Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
+        }
         Err(e) => {
             println!("admin_update: {}", e);
             Ok(Response::with((status::NotFound,

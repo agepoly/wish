@@ -19,8 +19,8 @@ $(document).ready(function() {
             x = JSON.parse(data);
             $("button[name='send']").bind("click", send);
 
+            $("#mail").html(x.mail);
             $("#name").html('<b>Activity name: </b>' + htmlEntities(x.name));
-            $("#mail").html('<b>Your email: </b>' + x.mail);
 
             var deadline = new Date(x.deadline * 1000);
             var now = new Date();
@@ -56,7 +56,7 @@ $(document).ready(function() {
                 $("#content").html(content);
                 $("button[name='send']").hide();
             } else if (deadline > now) {
-                content = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Wish</th><th> </th></tr></thead><tbody>';
+                content = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Your Wish</th><th> </th></tr></thead><tbody>';
                 n = x.slots.length;
                 if (n < x.wish.length) {
                     x.wish.length = n;

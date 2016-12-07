@@ -20,6 +20,9 @@ mod getadmindata;
 mod adminupdate;
 
 use iron::prelude::*;
+use iron::status;
+use iron::mime::Mime;
+
 use router::Router;
 use std::sync::{Arc, Mutex};
 use mongodb::{Client, ThreadedClient};
@@ -30,6 +33,9 @@ use std::env;
 use lettre::email::EmailBuilder;
 use lettre::transport::EmailTransport;
 use util::create_mailer;
+
+use std::fs::File;
+use std::io::prelude::*;
 
 fn main() {
     let client = Client::connect("db", 27017).expect("Failed to initialize mongodb client.");
@@ -63,6 +69,52 @@ fn main() {
     router.post("/admin_update",
                 move |r: &mut Request| adminupdate::admin_update(r, arc.clone()),
                 "admin_update");
+
+    router.get("/:file",
+               |r: &mut Request| {
+        let ref query = r.extensions
+            .get::<Router>()
+            .unwrap()
+            .find("file")
+            .unwrap_or("index.html");
+        load_file(query.to_string())
+    },
+               "file");
+    router.get("/",
+               |_: &mut Request| load_file("index.html".to_string()),
+               "index");
+
+    fn load_file(mut file: String) -> IronResult<Response> {
+        if !file.contains(".") {
+            file += ".html";
+        }
+        let ext = file.split(".").last().unwrap();
+        let content_type: Result<Mime, _> = if ext == "js" {
+                "application/javascript"
+            } else if ext == "css" {
+                "text/css"
+            } else if ext == "ico" {
+                "image/x-icon"
+            } else {
+                "text/html"
+            }
+            .parse();
+
+        if let Ok(content_type) = content_type {
+            if let Ok(mut f) = File::open(env::args().nth(2).unwrap_or(".".to_string()) + "/" +
+                                          file.as_str()) {
+                let mut s = Vec::new();
+                f.read_to_end(&mut s).unwrap();
+                return Ok(Response::with((status::Ok, content_type, s)));
+            } else {
+                println!("Cannot read file {:?}", file);
+            }
+        } else {
+            println!("Cannot get mime of {:?}", file);
+        }
+
+        Ok(Response::with((status::NotFound,)))
+    }
 
     let arc = db.clone();
     let handler = std::thread::spawn(move || {

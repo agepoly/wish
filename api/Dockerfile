@@ -33,4 +33,7 @@ COPY Cargo.toml .
 COPY Cargo.lock .
 RUN mkdir src && touch src/lib.rs && cargo build --release --lib
 COPY src src
-CMD cargo run --release
+RUN cargo build --release
+RUN mkdir www
+COPY www www
+CMD target/release/wish api:80 www

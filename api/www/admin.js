@@ -76,6 +76,7 @@ $(document).ready(function() {
             $("input").bind('input propertychange', check_validity);
 
             $("button[name=save]").show();
+            //$("button[name=save_mail]").show();
             $("#explanation").show();
             $("input[name='deadline']").show();
             $("label").show();

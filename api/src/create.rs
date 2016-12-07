@@ -138,7 +138,7 @@ pub fn create(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respons
         .to(data.amail.as_str())
         .html(format!(r#"<p>Hi,</p>
 <p>An event has been created with your email address.<br />
-<strong>If you are not concerned, please do not click on the following url.<strong><br />
+<strong>If you are not concerned, please do not click on the following url.</strong><br />
 <a href="http://{url}/admin#{key}">Click here</a> to administrate the activity.
 The first time that this administration page is opened,
 the invitation mails are sent to the participants.</p>
