@@ -27,17 +27,20 @@
 
         <div id="people" style="width:100%"></div>
 
-        <div class="row">
-            <div class="four columns" title="How many activities, time slots, tasks you have.">
-                <label for="numberInput">Number of slots</label>
-                <input type="number" name="nslots" class="u-full-width" min="1" max="100" step="1" value="2" id="numberInput">
-            </div>
-        </div>
         <div id="slots" style="width:100%">
         </div>
         <div id="slots_error" class="error"></div>
 
-        <input type="text" name="deadline" id="deadlineInput" class="u-full-width">
+        <div class="row">
+            <div class="four columns" title="If you create new slots">
+                <label for="numberInput">Number of slots</label>
+                <input type="number" name="nslots" class="u-full-width" min="1" max="100" step="1" value="2" id="numberInput">
+            </div>
+            <div class="eight columns" title="Put it for today and the reasults are (re)computed immdiatelly. Or simply put it in the future.">
+                <label for="numberInput">Deadline</label>
+                <input type="text" name="deadline" id="deadlineInput" class="u-full-width">
+            </div>
+        </div>
 
         <div class="row">
             <button type="button" name="save" class="one-half column" hidden>Save</button>

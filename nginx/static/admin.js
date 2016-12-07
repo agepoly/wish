@@ -39,22 +39,23 @@ $(document).ready(function() {
             var n = x.slots.length;
             var m = x.mails.length;
 
-            var content = '<table style="width:100%"><tr><th>Mail</th> <th>Wish page link : view from...</th> <th>Mail status</th></tr>';
+            var content = '<table class="u-full-width"><thead><tr><th>Mail</th> <th>Wish page link : view from...</th> <th>Mail status</th></tr></thead>';
+            content += '<tbody>';
             for (i = 0; i < m; ++i) {
                 var key = x.keys[i];
                 var url = "http://" + window.location.hostname + ":" + window.location.port + "/wish#" + key;
                 var aurl = url + "+" + admin_key;
                 content += '<tr>' +
-                    '<th>' + x.mails[i] + '</th>' +
-                    '<th><a href="' + url + '" title="Access the page with user’s rights.">user</a> or <a href="' + aurl + '" title="Access the page with override rights.">admin</a></th>';
+                    '<td>' + x.mails[i] + '</td>' +
+                    '<td><a href="' + url + '" title="Access the page with user’s rights.">user</a> or <a href="' + aurl + '" title="Access the page with override rights.">admin</a></td>';
                 if (x.sent[i]) {
-                    content += '<th>mail sent</th>';
+                    content += '<td>mail sent</td>';
                 } else {
-                    content += '<th title="If you refresh the page, we will try again to send the invitation mail to this address.">mail not sent</th>';
+                    content += '<td title="If you refresh the page, we will try again to send the invitation mail to this address.">mail not sent</td>';
                 }
                 content += '</tr>';
             }
-            content += '</table>';
+            content += '</tbody></table>';
             $("#people").html(content);
 
             oldvalues.slot = x.slots;
