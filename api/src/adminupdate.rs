@@ -24,6 +24,7 @@ pub fn admin_update(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<R
         slots: Vec<String>,
         vmin: Vec<i32>,
         vmax: Vec<i32>,
+        sendmail: bool
     }
 
     let mut payload = String::new();

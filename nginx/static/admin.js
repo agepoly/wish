@@ -14,7 +14,9 @@ $(document).ready(function() {
     $("label").hide();
     $("input[name='nslots']").hide();
 
-    $("button[name='save']").bind("click", save);
+    $("button[name='save']").bind("click", function() { save(false); });
+    $("button[name='save_mail']").bind("click", function() { save(true); });
+
     $("input[name='deadline']").datepicker({
         showOtherMonths: true,
         selectOtherMonths: true,
@@ -89,7 +91,7 @@ $(document).ready(function() {
     });
 });
 
-function save() {
+function save(sendmail) {
     if (!check_validity()) {
         return;
     }
@@ -107,7 +109,8 @@ function save() {
         deadline : deadline,
         slots : slots.slot,
         vmin : slots.vmin,
-        vmax : slots.vmax
+        vmax : slots.vmax,
+        sendmail : sendmail
     });
 
     console.log(payload);

@@ -41,7 +41,7 @@ $(document).ready(function() {
 
             var i, content, n;
             if (deadline < now && x.results.length > 0) {
-                content = '<table style="width:100%"><tr><th>Slot</th><th>Mail</th></tr>';
+                content = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Mail</th></tr></thead><tbody>';
                 n = x.slots.length;
                 for (i = 0; i < n; ++i) {
                     var list = [];
@@ -50,13 +50,13 @@ $(document).ready(function() {
                             list.push(x.mails[j]);
                         }
                     }
-                    content += '<tr><th>' + x.slots[i] + '</th><th>' + list.join(", ") + '</th></tr>';
+                    content += '<tr><td>' + x.slots[i] + '</td><td>' + list.join(", ") + '</td></tr>';
                 }
-                content += '</table>';
+                content += '</tbody></table>';
                 $("#content").html(content);
                 $("button[name='send']").hide();
             } else if (deadline > now) {
-                content = '<table style="width:100%"><tr><th>Slot</th><th>Wish</th><th> </th></tr>';
+                content = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Wish</th><th> </th></tr></thead><tbody>';
                 n = x.slots.length;
                 if (n < x.wish.length) {
                     x.wish.length = n;
@@ -65,19 +65,19 @@ $(document).ready(function() {
                     var wish = n - 1; // default value to [dont want]
                     if (i < x.wish.length) wish = x.wish[i];
                     else x.wish[i] = wish;
-                    content += '<tr><th>' + htmlEntities(x.slots[i]) + '</th><th>wanted <input type="range" name="wish' + i + '" min="0" max="' + (n - 1) + '" step="1" value="' + wish + '" /> hated</th>';
+                    content += '<tr><td>' + htmlEntities(x.slots[i]) + '</td><td>wanted <input type="range" name="wish' + i + '" min="0" max="' + (n - 1) + '" step="1" value="' + wish + '" /> hated</td>';
                     if (admin_key !== undefined) {
-                        content += '<th><input type="checkbox" name="impossible' + i + '" ' + (wish == 1000 ? 'checked' : '') + '>avoided</th>';
+                        content += '<td><input type="checkbox" name="impossible' + i + '" ' + (wish == 1000 ? 'checked' : '') + '>avoided</td>';
                     } else {
                         if (wish == 1000) {
-                            content += '<th>avoided</th>';
+                            content += '<td>avoided</td>';
                         } else {
-                            content += '<th></th>';
+                            content += '<td></td>';
                         }
                     }
                     content += '</tr>';
                 }
-                content += '</table>';
+                content += '</tbody></table>';
                 $("#content").html(content);
 
                 //$("input").bind('input propertychange', check);
