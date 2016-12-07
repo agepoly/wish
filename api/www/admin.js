@@ -29,7 +29,7 @@ $(document).ready(function() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":" + API_PORT + "/get_admin_data",
+        url: "http://" + window.location.hostname + ":" + window.location.port + "/get_admin_data",
         data: '{ "key" : "' + admin_key + '" }',
         success: function(data) {
             x = JSON.parse(data);
@@ -122,7 +122,7 @@ function save(sendmail) {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":" + API_PORT + "/admin_update",
+        url: "http://" + window.location.hostname + ":" + window.location.port + "/admin_update",
         data: payload,
         success: function(data) {
             $("#error").show();

@@ -49,7 +49,7 @@ function send() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":" + API_PORT + "/create",
+        url: "http://" + window.location.hostname + ":" + window.location.port + "/create",
         data: payload,
         success: function(data) {
             console.log("creation success");

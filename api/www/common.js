@@ -1,5 +1,3 @@
-var API_PORT = 80;
-
 function check_validity() {
     var err_color = '#FF4000';
     var valid = true;
