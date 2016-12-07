@@ -148,7 +148,7 @@ function send() {
     var payload = JSON.stringify({
         key : key,
         wish : x.wish,
-        admin_key : admin_key
+        admin_key : admin_key === undefined ? "" : admin_key
     });
     console.log(payload);
 
