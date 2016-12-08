@@ -32,7 +32,7 @@ pub fn get_admin_data(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult
     struct Output {
         name: String,
         mails: Vec<String>,
-        sent: Vec<bool>,
+        sent: Vec<i32>,
         keys: Vec<String>,
         slots: Vec<String>,
         vmin: Vec<i32>,
@@ -99,7 +99,13 @@ pub fn get_admin_data(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult
 
     for p in people.iter_mut() {
         if let &mut Bson::Document(ref mut x) = p {
-            if !x.get_bool("sent").unwrap_or(false) {
+
+            if match x.get("sent") {
+                None => true,
+                Some(&Bson::I32(y)) => y==0,
+                Some(&Bson::Boolean(y)) => !y,
+                _ => false
+            } {
                 let email = EmailBuilder::new()
                     .to(x.get_str("mail").unwrap_or(""))
                     .from("wish@epfl.ch")
@@ -124,12 +130,12 @@ The Wish team</p>"#,
                 match email {
                     Ok(email) => {
                         if let Err(e) = mailer.send(email) {
-                            x.insert("sent", false);
+                            x.insert("sent", 0i32);
                             error = format!("error when send mail to {} : {}",
                                             x.get_str("mail").unwrap_or(""),
                                             e);
                         } else {
-                            x.insert("sent", true);
+                            x.insert("sent", 1i32);
                         }
                     }
                     Err(e) => {
@@ -173,8 +179,8 @@ The Wish team</p>"#,
             .collect(),
         sent: people.iter()
             .map(|p| match p {
-                &Bson::Document(ref x) => x.get_bool("sent").unwrap_or(false),
-                _ => false,
+                &Bson::Document(ref x) => x.get_i32("sent").unwrap_or(0),
+                _ => 0,
             })
             .collect(),
         keys: event.get_array("people")
