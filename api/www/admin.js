@@ -104,7 +104,7 @@ function save() {
     if (deadline === null) {
         deadline = 0;
     } else {
-        deadline = deadline.getTime() / 1000;
+        deadline = deadline.getTime() / 1000 + 24 * 3600 - 60;
     }
     var sendmail = $('#notify-users').prop('checked');
 

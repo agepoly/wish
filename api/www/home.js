@@ -26,7 +26,7 @@ function send() {
     if (deadline === null) {
         deadline = 0;
     } else {
-        deadline = deadline.getTime() / 1000;
+        deadline = deadline.getTime() / 1000 + 24 * 3600 - 60; // à 23h59
     }
 
     var payload = JSON.stringify({
