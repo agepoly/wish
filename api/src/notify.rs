@@ -101,6 +101,13 @@ pub fn notify(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respons
 
     let people = event.get_array("people").unwrap_or(&Vec::new()).clone();
 
+    if results.len() != people.len() {
+        println!("notify: no results to notify");
+        return Ok(Response::with((status::NotFound,
+                                  "no results to notify",
+                                  Header(AccessControlAllowOrigin::Any))));
+    }
+
     for (i, p) in people.iter().enumerate() {
         if let &Bson::Document(ref x) = p {
             let mail = x.get_str("mail").unwrap_or("");
