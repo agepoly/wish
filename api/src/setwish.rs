@@ -106,5 +106,18 @@ pub fn set_wish(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respo
         }
     };
 
+
+    match db.collection("events").update_one(doc!{"people.key" => (data.key.clone())},
+                                             doc!{"$set" => {"people.$.sent" => (Bson::I32(2))}},
+                                             None) {
+        Ok(_) => {}
+        Err(e) => {
+            println!("set_wishes: {}", e);
+            return Ok(Response::with((status::NotFound,
+                                      format!("database error : {}", e),
+                                      Header(AccessControlAllowOrigin::Any))));
+        }
+    };
+
     Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
 }

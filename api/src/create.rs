@@ -187,7 +187,8 @@ The Wish team</p>"#,
             let mut p = Document::new();
             p.insert_bson("mail".to_owned(), Bson::String(data.mails[i].clone()));
             p.insert_bson("key".to_owned(), Bson::String(keys[i].clone()));
-            p.insert_bson("sent".to_owned(), Bson::Boolean(false));
+            p.insert_bson("sent".to_owned(), Bson::I32(0));
+//            p.insert_bson("sent".to_owned(), Bson::Boolean(false));
 
             p.insert_bson("wish".to_owned(), {
                 let mut v = Vec::new();
