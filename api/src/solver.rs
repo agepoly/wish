@@ -66,7 +66,7 @@ fn shuffle(vmin: &Vec<u32>,
     }
 
     // Extract the results
-    let mut results = Vec::with_capacity(vmin.len());
+    let mut results = Vec::with_capacity(wishes.len());
 
     for i in 0..wishes.len() {
         results.push(min_pos(&wishes[i]));

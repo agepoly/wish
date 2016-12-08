@@ -15,6 +15,7 @@ $(document).ready(function() {
     $("input[name='nslots']").hide();
     $('#save-button').hide();
     $('#save-button').bind("click", save);
+    $('#notify-button').bind("click", notify);
 
     $("input[name='deadline']").datepicker({
         showOtherMonths: true,
@@ -72,6 +73,7 @@ $(document).ready(function() {
             if (x.results.length > 0) //Check if results are there now ?
             {
                 exportcsv();
+                $('#deadline-over').show();
                 console.log('One have results');
             }
             $("input").bind('input propertychange', check_validity);
@@ -117,8 +119,8 @@ function save() {
 
     console.log(payload);
 
-    $("button[name='save']").prop('disabled', true);
-    $("button[name='save']").text('Request sent...');
+    $("#save-button").prop('disabled', true);
+    $("#save-button").text('Request sent...');
     $("#error").hide();
 
     $.ajax({
@@ -131,15 +133,15 @@ function save() {
             setTimeout(function() {
                 $("#error").fadeOut();
             }, 5000);
-            $("button[name='save']").prop('disabled', false);
-            $("button[name='save']").text('Save');
+            $("#save-button").prop('disabled', false);
+            $("#save-button").text('Save');
         },
         error: function(data) {
             console.log(data);
             $("#error").show();
             $("#error").text('Error : ' + data.responseText);
-            $("button[name='save']").prop('disabled', false);
-            $("button[name='save']").text('Save');
+            $("#save-button").prop('disabled', false);
+            $("#save-button").text('Save');
         },
     });
 }
@@ -170,4 +172,27 @@ function exportcsv() {
     intro.appendChild(text);
     intro.appendChild(link);
     console.log(link);
+}
+
+function notify() {
+    var payload = JSON.stringify({
+        key: admin_key,
+    });
+
+    $("#notify-button").prop('disabled', true);
+    $("#notify-button").text('Request sent...');
+
+    $.ajax({
+        type: "POST",
+        url: "http://" + window.location.hostname + ":" + window.location.port + "/notify",
+        data: payload,
+        success: function(data) {
+            swal("Sending succeed!", "A mail has been sent to all participants.", "success");
+            $("#notify-button").text('Done');
+        },
+        error: function(data) {
+            console.log(data);
+            swal("Error!", "Help yourself", "error");
+        },
+    });
 }

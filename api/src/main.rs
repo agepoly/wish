@@ -18,6 +18,7 @@ mod getdata;
 mod setwish;
 mod getadmindata;
 mod adminupdate;
+mod notify;
 
 use iron::prelude::*;
 use iron::status;
@@ -69,6 +70,11 @@ fn main() {
     router.post("/admin_update",
                 move |r: &mut Request| adminupdate::admin_update(r, arc.clone()),
                 "admin_update");
+
+    let arc = db.clone();
+    router.post("/notify",
+                move |r: &mut Request| notify::notify(r, arc.clone()),
+                "notify");
 
     router.get("/:file",
                |r: &mut Request| {
