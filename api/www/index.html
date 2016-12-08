@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <title>Wish</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <script src="/sweetalert.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/sweetalert.css">
+    <script src="/common.js"></script>
+    <script src="/home.js"></script>
+</head>
+
+<body>
+    <a href="https://github.com/agepoly"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67"
+            alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png"></a>
+
+    <div class="container">
+        <h1 style="text-align: center">Wish</h1>
+        <p>Distributes people in various slots trying to maximize the global satisfaction, taking into account quotas for each slot.</p>
+        <p>Organize the groups for various activities according to the desires of your friends, prepare the schedule of an oral exam taking into account the wishes of the students, plan who does what in the organization of a party,...</p>
+        <!--<p>Check out more about what Wish exactly allows you to do: follow this short tutorial.</p>-->
+
+        <div class="row">
+            <div class="eight columns" title="What you are trying to organize: a selection of activities, an oral exam, a tasks list for a party, ... It will be the subject of the mail.">
+                <label for="nameInput">Activity name</label>
+                <input class="u-full-width" type="text" id="nameInput" name="name" placeholder="" value="">
+            </div>
+            <div class="four columns" title="How many activities, time slots, tasks you have.">
+                <label for="numberInput">Number of slots</label>
+                <input type="number" name="nslots" class="u-full-width" min="1" max="100" step="1" value="2" id="numberInput">
+            </div>
+        </div>
+
+        <div id="slots" style="width: 100%">
+        </div>
+        <div id="slots_error" class="error"></div>
+
+        <div class="row" title="Your mail... unless you are not organizing this. An activation mail containing a private link to the admin page will be sent to this address.">
+            <label for="amailInput">Admin mail</label>
+            <input id="amailInput" type="email" name="amail" class="u-full-width" placeholder="Your mail address">
+        </div>
+
+        <div class="row" title="The addresses of the participants. Each of them will receive a private link to his/her own wish page. Include your mail if you are as well a participant.">
+            <label for="mails">Mail list <a href="https://youtu.be/ZzBglzmUZa0" target="_blank">how to get epfl mail list</a></label>
+            <textarea id="mails" rows="5" class="u-full-width" placeholder="user1@epfl.ch, user2@epfl.ch, ..."></textarea>
+            <div id="mails_error" class="error"></div>
+        </div>
+
+        <div class="row" title="This text will be added to the invitation mail sent to the participants.">
+            <label for="message">Message</label>
+            <textarea id="message" rows="5" class="u-full-width" placeholder=""></textarea>
+        </div>
+
+        <div class="row" title="The participants have to fill in their wish page before midnight on this day, when the algorithm is launched.">
+            <label for="deadlineInput">Deadline</label>
+            <input type="text" name="deadline" id="deadlineInput" class="u-full-width">
+        </div>
+
+        <button type="button" id="send" class="u-full-width">Create</button>
+
+        <!--
+    <div style="border-top: 1px solid lightgrey"></div>
+    -->
+
+        <p id="error"></p>
+    </div>
+
+</body>
+
+</html>
