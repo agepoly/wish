@@ -210,13 +210,13 @@ fn process(db: &Arc<Mutex<Database>>) {
                     .from("wish@epfl.ch")
                     .to(amail)
                     .html(format!(r#"<p>Hi,</p>
-<p>The event <strong>{name}</strong> has reach the deadline.<br />
+<p>The event <strong>{name}</strong> has reached the deadline.<br />
 An error has occured : {error}<br />
 On the admin page, any modification will reset the results and new ones will be computed.</p>
 
 <p><a href="http://{url}/admin#{key}">Click here</a> to administrate the event.</p>
 
-<p>Have a good day,<br />
+<p>Have a nice day,<br />
 The Wish team</p>"#,
                                   url = url,
                                   key = admin_key,
@@ -257,16 +257,15 @@ The Wish team</p>"#,
             .from("wish@epfl.ch")
             .to(amail)
             .html(format!(r#"<p>Hi,</p>
-<p>The event {name} has reach the deadline.<br />
-The results had been computed.<br />
-They are accessible on any user page.<br />
+<p>The event {name} has reached the deadline.<br />
+The results have been computed and are accessible on any user page.<br />
 On the admin page, any modification will reset the results and new ones will be computed.</p>
 
 <p><a href="http://{url}/admin#{key}">Click here</a> to administrate the event.</p>
 <p>Only you, the admin recieve this notification. Don't forget to inform yourself the users.
 Unless you want to postone the deadline...</p>
 
-<p>Have a good day,<br />
+<p>Have a nive day,<br />
 The Wish team</p>"#,
                           url = url,
                           key = admin_key,

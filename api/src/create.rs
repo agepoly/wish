@@ -143,7 +143,7 @@ pub fn create(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respons
 The first time that this administration page is opened,
 the invitation mails are sent to the participants.</p>
 
-<p>Have a good day,<br />
+<p>Have a nice day,<br />
 The Wish team</p>"#,
                       url = data.url.as_str(),
                       key = admin_key.as_str())

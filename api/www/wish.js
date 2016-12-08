@@ -41,7 +41,7 @@ $(document).ready(function() {
 
             var i, content, n;
             if (deadline < now && x.results.length > 0) {
-                content = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Mail</th></tr></thead><tbody>';
+                content = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Mail of the person assigned to this slot</th></tr></thead><tbody>';
                 n = x.slots.length;
                 for (i = 0; i < n; ++i) {
                     var list = [];
@@ -67,7 +67,7 @@ $(document).ready(function() {
                     else x.wish[i] = wish;
                     content += '<tr><td>' + htmlEntities(x.slots[i]) + '</td><td>wanted <input type="range" name="wish' + i + '" min="0" max="' + (n - 1) + '" step="1" value="' + wish + '" /> hated</td>';
                     if (admin_key !== undefined) {
-                        content += '<td><input type="checkbox" name="impossible' + i + '" ' + (wish == 1000 ? 'checked' : '') + '>avoided</td>';
+                        content += '<td><input type="checkbox" title="If for a given reason the participant must not be in this slot, you can prevent him/her from being assigned to this slot by checking this box." name="impossible' + i + '" ' + (wish == 1000 ? 'checked' : '') + '>avoided</td>';
                     } else {
                         if (wish == 1000) {
                             content += '<td>avoided</td>';
