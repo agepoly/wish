@@ -51,7 +51,7 @@ $(document).ready(function() {
                     '<td>' + x.mails[i] + '</td>' +
                     '<td><a href="' + url + '" title="Access the page with user’s rights.">user</a> or <a href="' + aurl + '" title="Access the page with override rights.">admin</a></td>';
                 if (x.sent[i]==1) {
-                    content += '<td title="The mail have been send." style="color:green">&#10003 &#10003</td>';
+                    content += '<td title="The mail have been send." style="color:green">&#10003</td>';
                 } else if (x.sent[i]==0){
                     content += '<td title="If you refresh the page, we will try again to send the invitation mail to this address.">&#10007</td>';
                 } else if(x.sent[i]==2){

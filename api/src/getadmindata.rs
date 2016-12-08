@@ -99,7 +99,13 @@ pub fn get_admin_data(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult
 
     for p in people.iter_mut() {
         if let &mut Bson::Document(ref mut x) = p {
-            if x.get_i32("sent").unwrap_or(0) == 0 {
+
+            if match x.get("sent") {
+                None => true,
+                Some(&Bson::I32(y)) => y==0,
+                Some(&Bson::Boolean(y)) => !y,
+                _ => false
+            } {
                 let email = EmailBuilder::new()
                     .to(x.get_str("mail").unwrap_or(""))
                     .from("wish@epfl.ch")
@@ -124,12 +130,12 @@ The Wish team</p>"#,
                 match email {
                     Ok(email) => {
                         if let Err(e) = mailer.send(email) {
-                            x.insert("sent", 0);
+                            x.insert("sent", 0i32);
                             error = format!("error when send mail to {} : {}",
                                             x.get_str("mail").unwrap_or(""),
                                             e);
                         } else {
-                            x.insert("sent", 1);
+                            x.insert("sent", 1i32);
                         }
                     }
                     Err(e) => {
