@@ -1,3 +1,5 @@
+use util::create_mailer;
+
 use iron::prelude::*;
 use iron::status;
 use iron::modifiers::Header;
@@ -10,9 +12,14 @@ use std::io::Read;
 use mongodb::db::Database;
 use mongodb::db::ThreadedDatabase;
 
+use lettre::email::EmailBuilder;
+use lettre::transport::EmailTransport;
+
 use rustc_serialize::json;
 
 use bson::{Document, Bson};
+
+use time;
 
 pub fn admin_update(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Response> {
     println!("admin_update");
@@ -24,7 +31,7 @@ pub fn admin_update(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<R
         slots: Vec<String>,
         vmin: Vec<i32>,
         vmax: Vec<i32>,
-        sendmail: bool
+        sendmail: bool,
     }
 
     let mut payload = String::new();
@@ -103,15 +110,71 @@ pub fn admin_update(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<R
                     Bson::Array(data.vmax.iter().map(|&x| Bson::I32(x)).collect()));
     document.insert("results", Bson::Null);
 
-    return match db.lock()
-        .unwrap()
-        .collection("events")
+    let db = db.lock().unwrap();
+
+    let sendit = || -> () {
+        let event = db.collection("events")
+            .find_one(Some(doc!{"admin_key" => (data.key.clone())}), None)
+            .unwrap()
+            .unwrap();
+
+        let url = event.get_str("url").unwrap_or("wish.com");
+        let name = event.get_str("name").unwrap_or("no name");
+        let amail = event.get_str("amail").unwrap_or("");
+        let slots = "<li>".to_string() + data.slots.join("</li><li>").as_str() + "</li>";
+        let deadline = time::strftime("%d %B %Y at %H:%M",
+                                      &time::at(time::Timespec::new(data.deadline, 0)))
+            .unwrap();
+
+        let mut mailer = create_mailer(true).unwrap();
+        let people = event.get_array("people").unwrap_or(&Vec::new()).clone();
+
+        for p in people {
+            if let Bson::Document(ref x) = p {
+                let mail = x.get_str("mail").unwrap_or("");
+                let key = x.get_str("key").unwrap_or("");
+
+                let content = format!(r#"<p>Hi,</p>
+<p>The event <strong>{name}</strong> has been updated by the administrator.</p>
+<p>The following slots are available:</p>
+<ul>
+{slots}
+</ul>
+
+<p>The deadline is {deadline}</p>
+<p>Please update your wishes accordingly by <a href="http://{url}/wish#{key}">clicking here</a>.
+If you have problems to change your wishes,
+it might be because they have been rendered invalid due to the changes.
+You might then want to take a look to <a href="http://{url}/help">this page</a>,
+which explains what “fair” and “unfair” wishes are.</p>
+
+<p>Have a nice day,<br />
+The Wish team</p>"#,
+                                      slots = slots,
+                                      name = name,
+                                      url = url,
+                                      deadline = deadline,
+                                      key = key);
+
+                let email = EmailBuilder::new()
+                    .to(mail)
+                    .from("wish@epfl.ch")
+                    .reply_to(amail)
+                    .html(content.as_str())
+                    .subject(format!("Wish : {}", name).as_str())
+                    .build();
+                mailer.send(email.unwrap()).unwrap();
+            }
+        }
+    };
+
+    return match db.collection("events")
         .update_one(doc!{"admin_key" => (data.key.clone())},
                     doc!{"$set" => document},
                     None) {
         Ok(_) => {
             if data.sendmail {
-
+                sendit();
             }
             Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
         }

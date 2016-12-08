@@ -13,9 +13,8 @@ $(document).ready(function() {
     $("input[name='deadline']").hide();
     $("label").hide();
     $("input[name='nslots']").hide();
-
-    $("button[name='save']").bind("click", function() { save(false); });
-    $("button[name='save_mail']").bind("click", function() { save(true); });
+    $('#save-button').hide();
+    $('#save-button').bind("click", save);
 
     $("input[name='deadline']").datepicker({
         showOtherMonths: true,
@@ -50,11 +49,11 @@ $(document).ready(function() {
                 content += '<tr>' +
                     '<td>' + x.mails[i] + '</td>' +
                     '<td><a href="' + url + '" title="Access the page with user’s rights.">user</a> or <a href="' + aurl + '" title="Access the page with override rights.">admin</a></td>';
-                if (x.sent[i]==1) {
+                if (x.sent[i] == 1) {
                     content += '<td title="The mail have been send." style="color:green">&#10003</td>';
-                } else if (x.sent[i]==0){
+                } else if (x.sent[i] === 0) {
                     content += '<td title="If you refresh the page, we will try again to send the invitation mail to this address.">&#10007</td>';
-                } else if(x.sent[i]==2){
+                } else if (x.sent[i] == 2) {
                     content += '<td title="The mail have been send and user have changed the values of preferences." style="color:green">&#10003 &#10003</td>';
                 }
                 content += '</tr>';
@@ -77,8 +76,7 @@ $(document).ready(function() {
             }
             $("input").bind('input propertychange', check_validity);
 
-            $("button[name=save]").show();
-            //$("button[name=save_mail]").show();
+            $('#save-button').show();
             $("#explanation").show();
             $("input[name='deadline']").show();
             $("label").show();
@@ -94,7 +92,7 @@ $(document).ready(function() {
     });
 });
 
-function save(sendmail) {
+function save() {
     if (!check_validity()) {
         return;
     }
@@ -106,14 +104,15 @@ function save(sendmail) {
     } else {
         deadline = deadline.getTime() / 1000;
     }
+    var sendmail = $('#notify-users').prop('checked');
 
     var payload = JSON.stringify({
-        key : admin_key,
-        deadline : deadline,
-        slots : slots.slot,
-        vmin : slots.vmin,
-        vmax : slots.vmax,
-        sendmail : sendmail
+        key: admin_key,
+        deadline: deadline,
+        slots: slots.slot,
+        vmin: slots.vmin,
+        vmax: slots.vmax,
+        sendmail: sendmail
     });
 
     console.log(payload);

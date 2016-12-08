@@ -56,7 +56,7 @@ $(document).ready(function() {
                 $("#content").html(content);
                 $("button[name='send']").hide();
             } else if (deadline > now) {
-                content = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Your Wish</th><th> </th></tr></thead><tbody>';
+                content = '<table class="u-full-width"><thead><tr><th>Slot</th><th>' + (admin_key !== undefined ? 'User\'s wish' : 'Your Wish') + '</th><th> </th></tr></thead><tbody>';
                 n = x.slots.length;
                 if (n < x.wish.length) {
                     x.wish.length = n;
@@ -146,9 +146,9 @@ function check(event) {
 
 function send() {
     var payload = JSON.stringify({
-        key : key,
-        wish : x.wish,
-        admin_key : admin_key === undefined ? "" : admin_key
+        key: key,
+        wish: x.wish,
+        admin_key: admin_key === undefined ? "" : admin_key
     });
     console.log(payload);
 
