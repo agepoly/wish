@@ -133,23 +133,25 @@ pub fn create(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respons
         }
     };
 
-    let email = EmailBuilder::new()
-        .from("wish@epfl.ch")
-        .to(data.amail.as_str())
-        .html(format!(r#"<p>Hi,</p>
+    let content = format!(r#"<p>Hi,</p>
 <p>An event has been created with your email address.<br />
 <strong>If you are not concerned, please do not click on the following url.</strong><br />
 <a href="http://{url}/admin#{key}">Click here</a> to administrate the activity.
 The first time that this administration page is opened,
 the invitation mails are sent to the participants.</p>
 
-<p>Have a good day,<br />
+<p>Have a nice day,<br />
 The Wish team</p>"#,
-                      url = data.url.as_str(),
-                      key = admin_key.as_str())
-            .as_str())
+                  url = data.url.as_str(),
+                  key = admin_key.as_str());
+
+    let email = EmailBuilder::new()
+        .from("wish@epfl.ch")
+        .to(data.amail.as_str())
+        .html(content.as_str())
         .subject(format!("Wish : {}", data.name).as_str())
         .build();
+
     let email = match email {
         Ok(x) => x,
         Err(e) => {
@@ -160,7 +162,9 @@ The Wish team</p>"#,
         }
     };
 
-    if let Err(e) = mailer.send(email) {
+    let result = mailer.send(email);
+
+    if let Err(e) = result {
         println!("create: {}", e);
         return Ok(Response::with((status::NotFound,
                                   format!("mail error : {}", e),
@@ -199,7 +203,9 @@ The Wish team</p>"#,
         Bson::Array(x)
     });
 
-    if let Err(e) = db.lock().unwrap().collection("events").insert_one(doc, None) {
+    let result = db.lock().unwrap().collection("events").insert_one(doc, None);
+
+    if let Err(e) = result {
         println!("create: {}", e);
         return Ok(Response::with((status::NotFound,
                                   format!("database error : {}", e),

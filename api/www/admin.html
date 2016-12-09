@@ -25,11 +25,15 @@
 
         <p id="name">Waiting for request... It may take time to send the mails</p>
 
+        <div class="row" id="deadline-over" hidden>
+            <span class="six columns">The deadline is over! </span><button type="button" class="six columns" id="notify-button">Send notification to users</button>
+        </div>
+
         <div id="people" style="width:100%"></div>
 
         <div id="slots" style="width:100%">
         </div>
-        <div id="slots_error" class="error"></div>
+        <div id="slots_error" style="color:red"></div>
 
         <div class="row">
             <div class="four columns" title="If you add or delete slots, some of the participants wishes may become unfair. In this case, it is strongly recommended to send the update mail.">
@@ -43,11 +47,12 @@
         </div>
 
         <div class="row">
-            <button type="button" name="save" class="four columns" hidden>Save</button>
-            <button type="button" name="save_mail" class="four columns" hidden>Save + send mail</button>
+            <button type="button" class="four columns" id="save-button">Save</button>
             <div id="error" class="four columns"></div>
+            <label class="four columns u-pull-right"><input type="checkbox" id="notify-users"><span class="label-body">Send notification to users</span></label>
         </div>
-
+        
+        <p class="u-pull-right"><a href="/help" target="_blank">help page</a></p>
     </div>
 
 </body>

@@ -23,9 +23,9 @@
 
     <div class="container">
         <h1 style="text-align: center">Wish</h1>
-        <p>Distributes people in various slots trying to maximize the global satisfaction, taking into account quotas for each slot.</p>
-        <p>Organize the groups for various activities according to the desires of your friends, prepare the schedule of an oral exam taking into account the wishes of the students, plan who does what in the organization of a party,...</p>
+        <p><em>Distributes people in various slots trying to maximize the global satisfaction, taking into account quotas for each slot.</em></p>
         <!--<p>Check out more about what Wish exactly allows you to do: follow this short tutorial.</p>-->
+        <p>If you are using Wish for the first time, you might want to take a look at <a href="/help" target="_blank">this help page</a>.</p>
 
         <div class="row">
             <div class="eight columns" title="What you are trying to organize: a selection of activities, an oral exam, a tasks list for a party, ... It will be the subject of the mail.">
@@ -38,11 +38,11 @@
             </div>
         </div>
 
-        <div id="slots" style="width: 100%">
+        <div id="slots" class="u-full-width">
         </div>
-        <div id="slots_error" class="error"></div>
+        <div id="slots_error" style="color:red"></div>
 
-        <div class="row" title="Your mail... unless you are not organizing this. An activation mail containing a private link to the admin page will be sent to this address.">
+        <div class="row" title="An activation mail containing a private link to the admin page will be sent to this address.">
             <label for="amailInput">Admin mail</label>
             <input id="amailInput" type="email" name="amail" class="u-full-width" placeholder="Your mail address">
         </div>
@@ -50,7 +50,7 @@
         <div class="row" title="The addresses of the participants. Each of them will receive a private link to his/her own wish page. Include your mail if you are as well a participant.">
             <label for="mails">Mail list <a href="https://youtu.be/ZzBglzmUZa0" target="_blank">how to get epfl mail list</a></label>
             <textarea id="mails" rows="5" class="u-full-width" placeholder="user1@epfl.ch, user2@epfl.ch, ..."></textarea>
-            <div id="mails_error" class="error"></div>
+            <div id="mails_error" style="color:red"></div>
         </div>
 
         <div class="row" title="This text will be added to the invitation mail sent to the participants.">
@@ -64,10 +64,6 @@
         </div>
 
         <button type="button" id="send" class="u-full-width">Create</button>
-
-        <!--
-    <div style="border-top: 1px solid lightgrey"></div>
-    -->
 
         <p id="error"></p>
     </div>

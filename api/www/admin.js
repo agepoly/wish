@@ -13,9 +13,9 @@ $(document).ready(function() {
     $("input[name='deadline']").hide();
     $("label").hide();
     $("input[name='nslots']").hide();
-
-    $("button[name='save']").bind("click", function() { save(false); });
-    $("button[name='save_mail']").bind("click", function() { save(true); });
+    $('#save-button').hide();
+    $('#save-button').bind("click", save);
+    $('#notify-button').bind("click", notify);
 
     $("input[name='deadline']").datepicker({
         showOtherMonths: true,
@@ -50,12 +50,12 @@ $(document).ready(function() {
                 content += '<tr>' +
                     '<td>' + x.mails[i] + '</td>' +
                     '<td><a href="' + url + '" title="Access the page with user’s rights.">user</a> or <a href="' + aurl + '" title="Access the page with override rights.">admin</a></td>';
-                if (x.sent[i]==1) {
-                    content += '<td title="The mail have been send." style="color:green">&#10003</td>';
-                } else if (x.sent[i]==0){
+                if (x.sent[i] == 1) {
+                    content += '<td title="The mail has been sent." style="color:green">&#10003</td>';
+                } else if (x.sent[i] === 0) {
                     content += '<td title="If you refresh the page, we will try again to send the invitation mail to this address.">&#10007</td>';
-                } else if(x.sent[i]==2){
-                    content += '<td title="The mail have been send and user have changed the values of preferences." style="color:green">&#10003 &#10003</td>';
+                } else if (x.sent[i] == 2) {
+                    content += '<td title="The mail has been sent and the user has changed his/her wishes." style="color:green">&#10003 &#10003</td>';
                 }
                 content += '</tr>';
             }
@@ -73,20 +73,20 @@ $(document).ready(function() {
             if (x.results.length > 0) //Check if results are there now ?
             {
                 exportcsv();
+                $('#deadline-over').show();
                 console.log('One have results');
             }
             $("input").bind('input propertychange', check_validity);
 
-            $("button[name=save]").show();
-            //$("button[name=save_mail]").show();
+            $('#save-button').show();
             $("#explanation").show();
             $("input[name='deadline']").show();
             $("label").show();
             $("input[name='nslots']").show();
 
-            if (x.error !== "") {
-                swal("Oops...", "Something went wrong!\n" + x.error, "error");
-            }
+            // if (x.error !== "") {
+            //     swal("Oops...", "Something went wrong!\n" + x.error, "error");
+            // }
         },
         error: function(data) {
             swal("Oops...", "Something went wrong!\n" + data.responseText, "error");
@@ -94,7 +94,7 @@ $(document).ready(function() {
     });
 });
 
-function save(sendmail) {
+function save() {
     if (!check_validity()) {
         return;
     }
@@ -104,22 +104,23 @@ function save(sendmail) {
     if (deadline === null) {
         deadline = 0;
     } else {
-        deadline = deadline.getTime() / 1000;
+        deadline = deadline.getTime() / 1000 + 24 * 3600 - 60;
     }
+    var sendmail = $('#notify-users').prop('checked');
 
     var payload = JSON.stringify({
-        key : admin_key,
-        deadline : deadline,
-        slots : slots.slot,
-        vmin : slots.vmin,
-        vmax : slots.vmax,
-        sendmail : sendmail
+        key: admin_key,
+        deadline: deadline,
+        slots: slots.slot,
+        vmin: slots.vmin,
+        vmax: slots.vmax,
+        sendmail: sendmail
     });
 
     console.log(payload);
 
-    $("button[name='save']").prop('disabled', true);
-    $("button[name='save']").text('Request sent...');
+    $("#save-button").prop('disabled', true);
+    $("#save-button").text('Request sent...');
     $("#error").hide();
 
     $.ajax({
@@ -132,15 +133,15 @@ function save(sendmail) {
             setTimeout(function() {
                 $("#error").fadeOut();
             }, 5000);
-            $("button[name='save']").prop('disabled', false);
-            $("button[name='save']").text('Save');
+            $("#save-button").prop('disabled', false);
+            $("#save-button").text('Save');
         },
         error: function(data) {
             console.log(data);
             $("#error").show();
             $("#error").text('Error : ' + data.responseText);
-            $("button[name='save']").prop('disabled', false);
-            $("button[name='save']").text('Save');
+            $("#save-button").prop('disabled', false);
+            $("#save-button").text('Save');
         },
     });
 }
@@ -171,4 +172,27 @@ function exportcsv() {
     intro.appendChild(text);
     intro.appendChild(link);
     console.log(link);
+}
+
+function notify() {
+    var payload = JSON.stringify({
+        key: admin_key,
+    });
+
+    $("#notify-button").prop('disabled', true);
+    $("#notify-button").text('Request sent...');
+
+    $.ajax({
+        type: "POST",
+        url: "http://" + window.location.hostname + ":" + window.location.port + "/notify",
+        data: payload,
+        success: function(data) {
+            swal("Sending succeed!", "A mail has been sent to all participants.", "success");
+            $("#notify-button").text('Done');
+        },
+        error: function(data) {
+            console.log(data);
+            swal("Error!", "Help yourself", "error");
+        },
+    });
 }
