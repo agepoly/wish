@@ -275,7 +275,7 @@ On the admin page, any modification will reset the results and new ones will be 
 <p>Only you, the admin recieve this notification. Don't forget to inform yourself the users.
 Unless you want to postone the deadline...</p>
 
-<p>Have a nive day,<br />
+<p>Have a nice day,<br />
 The Wish team</p>
 <p>PS : the global reached score is {score} (less is best)</p>"#,
                           url = url,
