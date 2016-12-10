@@ -37,6 +37,7 @@ use util::create_mailer;
 
 use std::fs::File;
 use std::io::prelude::*;
+use std::collections::BTreeMap;
 
 fn main() {
     let client = Client::connect("db", 27017).expect("Failed to initialize mongodb client.");
@@ -196,6 +197,8 @@ fn process(db: &Arc<Mutex<Database>>) {
             wish.resize(vmin.len(), vmin.len() as u32 - 1);
         }
 
+        let results = solver::search_solution(&vmin, &vmax, &wishes, 20f64);
+
         let amail = event.get_str("amail").unwrap_or("@");
         let url = event.get_str("url").unwrap_or("www");
         let admin_key = event.get_str("admin_key").unwrap_or("");
@@ -210,7 +213,6 @@ fn process(db: &Arc<Mutex<Database>>) {
         };
 
 
-        let results = solver::search_solution(&vmin, &vmax, &wishes, 20f64);
 
         let results = match results {
             Ok(x) => x,
@@ -249,6 +251,26 @@ The Wish team</p>"#,
             }
         };
 
+        let mut stats: BTreeMap<u32, i32> = BTreeMap::new();
+        for i in 0..wishes.len() {
+            let grade = wishes[i][results.0[0][i] as usize];
+            *stats.entry(grade).or_insert(0) += 1;
+        }
+        let suffix = ["th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"];
+        let stats: Vec<String> = stats.iter()
+            .map(|(&k, &c)| if c != 0 {
+                format!("{} participant{} in {} {}{} wish",
+                        c,
+                        if c > 1 { "s" } else { "" },
+                        if c > 1 { "their" } else { "his/her" },
+                        k + 1,
+                        suffix[((k + 1) % 10) as usize])
+            } else {
+                "".to_string()
+            })
+            .collect();
+        let stats = stats.join(", ");
+
         let score = results.1;
         let results = Bson::Array(results.0[0].iter().map(|&x| Bson::I32(x as i32)).collect());
 
@@ -271,17 +293,19 @@ The Wish team</p>"#,
 The results have been computed and are accessible on any user page.<br />
 On the admin page, any modification will reset the results and new ones will be computed.</p>
 
-<p><a href="http://{url}/admin#{key}">Click here</a> to administrate the event.</p>
-<p>Only you, the admin recieve this notification. Don't forget to inform yourself the users.
-Unless you want to postone the deadline...</p>
+<p><a href="http://{url}/admin#{key}">Click here</a> to administrate the event
+or to send an email to the participants informing them that the results have been computed.</p>
+
+<p>The global reached score is {score} (less is best).</p>
+<p>{stats}.</p>
 
 <p>Have a nice day,<br />
-The Wish team</p>
-<p>PS : the global reached score is {score} (less is best)</p>"#,
+The Wish team</p>"#,
                           url = url,
                           key = admin_key,
                           name = name,
-                          score = score)
+                          score = score,
+                          stats = stats)
                 .as_str())
             .subject(format!("Wish : {}", name).as_str())
             .build();

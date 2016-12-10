@@ -14,9 +14,110 @@
 	<div class="container">
 		<h1 style="text-align: center">Help</h1>
 
-		<p>Organize the groups for various activities according to the desires of your friends, prepare the schedule of an oral exam taking into account the wishes of the students, plan who does what in the organization of a party,...</p>
-
 		<p>The Wish Team is working on this help page. If you have any issue, please write an email to wish dot agepoly at gmail dot com.</p>
+
+		<h2>
+			What does Wish do?
+		</h2>
+
+		<h3>Aim of the algorithm</h3>
+
+		<p>The algorithm takes as input a matrix whose lines are the users and whose columns are the slots.</p>
+		<p>The matrix is filled in with non-negative integers describing the wishes of the users, which we can call “grades”. A small number means that the user would be very satisfied if put in this slot, and a high number means that the user would be disappointed
+			if put in this slot. For a given arrangement of the users in the slots, one can determine a “penalty”: it is the sum of the squares of the “grades” that each user has considering in which slot he/she is placed.</p>
+		<p>A maximum and minimum number of users is associated to each slot. The aim of the algorithm is to minimize the penalty under these constraints.</p>
+
+
+		<h3>Ensuring fair choices</h3>
+
+		<h4>Rules to ensure fair choices</h4>
+		<p>To ensure that everyone has a fair chance of having his/her favorite slot, some rules must be imposed on the choices of the users. Indeed, one could manipulate the results by setting all slots to “hated” but one. A simple solution to this problem is
+			to impose that the user strictly orders all the slots. However, this can be uncomfortable from the user’s point of view, and besides no default value can replace a user that choose not to set his/her wishes.</p>
+		<p>Therefore, another solution was found. Assume there are n slots. Then, the gradation from wanted to hated is 0, 1, 2,...n-1. Then the rule goes as follows:
+			<ul>
+				<li>Up to 1 slot can be hated (grade n-1)</li>
+				<li>Up to 2 slots can be assigned grades greater or equal to n-2.</li>
+				<li>Up to 3 slots can be assigned grades greater or equal to n-3.</li>
+				<li>….</li>
+				<li>Up to n slots can be assigned grades greater or equal to 0.</li>
+			</ul>
+		</p>
+		<p>Therefore, the default setting of the wishes is to have grade 0 for each slots. This corresponds to somebody having no preferences.</p>
+
+		<h4>User’s wish page</h4>
+		<p>When the users are setting their wishes, the sliders automatically prevent unfair wishes.</p>
+
+		<h4>Users with special constraints</h4>
+		<p>Initially this algorithm was intended to put people in slots for an oral exam. In such a case, it can be that some people simply mustn’t be put in some slots because they have another exam at this time. In such a case, it’s nice to be able to avoid
+			the problem by putting a very high grade to the slots that the person mustn’t be put in.</p>
+		<p>Therefore, the administrator has special rights to access the user’s wish page and select some slots as “avoided” if he/she judges that the user has sufficient reasons to not be put is this slot (see as well Recommendations of use <a href="#administrate-an-event">Administrate an event</a>).</p>
+
+
+		<h3>Private url</h3>
+		<p>To ensure that the users don’t change their wishes to trick the system, it’s good if they don’t know what the preferences of the other users are. Therefore, a unique key is randomly generated for each user. An url is then created using this key, which
+			gives to the user a private access to his/her wish page.</p>
+
+
+		<h3>What Wish doesn’t do...</h3>
+
+		<h4>Wish isn’t Doodle</h4>
+		<p>The aim of the algorithm is to arrange people in various slots. It’s not the aim to put all people in the same slot.</p>
+
+		<h4>Each user is in only one slot in the end</h4>
+		<p>It’s not that easy to modify the algorithm to put each person in two slots.</p>
+
+
+		<h2>
+			Recommendations of use
+		</h2>
+
+		<h3>Tips and tricks</h3>
+		<p>If you are not sure how to use some features on the pages of the wish website, try keeping the mouse on this feature. In most cases, a “tip” can appear informing you about how the feature works.</p>
+
+		<h3>Set your wishes</h3>
+		<p>Before setting your wishes, you might want to take a look at the “Rules to ensure fair choices” above.</p>
+
+		<h3>Create an event</h3>
+		<h4>Number of slots</h4>
+		<p>If you give too many slots, it will become a bit inconvenient for the users to set their wishes. If you are organizing an oral exam with a lot of students, a good solution is to gather three passage times in one slot and fit three people in the slot.</p>
+
+		<h4>Deadline</h4>
+		<p>The deadline will be on midnight of the selected date. The algorithm will run as soon as the deadline is passed and the administrator will receive a mail informing him/her that the results are available. He or she will have to go to the admin page to
+			send an email to the participants telling them that the results are available.</p>
+
+		<h4>Mailing list</h4>
+		<p>The mailing list should contain the e-mail of each of the participants to the event. If the administrator intends to be put in a slot to, his/her mail should be on the list too.</p>
+		<p>This list will be used to send the following mails:
+			<ul>
+				<li>Invitation mail: provides the user with an access to his/her wish page.</li>
+				<li>Update mail: if the administrator changes something in the event organization (slots/deadline), it is possible to send an update mail to warn the users.</li>
+				<li>Results mail: when the results have been computed, the administrator can inform the users.</li>
+			</ul>
+		</p>
+
+		<h3 id="administrate-an-event">Administer an event</h3>
+		<h4>Activate the event and send the invitation mails</h4>
+		<p>Once an event has been created, the administrator receives an e-mail containing a link to the admin page. The first time that this page is opened, it sends the invitation mails to the participants.</p>
+
+
+		<h4>Administration of a user page and special admin rights</h4>
+		<p>If for some reasons a given user must not be in some of the slots, the administrator can make sure that it won’t happen. To do so, click on the admin link to the user’s page and check the “avoided” case in the corresponding slots.</p>
+		<p>This assigns a very high grade to this slot in the user’s wish list and makes it therefore highly unlikely for the user to be in this slot. As a consequence, the choices of the user are made unfair, and therefore the user shouldn’t try to modify his/her
+			wish after this.</p>
+		<p>It is therefore recommended to perform this action shortly before the deadline.</p>
+
+		<h4>Change the number of slots</h4>
+		<p>Changing the number of slots is allowed but the administrator should be aware that this can make the choices of the users unfair.</p>
+
+		<h4>Change the deadline</h4>
+		<p>In case the results have already been computed, changing the deadline suppresses them. They are computed again when the new deadline is over.</p>
+
+		<h2>
+			If you have problems that this page doesn’t solve...
+		</h2>
+
+		<p>Contact us: write an e-mail at wish.agepoly@gmail.com<br /> Create an issue on GitHub: github.com/agepoly/wish</p>
+
 	</div>
 </body>
 
