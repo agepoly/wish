@@ -88,7 +88,7 @@ pub fn search_solution(vmin: &Vec<u32>,
                        vmax: &Vec<u32>,
                        wishes: &Vec<Vec<u32>>,
                        time: f64)
-                       -> Result<Vec<Vec<usize>>, String> {
+                       -> Result<(Vec<Vec<usize>>, i32), String> {
     if vmin.len() != vmax.len() {
         return Err("length of vmin != length of vmax".to_string());
     }
@@ -163,6 +163,6 @@ pub fn search_solution(vmin: &Vec<u32>,
     if best_results.len() == 0 {
         Err("empty results".to_string())
     } else {
-        Ok(best_results.clone())
+        Ok((best_results.clone(), best_score))
     }
 }

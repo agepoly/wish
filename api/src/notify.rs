@@ -112,12 +112,17 @@ pub fn notify(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respons
         if let &Bson::Document(ref x) = p {
             let mail = x.get_str("mail").unwrap_or("");
             let key = x.get_str("key").unwrap_or("");
-            let slot = &slots[results[i] as usize];
+            let k = results[i] as usize;
+            let slot = &slots[k];
+            let malus = match x.get_array("wish").unwrap_or(&vec![Bson::I32(0); slots.len()])[k] {
+                Bson::I32(x) => x,
+                _ => 0,
+            };
 
             let content = format!(r#"<p>Hi,</p>
         <p>The event <strong>{name}</strong> has reached the deadline ({deadline}).</p>
         <p>The results have been computed and you have been placed into the slot
-        <strong>{slot}</strong>.</p>
+        <strong>{slot}</strong> (malus of {malus}).</p>
         <p>You can see the full results on your user page by
         <a href="http://{url}/wish#{key}">clicking here</a>.</p>
 
@@ -127,7 +132,8 @@ pub fn notify(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respons
                                   name = name,
                                   url = url,
                                   deadline = deadline,
-                                  key = key);
+                                  key = key,
+                                  malus = malus);
 
             let email = EmailBuilder::new()
                 .to(mail)

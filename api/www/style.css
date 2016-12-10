@@ -22,6 +22,7 @@
 .container {
     max-width: 640px;
     top: 100px;
+    text-align: justify;
 }
 
 #content {

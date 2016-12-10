@@ -210,7 +210,10 @@ fn process(db: &Arc<Mutex<Database>>) {
         };
 
 
-        let results = match solver::search_solution(&vmin, &vmax, &wishes, 20f64) {
+        let results = solver::search_solution(&vmin, &vmax, &wishes, 20f64);
+
+        let results = match results {
+            Ok(x) => x,
             Err(e) => {
                 let email = EmailBuilder::new()
                     .from("wish@epfl.ch")
@@ -234,7 +237,7 @@ The Wish team</p>"#,
                 match email {
                     Ok(x) => {
                         if let Err(e) = mailer.send(x) {
-                            println!("process: email send {}", e);
+                            println!("process: email sent {}", e);
                         }
                     }
                     Err(e) => {
@@ -244,10 +247,11 @@ The Wish team</p>"#,
                 };
                 return;
             }
-            Ok(x) => x,
         };
 
-        let results = Bson::Array(results[0].iter().map(|&x| Bson::I32(x as i32)).collect());
+        let score = results.1;
+        let results = Bson::Array(results.0[0].iter().map(|&x| Bson::I32(x as i32)).collect());
+
         if let Ok(db) = db.lock() {
             db.collection("events")
                 .update_one(doc!{"_id" => (event.get_object_id("_id").unwrap().clone())},
@@ -272,10 +276,12 @@ On the admin page, any modification will reset the results and new ones will be 
 Unless you want to postone the deadline...</p>
 
 <p>Have a nive day,<br />
-The Wish team</p>"#,
+The Wish team</p>
+<p>PS : the global reached score is {score} (less is best)</p>"#,
                           url = url,
                           key = admin_key,
-                          name = name)
+                          name = name,
+                          score = score)
                 .as_str())
             .subject(format!("Wish : {}", name).as_str())
             .build();
