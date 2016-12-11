@@ -162,23 +162,24 @@ function send() {
         url: "http://" + window.location.hostname + ":" + window.location.port + "/set_wish",
         data: payload,
         success: function(data) {
-            $("button[name='send']").css({
-                "background-color": "#d1ffdf"
-            });
+            // $("button[name='send']").css({
+            //     "background-color": "#d1ffdf"
+            // });
             $("#error").text("Saved !");
             $("#error").show();
             setTimeout(function() {
-                $("button[name='send']").removeAttr('style');
+                // $("button[name='send']").removeAttr('style');
                 $("#error").fadeOut();
             }, 3000);
         },
         error: function(data) {
             console.log(data);
-            $("button[name='send']").css({
-                "background-color": "#fc9e97"
-            });
+            // $("button[name='send']").css({
+            //     "background-color": "#fc9e97"
+            // });
             $("#error").text(data.responseText);
             $("#error").show();
+            swal("Oops...", "Something went wrong!\n" + data.responseText, "error");
         },
     });
 }

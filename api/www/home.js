@@ -45,7 +45,6 @@ function send() {
 
     $('#send').prop('disabled', true);
     $('#send').text('Request sent...');
-    $("#error").hide();
 
     $.ajax({
         type: "POST",
@@ -60,8 +59,6 @@ function send() {
         error: function(data) {
             console.log(data);
             swal("Oops...", "Something went wrong!\n" + data.responseText, "error");
-            //$("#error").show();
-            //$("#error").text('Creation failed : ' + data.responseText);
             $('#send').prop('disabled', false);
             $('#send').text('Re create');
         },
