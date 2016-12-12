@@ -1,5 +1,7 @@
 # Wish
 
+[web page](https://wish.agepoly.ch/)
+
 ## Goal
 
 Dispatch peoples amongst different slots according to each individual wishes.
@@ -12,8 +14,3 @@ With the url the participant can enter his own wish by sorting the slots by pref
 
 1. Install docker
 2. `docker-compose up --build`
-
-## Screenshots
-
-![home](https://cloud.githubusercontent.com/assets/333780/19229911/637c79b8-8ed1-11e6-93e7-e6bb92fb26c0.png)
-![get](https://cloud.githubusercontent.com/assets/333780/19229913/663dfbc2-8ed1-11e6-9462-91ae4eed94bb.png)
