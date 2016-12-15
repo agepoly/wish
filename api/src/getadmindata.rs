@@ -115,7 +115,7 @@ pub fn get_admin_data(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult
 <strong>{name}</strong></p>
 <pre>{message}</pre>
 
-<p><a href="http://{url}/wish#{key}">Click here</a> to set your wishes.</p>
+<p><a href="{url}/wish#{key}">Click here</a> to set your wishes.</p>
 
 <p>Have a nice day,<br />
 The Wish team</p>"#,

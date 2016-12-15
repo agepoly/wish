@@ -278,7 +278,7 @@ fn process(db: &Arc<Mutex<Database>>) {
 The results have been computed and are accessible on any user page.<br />
 On the admin page, any modification will reset the results and new ones will be computed.</p>
 
-<p><a href="http://{url}/admin#{key}">Click here</a> to administrate the event
+<p><a href="{url}/admin#{key}">Click here</a> to administrate the event
 or to send an email to the participants informing them that the results have been computed.</p>
 
 <p>The global reached score is {score} (less is best).</p>
@@ -309,7 +309,7 @@ The Wish team</p>"#,
 An error has occured : <em>{error}</em><br />
 On the admin page, any modification will reset the results and new ones will be computed.</p>
 
-<p><a href="http://{url}/admin#{key}">Click here</a> to administrate the event.</p>
+<p><a href="{url}/admin#{key}">Click here</a> to administrate the event.</p>
 
 <p>Have a nice day,<br />
 The Wish team</p>"#,

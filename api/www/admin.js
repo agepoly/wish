@@ -29,7 +29,7 @@ $(document).ready(function() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":" + window.location.port + "/get_admin_data",
+        url: window.location.origin + "/get_admin_data",
         data: '{ "key" : "' + admin_key + '" }',
         success: function(data) {
             x = JSON.parse(data);
@@ -45,7 +45,7 @@ $(document).ready(function() {
             content += '<tbody>';
             for (i = 0; i < m; ++i) {
                 var key = x.keys[i];
-                var url = "http://" + window.location.hostname + ":" + window.location.port + "/wish#" + key;
+                var url = window.location.origin + "/wish#" + key;
                 var aurl = url + "+" + admin_key;
                 content += '<tr>' +
                     '<td>' + x.mails[i] + '</td>' +
@@ -125,7 +125,7 @@ function save() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":" + window.location.port + "/admin_update",
+        url: window.location.origin + "/admin_update",
         data: payload,
         success: function(data) {
             $("#error").show();
@@ -184,7 +184,7 @@ function notify() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":" + window.location.port + "/notify",
+        url: window.location.origin + "/notify",
         data: payload,
         success: function(data) {
             swal("Sending succeed!", "A mail has been sent to all participants.", "success");

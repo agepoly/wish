@@ -37,7 +37,7 @@ function send() {
       slots : slots.slot,
       vmin : slots.vmin,
       vmax : slots.vmax,
-      url : window.location.hostname + ':' + window.location.port,
+      url : window.location.origin,
       message : $("#message").val()
     });
 
@@ -48,7 +48,7 @@ function send() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":" + window.location.port + "/create",
+        url: window.location.origin + "/create",
         data: payload,
         success: function(data) {
             console.log("creation success");

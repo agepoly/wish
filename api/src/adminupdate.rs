@@ -142,10 +142,10 @@ pub fn admin_update(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<R
 </ul>
 
 <p>The deadline is {deadline}</p>
-<p>Please update your wishes accordingly by <a href="http://{url}/wish#{key}">clicking here</a>.
+<p>Please update your wishes accordingly by <a href="{url}/wish#{key}">clicking here</a>.
 If you have problems to change your wishes,
 it might be because they have been rendered invalid due to the changes.
-You might then want to take a look to <a href="http://{url}/help">this page</a>,
+You might then want to take a look to <a href="{url}/help">this page</a>,
 which explains what “fair” and “unfair” wishes are.</p>
 
 <p>Have a nice day,<br />

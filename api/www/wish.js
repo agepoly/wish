@@ -13,7 +13,7 @@ $(document).ready(function() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":" + window.location.port + "/get_data",
+        url: window.location.origin + "/get_data",
         data: '{ "key" : "' + key + '" }',
         success: function(data) {
             x = JSON.parse(data);
@@ -159,7 +159,7 @@ function send() {
 
     $.ajax({
         type: "POST",
-        url: "http://" + window.location.hostname + ":" + window.location.port + "/set_wish",
+        url: window.location.origin + "/set_wish",
         data: payload,
         success: function(data) {
             // $("button[name='send']").css({

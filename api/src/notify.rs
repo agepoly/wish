@@ -124,7 +124,7 @@ pub fn notify(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respons
         <p>The results have been computed and you have been placed into the slot
         <strong>{slot}</strong> (grade {grade}).</p>
         <p>You can see the full results on your user page by
-        <a href="http://{url}/wish#{key}">clicking here</a>.</p>
+        <a href="{url}/wish#{key}">clicking here</a>.</p>
 
         <p>Have a nice day,<br />
         The Wish team</p>"#,
