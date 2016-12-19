@@ -195,7 +195,7 @@ function notify() {
         },
         error: function(data) {
             console.log(data);
-            swal("Error!", "Help yourself", "error");
+            swal("Error!", data.responseText, "error");
         },
     });
 }
@@ -219,7 +219,7 @@ function send_reminder() {
         },
         error: function(data) {
             console.log(data);
-            swal("Error!", "Help yourself", "error");
+            swal("Error!", data.responseText, "error");
         },
     });
 }

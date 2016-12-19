@@ -102,13 +102,17 @@ pub fn notify(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respons
 
     let people = event.get_array("people").unwrap_or(&Vec::new()).clone();
 
-    if results.len() != people.len() {
+    let mut errors = Vec::new();
 
-        for p in people.iter() {
-            if let &Bson::Document(ref x) = p {
-                let mail = x.get_str("mail").unwrap_or("");
-                let key = x.get_str("key").unwrap_or("");
-                let sent = x.get_i32("sent").unwrap_or(0);
+
+    for (i, p) in people.iter().enumerate() {
+        if let &Bson::Document(ref x) = p {
+            let mail = x.get_str("mail").unwrap_or("");
+            let key = x.get_str("key").unwrap_or("");
+            let sent = x.get_i32("sent").unwrap_or(0);
+
+            let email = if results.len() != people.len() {
+
                 if sent != 1 {
                     // Send reminder only if mail recieved but no wish sets
                     continue;
@@ -130,41 +134,14 @@ The Wish team</p>"#,
                                       key = key,
                                       message = data.message);
 
-                let email = EmailBuilder::new()
+                EmailBuilder::new()
                     .to(mail)
                     .from("wish@epfl.ch")
                     .reply_to(amail)
                     .html(content.as_str())
                     .subject(format!("Wish reminder : {}", name).as_str())
-                    .build();
-
-                let email = match email {
-                    Ok(x) => x,
-                    Err(e) => {
-                        println!("notify: {}", e);
-                        return Ok(Response::with((status::NotFound,
-                                                  format!("mail error : {}", e),
-                                                  Header(AccessControlAllowOrigin::Any))));
-                    }
-                };
-
-                let result = mailer.send(email);
-
-                if let Err(e) = result {
-                    println!("notify: {}", e);
-                    return Ok(Response::with((status::NotFound,
-                                              format!("mail error : {}", e),
-                                              Header(AccessControlAllowOrigin::Any))));
-                }
-            }
-        }
-
-    } else {
-
-        for (i, p) in people.iter().enumerate() {
-            if let &Bson::Document(ref x) = p {
-                let mail = x.get_str("mail").unwrap_or("");
-                let key = x.get_str("key").unwrap_or("");
+                    .build()
+            } else {
                 let k = results[i] as usize;
                 let slot = &slots[k];
                 let grade =
@@ -193,35 +170,36 @@ The Wish team</p>"#,
                                       grade = grade,
                                       message = data.message);
 
-                let email = EmailBuilder::new()
+                EmailBuilder::new()
                     .to(mail)
                     .from("wish@epfl.ch")
                     .reply_to(amail)
                     .html(content.as_str())
                     .subject(format!("Wish : {}", name).as_str())
-                    .build();
+                    .build()
+            };
 
-                let email = match email {
-                    Ok(x) => x,
-                    Err(e) => {
-                        println!("notify: {}", e);
-                        return Ok(Response::with((status::NotFound,
-                                                  format!("mail error : {}", e),
-                                                  Header(AccessControlAllowOrigin::Any))));
-                    }
-                };
-
-                let result = mailer.send(email);
-
-                if let Err(e) = result {
-                    println!("notify: {}", e);
-                    return Ok(Response::with((status::NotFound,
-                                              format!("mail error : {}", e),
-                                              Header(AccessControlAllowOrigin::Any))));
+            let email = match email {
+                Ok(x) => x,
+                Err(e) => {
+                    errors.push(format!("{} : {}", mail, e));
+                    continue;
                 }
+            };
+
+            let result = mailer.send(email);
+
+            if let Err(e) = result {
+                errors.push(format!("{} : {}", mail, e));
             }
         }
     }
 
-    Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
+    if !errors.is_empty() {
+        Ok(Response::with((status::NotFound,
+                           errors.join("\n"),
+                           Header(AccessControlAllowOrigin::Any))))
+    } else {
+        Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
+    }
 }
