@@ -46,7 +46,8 @@ pub fn set_wish(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respo
                     if slots.len() != data.wish.len() {
                         println!("set_wishes: wish length does not match with slots length");
                         return Ok(Response::with((status::NotFound,
-                                                  "Wish length does not match with slots length.\nTry to refresh the page.",
+                                                  "Wish length does not match with slots \
+                                                   length.\nTry to refresh the page.",
                                                   Header(AccessControlAllowOrigin::Any))));
                     }
                 }
@@ -72,14 +73,16 @@ pub fn set_wish(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respo
         }
     };
 
-    if db.collection("events")
+    let not_admin = db.collection("events")
         .find_one(Some(doc!{
             "admin_key" => (data.admin_key.clone()),
             "people.key" => (data.key.clone())
         }),
                   None)
         .unwrap_or(None)
-        .is_none() {
+        .is_none();
+
+    if not_admin {
         let mut c = data.wish.clone();
         c.sort();
         for i in 0..c.len() {

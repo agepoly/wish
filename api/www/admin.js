@@ -16,6 +16,7 @@ $(document).ready(function() {
     $('#save-button').hide();
     $('#save-button').bind("click", save);
     $('#notify-button').bind("click", notify);
+    $('#reminder-button').bind('click', send_reminder);
 
     $("input[name='deadline']").datepicker({
         showOtherMonths: true,
@@ -50,10 +51,11 @@ $(document).ready(function() {
                 content += '<tr>' +
                     '<td>' + x.mails[i] + '</td>' +
                     '<td><a href="' + url + '" title="Access the page with user’s rights.">user</a> or <a href="' + aurl + '" title="Access the page with override rights.">admin</a></td>';
-                if (x.sent[i] == 1) {
-                    content += '<td title="The mail has been sent." style="color:green">&#10003;</td>';
-                } else if (x.sent[i] === 0) {
+                if (x.sent[i] === 0) {
                     content += '<td title="If you refresh the page, we will try again to send the invitation mail to this address." style="color:red">&#10007;</td>';
+                } else if (x.sent[i] === 1) {
+                    content += '<td title="The mail has been sent." style="color:green">&#10003;</td>';
+                    $('#reminder').show();
                 } else if (x.sent[i] == 2) {
                     content += '<td title="The mail has been sent and the user has changed his/her wishes." style="color:green">&#10003;&#10003;</td>';
                 }
@@ -177,6 +179,7 @@ function exportcsv() {
 function notify() {
     var payload = JSON.stringify({
         key: admin_key,
+        message: ""
     });
 
     $("#notify-button").prop('disabled', true);
@@ -189,6 +192,30 @@ function notify() {
         success: function(data) {
             swal("Sending succeed!", "A mail has been sent to all participants.", "success");
             $("#notify-button").text('Done');
+        },
+        error: function(data) {
+            console.log(data);
+            swal("Error!", "Help yourself", "error");
+        },
+    });
+}
+
+function send_reminder() {
+    var payload = JSON.stringify({
+        key: admin_key,
+        message: ""
+    });
+
+    $("#reminder-button").prop('disabled', true);
+    $("#reminder-button").text('Request sent...');
+
+    $.ajax({
+        type: "POST",
+        url: window.location.origin + "/notify",
+        data: payload,
+        success: function(data) {
+            swal("Sending succeed!", "A mail has been sent to the participants that did not set their wishes.", "success");
+            $("#reminder-button").text('Done');
         },
         error: function(data) {
             console.log(data);

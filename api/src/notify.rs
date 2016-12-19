@@ -27,6 +27,7 @@ pub fn notify(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respons
     #[derive(RustcDecodable)]
     struct Input {
         key: String,
+        message: String,
     }
 
     let mut payload = String::new();
@@ -102,68 +103,125 @@ pub fn notify(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respons
     let people = event.get_array("people").unwrap_or(&Vec::new()).clone();
 
     if results.len() != people.len() {
-        println!("notify: no results to notify");
-        return Ok(Response::with((status::NotFound,
-                                  "no results to notify",
-                                  Header(AccessControlAllowOrigin::Any))));
-    }
 
-    for (i, p) in people.iter().enumerate() {
-        if let &Bson::Document(ref x) = p {
-            let mail = x.get_str("mail").unwrap_or("");
-            let key = x.get_str("key").unwrap_or("");
-            let k = results[i] as usize;
-            let slot = &slots[k];
-            let grade = match x.get_array("wish").unwrap_or(&vec![Bson::I32(0); slots.len()])[k] {
-                Bson::I32(x) => x,
-                _ => 0,
-            };
+        for p in people.iter() {
+            if let &Bson::Document(ref x) = p {
+                let mail = x.get_str("mail").unwrap_or("");
+                let key = x.get_str("key").unwrap_or("");
+                let sent = x.get_i32("sent").unwrap_or(0);
+                if sent != 1 {
+                    // Send reminder only if mail recieved but no wish sets
+                    continue;
+                }
 
-            let content = format!(r#"<p>Hi,</p>
-        <p>The event <strong>{name}</strong> has reached the deadline ({deadline}).</p>
-        <p>The results have been computed and you have been placed into the slot
-        <strong>{slot}</strong> (grade {grade}).</p>
-        <p>You can see the full results on your user page by
-        <a href="{url}/wish#{key}">clicking here</a>.</p>
+                let content = format!(r#"<p>Hi,</p>
+<p>This is a reminder for the event <strong>{name}</strong>.
+The deadline to set your wishes is {deadline}.</p>
 
-        <p>Have a nice day,<br />
-        The Wish team</p>"#,
-                                  slot = slot,
-                                  name = name,
-                                  url = url,
-                                  deadline = deadline,
-                                  key = key,
-                                  grade = grade);
+<pre>{message}</pre>
 
-            let email = EmailBuilder::new()
-                .to(mail)
-                .from("wish@epfl.ch")
-                .reply_to(amail)
-                .html(content.as_str())
-                .subject(format!("Wish : {}", name).as_str())
-                .build();
+<p><a href="{url}/wish#{key}">Click here</a> to set your wishes.</p>
 
-            let email = match email {
-                Ok(x) => x,
-                Err(e) => {
+<p>Have a nice day,<br />
+The Wish team</p>"#,
+                                      name = name,
+                                      url = url,
+                                      deadline = deadline,
+                                      key = key,
+                                      message = data.message);
+
+                let email = EmailBuilder::new()
+                    .to(mail)
+                    .from("wish@epfl.ch")
+                    .reply_to(amail)
+                    .html(content.as_str())
+                    .subject(format!("Wish reminder : {}", name).as_str())
+                    .build();
+
+                let email = match email {
+                    Ok(x) => x,
+                    Err(e) => {
+                        println!("notify: {}", e);
+                        return Ok(Response::with((status::NotFound,
+                                                  format!("mail error : {}", e),
+                                                  Header(AccessControlAllowOrigin::Any))));
+                    }
+                };
+
+                let result = mailer.send(email);
+
+                if let Err(e) = result {
                     println!("notify: {}", e);
                     return Ok(Response::with((status::NotFound,
                                               format!("mail error : {}", e),
                                               Header(AccessControlAllowOrigin::Any))));
                 }
-            };
+            }
+        }
 
-            let result = mailer.send(email);
+    } else {
 
-            if let Err(e) = result {
-                println!("notify: {}", e);
-                return Ok(Response::with((status::NotFound,
-                                          format!("mail error : {}", e),
-                                          Header(AccessControlAllowOrigin::Any))));
+        for (i, p) in people.iter().enumerate() {
+            if let &Bson::Document(ref x) = p {
+                let mail = x.get_str("mail").unwrap_or("");
+                let key = x.get_str("key").unwrap_or("");
+                let k = results[i] as usize;
+                let slot = &slots[k];
+                let grade =
+                    match x.get_array("wish").unwrap_or(&vec![Bson::I32(0); slots.len()])[k] {
+                        Bson::I32(x) => x,
+                        _ => 0,
+                    };
+
+                let content = format!(r#"<p>Hi,</p>
+<p>The event <strong>{name}</strong> has reached the deadline ({deadline}).</p>
+<p>The results have been computed and you have been placed into the slot
+<strong>{slot}</strong> (grade {grade}).</p>
+
+<pre>{message}</pre>
+
+<p>You can see the full results on your user page by
+<a href="{url}/wish#{key}">clicking here</a>.</p>
+
+<p>Have a nice day,<br />
+The Wish team</p>"#,
+                                      slot = slot,
+                                      name = name,
+                                      url = url,
+                                      deadline = deadline,
+                                      key = key,
+                                      grade = grade,
+                                      message = data.message);
+
+                let email = EmailBuilder::new()
+                    .to(mail)
+                    .from("wish@epfl.ch")
+                    .reply_to(amail)
+                    .html(content.as_str())
+                    .subject(format!("Wish : {}", name).as_str())
+                    .build();
+
+                let email = match email {
+                    Ok(x) => x,
+                    Err(e) => {
+                        println!("notify: {}", e);
+                        return Ok(Response::with((status::NotFound,
+                                                  format!("mail error : {}", e),
+                                                  Header(AccessControlAllowOrigin::Any))));
+                    }
+                };
+
+                let result = mailer.send(email);
+
+                if let Err(e) = result {
+                    println!("notify: {}", e);
+                    return Ok(Response::with((status::NotFound,
+                                              format!("mail error : {}", e),
+                                              Header(AccessControlAllowOrigin::Any))));
+                }
             }
         }
     }
-
 
     Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
 }
