@@ -74,9 +74,10 @@ $(document).ready(function() {
             check_validity();
             if (x.results.length > 0) //Check if results are there now ?
             {
+                console.log('One have results');
                 exportcsv();
                 $('#deadline-over').show();
-                console.log('One have results');
+                $('#reminder').hide();
             }
             $("input").bind('input propertychange', check_validity);
 
