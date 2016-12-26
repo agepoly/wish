@@ -122,8 +122,8 @@ pub fn admin_update(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<R
         let name = event.get_str("name").unwrap_or("no name");
         let amail = event.get_str("amail").unwrap_or("");
         let slots = "<li>".to_string() + data.slots.join("</li><li>").as_str() + "</li>";
-        let deadline = time::strftime("%d %B %Y at %H:%M",
-                                      &time::at(time::Timespec::new(data.deadline, 0)))
+        let deadline = time::strftime("%d %B %Y at %H:%M UTC",
+                                      &time::at_utc(time::Timespec::new(data.deadline, 0)))
             .unwrap();
 
         let mut mailer = create_mailer(true).unwrap();

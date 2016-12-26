@@ -80,8 +80,8 @@ pub fn notify(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respons
     let name = event.get_str("name").unwrap_or("no name");
     let amail = event.get_str("amail").unwrap_or("");
     let deadline =
-        time::strftime("%d %B %Y at %H:%M",
-                       &time::at(time::Timespec::new(event.get_i64("deadline").unwrap_or(0), 0)))
+        time::strftime("%d %B %Y at %H:%M UTC",
+                       &time::at_utc(time::Timespec::new(event.get_i64("deadline").unwrap_or(0), 0)))
             .unwrap();
     let slots: Vec<String> = event.get_array("slots")
         .unwrap_or(&Vec::new())

@@ -39,54 +39,57 @@ $(document).ready(function() {
                 $("#deadline").html('<b>Deadline: </b> ' + days + ' days ' + hours + ' hours and ' + minutes + ' minutes ago');
             }
 
-            var i, content, n;
-            if (deadline < now && x.results.length > 0) {
-                content = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Mail of the person assigned to this slot</th></tr></thead><tbody>';
-                n = x.slots.length;
-                for (i = 0; i < n; ++i) {
-                    var list = [];
-                    for (var j = 0; j < x.mails.length; ++j) {
-                        if (x.results[j] == i) {
-                            list.push(x.mails[j]);
+            var i, n;
+            var content = '';
+            if (deadline < now) {
+                content = '<h2>Results</h2>';
+                if (x.results.length > 0) {
+                    content += '<table class="u-full-width"><thead><tr><th>Slot</th><th>Mail of the person assigned to this slot</th></tr></thead><tbody>';
+                    n = x.slots.length;
+                    for (i = 0; i < n; ++i) {
+                        var list = [];
+                        for (var j = 0; j < x.mails.length; ++j) {
+                            if (x.results[j] == i) {
+                                list.push(x.mails[j]);
+                            }
                         }
+                        content += '<tr><td>' + x.slots[i] + '</td><td>' + list.join(", ") + '</td></tr>';
                     }
-                    content += '<tr><td>' + x.slots[i] + '</td><td>' + list.join(", ") + '</td></tr>';
+                    content += '</tbody></table>';
+                } else {
+                    content += "The deadline is over, the results will be generated soon !";
                 }
-                content += '</tbody></table>';
-                $("#content").html(content);
-                $("button[name='send']").hide();
-            } else if (deadline > now) {
-                content = '<table class="u-full-width"><thead><tr><th>Slot</th><th>' + (admin_key !== undefined ? 'User\'s wish' : 'Your Wish') + '</th><th> </th></tr></thead><tbody>';
-                n = x.slots.length;
-                if (n < x.wish.length) {
-                    x.wish.length = n;
-                }
-                for (i = 0; i < n; ++i) {
-                    var wish = n - 1; // default value to [dont want]
-                    if (i < x.wish.length) wish = x.wish[i];
-                    else x.wish[i] = wish;
-                    content += '<tr><td>' + htmlEntities(x.slots[i]) + '</td><td>wanted <input type="range" name="wish' + i + '" min="0" max="' + (n - 1) + '" step="1" value="' + wish + '" /> hated</td>';
-                    if (admin_key !== undefined) {
-                        content += '<td><input type="checkbox" title="If for a given reason the participant must not be in this slot, you can prevent him/her from being assigned to this slot by checking this box." name="impossible' + i + '" ' + (wish == 1000 ? 'checked' : '') + '>avoided</td>';
-                    } else {
-                        if (wish == 1000) {
-                            content += '<td>avoided</td>';
-                        } else {
-                            content += '<td></td>';
-                        }
-                    }
-                    content += '</tr>';
-                }
-                content += '</tbody></table>';
-                $("#content").html(content);
-
-                //$("input").bind('input propertychange', check);
-                //$("input").bind('input onclick', check);
-                $("input").change(check);
-            } else {
-                $("#content").html("The deadline is over, the results will be generated soon !");
-                $("button[name='send']").hide();
+                $("#results").html(content);
             }
+
+            if (content !== '') content = '<h2>Wish</h2>';
+            content += '<table class="u-full-width"><thead><tr><th>Slot</th><th>' + (admin_key !== undefined ? 'User\'s wish' : 'Your Wish') + '</th><th> </th></tr></thead><tbody>';
+            n = x.slots.length;
+            if (n < x.wish.length) {
+                x.wish.length = n;
+            }
+            for (i = 0; i < n; ++i) {
+                var wish = n - 1; // default value to [dont want]
+                if (i < x.wish.length) wish = x.wish[i];
+                else x.wish[i] = wish;
+                content += '<tr><td>' + htmlEntities(x.slots[i]) + '</td><td>wanted <input type="range" name="wish' + i + '" min="0" max="' + (n - 1) + '" step="1" value="' + wish + '" /> hated</td>';
+                if (admin_key !== undefined) {
+                    content += '<td><input type="checkbox" title="If for a given reason the participant must not be in this slot, you can prevent him/her from being assigned to this slot by checking this box." name="impossible' + i + '" ' + (wish == 1000 ? 'checked' : '') + '>avoided</td>';
+                } else {
+                    if (wish == 1000) {
+                        content += '<td>avoided</td>';
+                    } else {
+                        content += '<td></td>';
+                    }
+                }
+                content += '</tr>';
+            }
+            content += '</tbody></table>';
+            $("#content").html(content);
+
+            //$("input").bind('input propertychange', check);
+            //$("input").bind('input onclick', check);
+            $("input").change(check);
         },
         error: function(data) {
             console.log(data);

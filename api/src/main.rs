@@ -89,13 +89,14 @@ fn main() {
             .get::<Router>()
             .unwrap()
             .find("file")
-            .unwrap_or("index.html");
+            .unwrap_or("home.html");
         load_file(query.to_string())
     },
                "file");
+    
     router.get("/",
-               |_: &mut Request| load_file("index.html".to_string()),
-               "index");
+               |_: &mut Request| load_file("home.html".to_string()),
+               "home");
 
     fn load_file(mut file: String) -> IronResult<Response> {
         if !file.contains(".") {

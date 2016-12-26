@@ -8,7 +8,7 @@ var x = null;
 $(document).ready(function() {
     $("input[name='nslots']").bind('input propertychange', function() {
         create_slots();
-        $("input").bind('input propertychange', check_validity);
+        $("input").bind('input propertychange', entry_modified);
     });
     $("input[name='deadline']").hide();
     $("label").hide();
@@ -23,9 +23,8 @@ $(document).ready(function() {
         selectOtherMonths: true,
         dateFormat: "yy-mm-dd",
         onSelect: function() {
-            check_validity();
-        },
-        minDate: 0
+            entry_modified();
+        }
     });
 
     $.ajax({
@@ -69,33 +68,50 @@ $(document).ready(function() {
             oldvalues.vmax = x.vmax;
             $("input[name='nslots']").val(x.slots.length);
             create_slots();
-            $("input").bind('input propertychange', check_validity);
 
-            check_validity();
             if (x.results.length > 0) //Check if results are there now ?
             {
                 console.log('One have results');
                 exportcsv();
                 $('#deadline-over').show();
                 $('#reminder').hide();
+                $('#save-button').text('Recompute');
             }
-            $("input").bind('input propertychange', check_validity);
 
+            $("input").bind('input propertychange', entry_modified);
             $('#save-button').show();
             $("#explanation").show();
             $("input[name='deadline']").show();
             $("label").show();
             $("input[name='nslots']").show();
-
-            // if (x.error !== "") {
-            //     swal("Oops...", "Something went wrong!\n" + x.error, "error");
-            // }
+            //entry_modified();
         },
         error: function(data) {
             swal("Oops...", "Something went wrong!\n" + data.responseText, "error");
         },
     });
 });
+
+function entry_modified() {
+    console.log('entry modified');
+    check_validity();
+
+    var deadline = $("input[name='deadline']").datepicker("getDate");
+    if (deadline === null) {
+        deadline = 0;
+    } else {
+        deadline = deadline.getTime() / 1000 + 24 * 3600 - 60;
+    }
+
+    var now = new Date() / 1000;
+
+    if (x.results.length > 0) {
+        $('#save-button').text('Save & Recompute');
+    }
+    if (deadline > now) {
+        $('#save-button').text('Save');
+    }
+}
 
 function save() {
     if (!check_validity()) {
@@ -122,6 +138,7 @@ function save() {
 
     console.log(payload);
 
+    var oldText = $("#save-button").text();
     $("#save-button").prop('disabled', true);
     $("#save-button").text('Request sent...');
     $("#error").hide();
@@ -137,14 +154,14 @@ function save() {
                 $("#error").fadeOut();
             }, 5000);
             $("#save-button").prop('disabled', false);
-            $("#save-button").text('Save');
+            $("#save-button").text(oldText);
         },
         error: function(data) {
             console.log(data);
             $("#error").show();
             $("#error").text('Error : ' + data.responseText);
             $("#save-button").prop('disabled', false);
-            $("#save-button").text('Save');
+            $("#save-button").text(oldText);
         },
     });
 }
@@ -168,6 +185,7 @@ function exportcsv() {
     var link = document.createElement("a");
     link.href = 'data:attachment/csv,' + encodedURI;
     link.target = '_blank';
+    link.className += ' button';
     link.download = 'datas.csv';
     link.innerHTML = "datas.csv";
     var intro = document.getElementById('intro');
