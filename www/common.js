@@ -64,7 +64,7 @@ function check_validity() {
             valid = false;
         }
 
-        var mails = $("#mails").val().split(/[\s,]+/);
+        var mails = $("#mails").val().split(/[\s,;]+/).filter(function(x) { return x !== ''; });
 
         for (i = 0; i < mails.length; ++i) {
             if (mails[i] === "") {

@@ -33,7 +33,7 @@ function send() {
       name : $("input[name='name']").val(),
       deadline : deadline,
       amail : $("input[name='amail']").val(),
-      mails : $("#mails").val().split(/[\s,]+/),
+      mails : $("#mails").val().split(/[\s,;]+/).filter(function(x) { return x !== ''; }),
       slots : slots.slot,
       vmin : slots.vmin,
       vmax : slots.vmax,
