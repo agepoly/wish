@@ -21,7 +21,7 @@ use rand::Rng;
 use lettre::email::EmailBuilder;
 use lettre::transport::EmailTransport;
 
-use bson::{Document, Bson};
+use bson::Bson;
 
 
 pub fn create(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Response> {
@@ -171,37 +171,34 @@ The Wish team</p>"#,
                                   Header(AccessControlAllowOrigin::Any))));
     }
 
-
-    let mut doc = Document::new();
-    doc.insert_bson("message".to_string(), Bson::String(data.message.clone()));
-    doc.insert_bson("url".to_owned(), Bson::String(data.url.clone()));
-    doc.insert_bson("name".to_owned(), Bson::String(data.name.clone()));
-    doc.insert_bson("admin_key".to_owned(), Bson::String(admin_key.clone()));
-    doc.insert_bson("amail".to_owned(), Bson::String(data.amail.clone()));
-    doc.insert_bson("deadline".to_owned(), Bson::I64(data.deadline));
-    doc.insert_bson("slots".to_owned(),
-                    Bson::Array(data.slots.iter().map(|s| Bson::String(s.clone())).collect()));
-    doc.insert_bson("vmin".to_owned(),
-                    Bson::Array(data.vmin.iter().map(|&v| Bson::I32(v)).collect()));
-    doc.insert_bson("vmax".to_owned(),
-                    Bson::Array(data.vmax.iter().map(|&v| Bson::I32(v)).collect()));
-    doc.insert_bson("people".to_owned(), {
-        let mut x: Vec<Bson> = Vec::with_capacity(data.mails.len());
-        for i in 0..data.mails.len() {
-            let mut p = Document::new();
-            p.insert_bson("mail".to_owned(), Bson::String(data.mails[i].clone()));
-            p.insert_bson("key".to_owned(), Bson::String(keys[i].clone()));
-            p.insert_bson("sent".to_owned(), Bson::I32(0));
-
-            p.insert_bson("wish".to_owned(), {
-                let mut v = Vec::new();
-                v.resize(data.slots.len(), Bson::I32(0));
-                Bson::Array(v)
-            });
-            x.push(Bson::Document(p));
-        }
-        Bson::Array(x)
-    });
+    let doc = doc!{
+        "message" => (data.message.clone()),
+        "url" => (data.url.clone()),
+        "name" => (data.name.clone()),
+        "admin_key" => (admin_key.clone()),
+        "amail" => (data.amail.clone()),
+        "deadline" => (data.deadline),
+        "slots" => (Bson::Array(data.slots.iter().map(|s| Bson::String(s.clone())).collect())),
+        "vmin" => (Bson::Array(data.vmin.iter().map(|&v| Bson::I32(v)).collect())),
+        "vmax" => (Bson::Array(data.vmax.iter().map(|&v| Bson::I32(v)).collect())),
+        "people" => ({
+            let mut x: Vec<Bson> = Vec::new();
+            for i in 0..data.mails.len() {
+                let p = doc!{
+                    "mail" => (data.mails[i].clone()),
+                    "key" => (keys[i].clone()),
+                    "sent" => 0,
+                    "wish" => ({
+                        let mut v = Vec::new();
+                        v.resize(data.slots.len(), Bson::I32(0));
+                        Bson::Array(v)
+                    })
+                };
+                x.push(Bson::Document(p));
+            }
+            x
+        })
+    };
 
     let result = db.lock().unwrap().collection("events").insert_one(doc, None);
 
