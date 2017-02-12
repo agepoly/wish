@@ -20,9 +20,9 @@
 }
 
 .container {
-    max-width: 640px;
+    /* max-width: 640px; */
     top: 100px;
-    text-align: justify;
+    /* text-align: justify; */
 }
 
 h4 {
@@ -42,9 +42,10 @@ h3{
     display: inline-block;
 }
 
+/*
 br {
     border-top: 1px solid grey;
-}
+}*/
 
 label:hover {
     font-weight: normal;

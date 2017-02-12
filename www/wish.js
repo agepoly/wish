@@ -1,26 +1,28 @@
 var x = null;
 
 function main() {
-    var i, n;
+    "use strict";
+    var i;
 
     document.getElementById('save').onclick = send;
     document.getElementById('mail').innerHTML = x.mail;
     document.getElementById('name').innerHTML = '<b>Activity name: </b>' + htmlEntities(x.name);
 
     var content = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Your Wish</th></tr></thead><tbody>';
-    n = x.slots.length;
-    for (i = 0; i < n; ++i) {
-        content += '<tr><td>' + htmlEntities(x.slots[i]) + '</td><td>wanted <input type="range" name="wish' + i + '" min="0" max="' + (n - 1) + '" step="1" value="' + x.wish + '" /> hated</td></tr>';
+    for (i = 0; i < x.slots.length; ++i) {
+        content += '<tr><td>' + htmlEntities(x.slots[i]) + '</td><td>wanted <input type="range" name="wish' + i + '" min="0" max="' + (x.slots.length - 1) + '" step="1" value="' + x.wish[i] + '" /> hated</td></tr>';
     }
     content += '</tbody></table>';
     document.getElementById("content").innerHTML = content;
 
-    for (var input in document.getElementsByTagName('input')) {
-        input.onchange = check;
+    var inputs = document.getElementsByTagName('input');
+    for (i = 0; i < inputs.length; ++i) {
+        inputs[i].onchange = check;
     }
 }
 
 function check(event) {
+    "use strict";
     var n = x.wish.length;
     var i;
 
@@ -43,9 +45,7 @@ function check(event) {
             for (i = 0; i < n; ++i) {
                 if (i == target) continue;
                 if (wish[i] == v) {
-                    for (var e in document.getElementsByName('wish' + i)) {
-                        e.value = v - 1;
-                    }
+                    document.getElementsByName('wish' + i)[0].value = v - 1;
                     wish[i] = v - 1;
                     break;
                 }
@@ -58,8 +58,9 @@ function check(event) {
 }
 
 function send() {
+    "use strict";
     var payload = JSON.stringify({
-        key: window.location.hash.substring(1)[0],
+        key: window.location.hash.substring(1),
         wish: x.wish
     });
     console.log(payload);
