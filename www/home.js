@@ -1,20 +1,14 @@
-$(document).ready(function() {
-    $("input[name='nslots']").bind('input propertychange', create_slots);
-    $("#send").click(send);
-    //$("input").bind('input propertychange', check_validity);
-    //$("textarea").bind('input propertychange', check_validity);
-    $("input[name='deadline']").datepicker({
-        showOtherMonths: true,
-        selectOtherMonths: true,
-        dateFormat: "yy-mm-dd",
-        onSelect: function() {
-            //check_validity();
-        },
-        minDate: 0
-    });
+function main() {
+    document.getElementById('nslots').onchange = create_slots;
+    document.getElementById('send').onclick = send;
     create_slots();
-    //check_validity();
-});
+}
+
+if (document.readyState != 'loading') {
+    main();
+} else {
+    document.addEventListener('DOMContentLoaded', main);
+}
 
 function send() {
     if (!check_validity()) {
@@ -22,46 +16,42 @@ function send() {
     }
 
     var slots = get_slot_val();
-    var deadline = $("input[name='deadline']").datepicker("getDate");
-    if (deadline === null) {
-        deadline = 0;
-    } else {
-        deadline = deadline.getTime() / 1000 + 24 * 3600 - 60; // à 23h59
-    }
+
+    var mails = document.getElementById('mails').value;
+    mails = mails.split(/[\s,;]+/).filter(function(x) {
+        return x !== '';
+    });
 
     var payload = JSON.stringify({
-      name : $("input[name='name']").val(),
-      deadline : deadline,
-      amail : $("input[name='amail']").val(),
-      mails : $("#mails").val().split(/[\s,;]+/).filter(function(x) { return x !== ''; }),
-      slots : slots.slot,
-      vmin : slots.vmin,
-      vmax : slots.vmax,
-      url : window.location.origin,
-      message : $("#message").val()
+        name: document.getElementById('name').value,
+        admin_mail: document.getElementById('admin_mail').value,
+        mails: mails,
+        slots: slots.slot,
+        vmin: slots.vmin,
+        vmax: slots.vmax,
+        url: window.location.origin,
+        message: document.getElementById('message').value
     });
 
     console.log(payload);
 
-    $('#send').prop('disabled', true);
-    $('#send').text('Request sent...');
+    document.getElementById('send').value = "Please wait...";
 
-    $.ajax({
-        type: "POST",
-        url: window.location.origin + "/create",
-        data: payload,
-        contentType: "application/json",
-        success: function(data) {
-            console.log("creation success " + data);
-            swal("Creation succeed!", "A mail has been sent to " + $("input[name='amail']").val() + " to validate the activity.", "success");
-            $('#send').prop('disabled', false);
-            $('#send').text('Re create');
-        },
-        error: function(data) {
-            console.log(data);
-            swal("Oops...", "Something went wrong!\n" + data.responseText, "error");
-            $('#send').prop('disabled', false);
-            $('#send').text('Re create');
-        },
-    });
+    var request = new XMLHttpRequest();
+    request.open('POST', window.location.origin + '/create', true);
+
+    request.onload = function() {
+        if (this.status >= 200 && this.status < 400) {
+            swal("Creation succeed!", "A mail has been sent to " + payload.admin_mail + " to validate the activity.", "success");
+        } else {
+            swal("Oops...", "Something went wrong!", "error");
+        }
+        document.getElementById('send').value = "Re create";
+    };
+
+    request.onerror = function() {
+        swal("Oops...", "There was a connection error of some sort!", "error");
+    };
+
+    request.send(payload);
 }

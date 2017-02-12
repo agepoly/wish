@@ -2,8 +2,6 @@ use util::create_mailer;
 
 use iron::prelude::*;
 use iron::status;
-use iron::modifiers::Header;
-use iron::headers::AccessControlAllowOrigin;
 
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -20,8 +18,8 @@ use lettre::transport::EmailTransport;
 
 use bson::{Document, Bson};
 
-pub fn get_admin_data(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Response> {
-    println!("get_admin_data");
+pub fn get_data(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Response> {
+    println!("get_data");
 
     #[derive(RustcDecodable)]
     struct Input {
@@ -33,13 +31,10 @@ pub fn get_admin_data(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult
         name: String,
         mails: Vec<String>,
         sent: Vec<i32>,
-        keys: Vec<String>,
         slots: Vec<String>,
         vmin: Vec<i32>,
         vmax: Vec<i32>,
         wishes: Vec<Vec<i32>>,
-        deadline: i64,
-        results: Vec<i32>,
         error: String,
     }
 
@@ -49,10 +44,8 @@ pub fn get_admin_data(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult
     let data: Input = match json::decode(&payload) {
         Ok(x) => x,
         Err(e) => {
-            println!("get_admin_data: {}\n{}", e, payload);
-            return Ok(Response::with((status::BadRequest,
-                                      "input data parsing",
-                                      Header(AccessControlAllowOrigin::Any))));
+            println!("get_data: {}\n{}", e, payload);
+            return Ok(Response::with((status::BadRequest, "input data parsing")));
         }
     };
 
@@ -65,16 +58,12 @@ pub fn get_admin_data(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult
             .find_one(Some(doc!{"admin_key" => (data.key.clone())}), Some(options)) {
             Ok(Some(x)) => x,
             Ok(None) => {
-                println!("get_admin_data: invalid key");
-                return Ok(Response::with((status::NotFound,
-                                          "invalid key",
-                                          Header(AccessControlAllowOrigin::Any))));
+                println!("get_data: invalid key");
+                return Ok(Response::with((status::NotFound, "invalid key")));
             }
             Err(e) => {
-                println!("get_admin_data: {}", e);
-                return Ok(Response::with((status::NotFound,
-                                          format!("database error : {}", e),
-                                          Header(AccessControlAllowOrigin::Any))));
+                println!("get_data: {}", e);
+                return Ok(Response::with((status::NotFound, format!("database error : {}", e))));
             }
         }
     };
@@ -87,10 +76,8 @@ pub fn get_admin_data(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult
     let mut mailer = match create_mailer(true) {
         Ok(x) => x,
         Err(e) => {
-            println!("get_admin_data: {}", e);
-            return Ok(Response::with((status::NotFound,
-                                      format!("mail error : {}", e),
-                                      Header(AccessControlAllowOrigin::Any))));
+            println!("get_data: {}", e);
+            return Ok(Response::with((status::NotFound, format!("mail error : {}", e))));
         }
     };
 
@@ -102,9 +89,9 @@ pub fn get_admin_data(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult
 
             if match x.get("sent") {
                 None => true,
-                Some(&Bson::I32(y)) => y==0,
+                Some(&Bson::I32(y)) => y == 0,
                 Some(&Bson::Boolean(y)) => !y,
-                _ => false
+                _ => false,
             } {
                 let email = EmailBuilder::new()
                     .to(x.get_str("mail").unwrap_or(""))
@@ -139,9 +126,7 @@ The Wish team</p>"#,
                         }
                     }
                     Err(e) => {
-                        return Ok(Response::with((status::NotFound,
-                                                  format!("mail : {}", e),
-                                                  Header(AccessControlAllowOrigin::Any))))
+                        return Ok(Response::with((status::NotFound, format!("mail : {}", e))))
                     }
                 }
             }
@@ -160,15 +145,12 @@ The Wish team</p>"#,
         .update_one(doc!{"admin_key" => (data.key.clone())},
                     doc!{"$set" => document},
                     None) {
-        println!("get_admin_data: {}", e);
-        return Ok(Response::with((status::NotFound,
-                                  format!("database error : {}", e),
-                                  Header(AccessControlAllowOrigin::Any))));
+        println!("get_data: {}", e);
+        return Ok(Response::with((status::NotFound, format!("database error : {}", e))));
     }
 
     let json = json::encode(&Output {
         name: event.get_str("name").unwrap_or("").to_string(),
-        deadline: event.get_i64("deadline").unwrap_or(0),
         mails: event.get_array("people")
             .unwrap_or(&Vec::new())
             .iter()
@@ -181,14 +163,6 @@ The Wish team</p>"#,
             .map(|p| match p {
                 &Bson::Document(ref x) => x.get_i32("sent").unwrap_or(0),
                 _ => 0,
-            })
-            .collect(),
-        keys: event.get_array("people")
-            .unwrap_or(&Vec::new())
-            .iter()
-            .map(|p| match p {
-                &Bson::Document(ref x) => x.get_str("key").unwrap_or("").to_owned(),
-                _ => "".to_owned(),
             })
             .collect(),
         wishes: event.get_array("people")
@@ -232,24 +206,14 @@ The Wish team</p>"#,
                 _ => 0,
             })
             .collect(),
-        results: event.get_array("results")
-            .unwrap_or(&Vec::new())
-            .iter()
-            .map(|x| match x {
-                &Bson::I32(v) => v,
-                _ => 0,
-            })
-            .collect(),
         error: error,
     });
     let payload = match json {
         Ok(x) => x,
         Err(e) => {
-            println!("get_admin_data: {}", e);
-            return Ok(Response::with((status::NotFound,
-                                      format!("json error : {}", e),
-                                      Header(AccessControlAllowOrigin::Any))));
+            println!("get_data: {}", e);
+            return Ok(Response::with((status::NotFound, format!("json error : {}", e))));
         }
     };
-    Ok(Response::with((status::Ok, payload, Header(AccessControlAllowOrigin::Any))))
+    Ok(Response::with((status::Ok, payload)))
 }

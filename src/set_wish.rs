@@ -1,7 +1,5 @@
 use iron::prelude::*;
 use iron::status;
-use iron::modifiers::Header;
-use iron::headers::AccessControlAllowOrigin;
 
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -20,7 +18,6 @@ pub fn set_wish(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respo
     #[derive(RustcDecodable)]
     struct Input {
         key: String,
-        admin_key: String,
         wish: Vec<i32>,
     }
 
@@ -31,9 +28,7 @@ pub fn set_wish(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respo
         Ok(x) => x,
         Err(e) => {
             println!("set_wishes: {}", e);
-            return Ok(Response::with((status::BadRequest,
-                                      format!("Request error \"{}\".", e),
-                                      Header(AccessControlAllowOrigin::Any))));
+            return Ok(Response::with((status::BadRequest, format!("Request error \"{}\".", e))));
         }
     };
 
@@ -47,51 +42,32 @@ pub fn set_wish(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respo
                         println!("set_wishes: wish length does not match with slots length");
                         return Ok(Response::with((status::NotFound,
                                                   "Wish length does not match with slots \
-                                                   length.\nTry to refresh the page.",
-                                                  Header(AccessControlAllowOrigin::Any))));
+                                                   length.\nTry to refresh the page.")));
                     }
                 }
                 Err(e) => {
                     println!("set_wishes: {}", e);
                     return Ok(Response::with((status::NotFound,
-                                              format!("Database error \"{}\".", e),
-                                              Header(AccessControlAllowOrigin::Any))));
+                                              format!("Database error \"{}\".", e))));
                 }
             }
         }
         Ok(None) => {
             println!("set_wishes: Wrong user key");
-            return Ok(Response::with((status::NotFound,
-                                      "The url is wrong.",
-                                      Header(AccessControlAllowOrigin::Any))));
+            return Ok(Response::with((status::NotFound, "The url is wrong.")));
         }
         Err(e) => {
             println!("set_wishes: {}", e);
-            return Ok(Response::with((status::NotFound,
-                                      format!("Database error \"{}\".", e),
-                                      Header(AccessControlAllowOrigin::Any))));
+            return Ok(Response::with((status::NotFound, format!("Database error \"{}\".", e))));
         }
     };
 
-    let not_admin = db.collection("events")
-        .find_one(Some(doc!{
-            "admin_key" => (data.admin_key.clone()),
-            "people.key" => (data.key.clone())
-        }),
-                  None)
-        .unwrap_or(None)
-        .is_none();
-
-    if not_admin {
-        let mut c = data.wish.clone();
-        c.sort();
-        for i in 0..c.len() {
-            if c[i] > i as i32 {
-                println!("set_wishes: unfair wish");
-                return Ok(Response::with((status::BadRequest,
-                                          "Your wish is unfair (see help page).",
-                                          Header(AccessControlAllowOrigin::Any))));
-            }
+    let mut c = data.wish.clone();
+    c.sort();
+    for i in 0..c.len() {
+        if c[i] > i as i32 {
+            println!("set_wishes: unfair wish");
+            return Ok(Response::with((status::BadRequest, "Your wish is unfair (see help page).")));
         }
     }
 
@@ -103,9 +79,7 @@ pub fn set_wish(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respo
         Ok(_) => {}
         Err(e) => {
             println!("set_wishes: {}", e);
-            return Ok(Response::with((status::NotFound,
-                                      format!("Database error \"{}\".", e),
-                                      Header(AccessControlAllowOrigin::Any))));
+            return Ok(Response::with((status::NotFound, format!("Database error \"{}\".", e))));
         }
     };
 
@@ -116,11 +90,9 @@ pub fn set_wish(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Respo
         Ok(_) => {}
         Err(e) => {
             println!("set_wishes: {}", e);
-            return Ok(Response::with((status::NotFound,
-                                      format!("Database error \"{}\".", e),
-                                      Header(AccessControlAllowOrigin::Any))));
+            return Ok(Response::with((status::NotFound, format!("Database error \"{}\".", e))));
         }
     };
 
-    Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
+    Ok(Response::with(status::Ok))
 }

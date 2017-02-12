@@ -2,143 +2,120 @@ function check_validity() {
     var err_color = '#FF4000';
     var valid = true;
 
-    $("input").removeAttr('style');
-    $("#mails").removeAttr('style');
-    $("input[name='deadline']").removeAttr('style');
-    $("#mails_error").empty();
-    $("#slots_error").empty();
+    var xs = document.getElementsByTagName('input');
+    for (i = 0; i < xs.length; ++i) {
+        xs[i].removeAttribute('style');
+    }
+    document.getElementById('mails').removeAttribute('style');
+    document.getElementById('mails_error').innerText = "";
+    document.getElementById('slots_error').innerText = "";
 
-    if ($("input[name='name']").val() === "") {
-        $("input[name='name']").css({
-            'border-color': err_color
-        });
+    var name = document.getElementById('name');
+    if (name.value === "") {
+        name.setAttribute('style', 'border-color: ' + err_color);
         valid = false;
     }
+
+    var n = Number(document.getElementById('nslots').value);
 
     var total_vmin = 0;
     var total_vmax = 0;
 
-    for (var i = 0; $("input[name='slot" + i + "']").length; ++i) {
-        if ($("input[name='slot" + i + "']").val() === "") {
-            $("input[name='slot" + i + "']").css({
-                'border-color': err_color
-            });
-            valid = false;
-            $("#slots_error").text('A slot name is empty.');
-        }
-        var vmin = Number($("input[name='vmin" + i + "']").val());
-        var vmax = Number($("input[name='vmax" + i + "']").val());
-        if (vmin < 0) {
-            $("input[name='vmin" + i + "']").css({
-                'border-color': err_color
-            });
-            $("#slots_error").text('Minimum bounds must be a non-negative number.');
+    for (var i = 0; i < n; ++i) {
+        var slot = document.getElementById('slot' + i);
+        if (slot.value === "") {
+            slot.setAttribute('style', 'border-color: ' + err_color);
+            document.getElementById('slots_error').innerText = "A slot name is empty.";
             valid = false;
         }
-        if (vmax <= 0) {
-            $("input[name='vmax" + i + "']").css({
-                'border-color': err_color
-            });
-            $("#slots_error").text('Maximum bounds must be as positive number.');
+        var vmin = document.getElementById('vmin' + i);
+        var vmax = document.getElementById('vmax' + i);
+        if (Number(vmin.value) < 0) {
+            vmin.setAttribute('style', 'border-color: ' + err_color);
+            document.getElementById('slots_error').innerText = "Minimum bounds must be a non-negative number.";
             valid = false;
         }
-        if (vmin > vmax) {
-            $("input[name='vmin" + i + "']").css({
-                'border-color': err_color
-            });
-            $("input[name='vmax" + i + "']").css({
-                'border-color': err_color
-            });
-            $("#slots_error").text('Maximum bound must be larger or equal to minimum bound.');
+        if (Number(vmax.value) <= 0) {
+            vmax.setAttribute('style', 'border-color: ' + err_color);
+            document.getElementById('slots_error').innerText = "Maximum bounds must be a positive number.";
             valid = false;
         }
-        total_vmin += vmin;
-        total_vmax += vmax;
+        if (Number(vmin.value) > Number(vmax.value)) {
+            vmin.setAttribute('style', 'border-color: ' + err_color);
+            vmax.setAttribute('style', 'border-color: ' + err_color);
+            document.getElementById('slots_error').innerText = "Maximum bound must be greater or equal to minimum bound.";
+            valid = false;
+        }
+        total_vmin += Number(vmin.value);
+        total_vmax += Number(vmax.value);
     }
 
-    if ($("#mails").length) {
-        if ($("#mails").val() === "") {
-            $("#mails").css({
-                'border-color': err_color
-            });
+    var mails = document.getElementById('mails');
+    if (mails !== null) {
+        if (mails.value === "") {
+            mails.setAttribute('style', 'border-color: ' + err_color);
+            document.getElementById('mails_error').innerText = "You need to enter the participants mails.";
             valid = false;
         }
 
-        var mails = $("#mails").val().split(/[\s,;]+/).filter(function(x) { return x !== ''; });
+        var mails_list = mails.value.split(/[\s,;]+/).filter(function(x) { return x !== ''; });
 
-        for (i = 0; i < mails.length; ++i) {
-            if (mails[i] === "") {
-                $("#mails").css({
-                    'border-color': err_color
-                });
+        for (i = 0; i < mails_list.length; ++i) {
+            if (mails_list[i] === "") {
+                mails.setAttribute('style', 'border-color: ' + err_color);
                 valid = false;
             }
         }
 
-        if (mails.length > total_vmax) {
-            $(".vmax").css({
-                'border-color': err_color
-            });
-            $("#mails").css({
-                'border-color': err_color
-            });
-            $("#slots_error").text('Too many participants for the maximum bounds.');
-            $("#mails_error").text('Too many participants for the maximum bounds.');
+        if (mails_list.length > total_vmax) {
+            for (j = 0; j < n; ++j) {
+                document.getElementById('vmax' + j).setAttribute('style', 'border-color: ' + err_color);
+            }
+            mails.setAttribute('style', 'border-color: ' + err_color);
+
+            document.getElementById('slots_error').innerText = "Too many participants for the maximum bounds.";
+            document.getElementById('mails_error').innerText = "Too many participants for the maximum bounds.";
             valid = false;
         }
-        if (mails.length < total_vmin) {
-            $(".vmin").css({
-                'border-color': err_color
-            });
-            $("#mails").css({
-                'border-color': err_color
-            });
-            $("#slots_error").text('Not enough participants for the minimum bounds.');
-            $("#mails_error").text('Not enough participants for the minimum bounds.');
+        if (mails_list.length < total_vmin) {
+            for (j = 0; j < n; ++j) {
+                document.getElementById('vmin' + j).setAttribute('style', 'border-color: ' + err_color);
+            }
+            mails.setAttribute('style', 'border-color: ' + err_color);
+
+            document.getElementById('slots_error').innerText = "Not enough participants for the minimum bounds.";
+            document.getElementById('mails_error').innerText = "Not enough participants for the minimum bounds.";
             valid = false;
         }
 
-        mails.sort();
-        for (i = 1; i < mails.length; ++i) {
-            if (mails[i - 1] == mails[i]) {
-                $("#mails").css({
-                    'border-color': err_color
-                });
-                $("#mails_error").text('A mail address appear more than once');
+        mails_list.sort();
+        for (i = 1; i < mails_list.length; ++i) {
+            if (mails_list[i - 1] == mails_list[i]) {
+                mails.setAttribute('style', 'border-color: ' + err_color);
+                document.getElementById('mails_error').innerText = "A mail address appear more than once.";
                 valid = false;
             }
         }
     }
     if (typeof x !== 'undefined' && typeof x.mails !== 'undefined') {
         if (x.mails.length > total_vmax) {
-            $(".vmax").css({
-                'border-color': err_color
-            });
-            $("#slots_error").text('Too many participants for the maximum bounds.');
-            $("#mails_error").text('Too many participants for the maximum bounds.');
+            for (j = 0; j < n; ++j) {
+                document.getElementById('vmax' + j).setAttribute('style', 'border-color: ' + err_color);
+            }
+            document.getElementById('slots_error').innerText = "Too many participants for the maximum bounds.";
             valid = false;
         }
         if (x.mails.length < total_vmin) {
-            $(".vmin").css({
-                'border-color': err_color
-            });
-            $("#slots_error").text('Not enough participants for the minimum bounds.');
-            $("#mails_error").text('Not enough participants for the minimum bounds.');
+            for (j = 0; j < n; ++j) {
+                document.getElementById('vmin' + j).setAttribute('style', 'border-color: ' + err_color);
+            }
+            document.getElementById('slots_error').innerText = "Not enough participants for the minimum bounds.";
             valid = false;
         }
     }
 
-    if ($("input[name='deadline']").length && $("input[name='deadline']").datepicker("getDate") === null) {
-        $("input[name='deadline']").css({
-            'border-color': err_color
-        });
-        valid = false;
-    }
-
-    if ($("input[name='amail']").length && $("input[name='amail']").val() === "") {
-        $("input[name='amail']").css({
-            'border-color': err_color
-        });
+    if (document.getElementById('admin_mail').value === "") {
+        document.getElementById('admin_mail').setAttribute('style', 'border-color: ' + err_color);
         valid = false;
     }
 
@@ -157,8 +134,8 @@ var oldvalues = {
 };
 
 function create_slots() {
-    var n = $("input[name='nslots']").val();
-    if (n > Number($("input[name='nslots']").prop('max'))) {
+    var n = Number(document.getElementById('nslots').value);
+    if (n > Number(document.getElementById('nslots').getAttribute('max'))) {
         return;
     }
     var old = get_slot_val();
@@ -182,11 +159,11 @@ function create_slots() {
             values.vmin = oldvalues.vmin[i];
             values.vmax = oldvalues.vmax[i];
         }
-        content += '<div class="row"><div class="six columns"><input type="text" placeholder="Tuesday morning" class="slot u-full-width" name="slot' + i + '" value="' + htmlEntities(values.name) + '" title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform..."></div>';
-        content += '<div class="three columns"><input type="number" class="vmin u-full-width" name="vmin' + i + '" min="0" max="100" step="1" value="' + values.vmin + '" title="The algorithm will ensure that at least this many people are in this slot."></div>';
-        content += '<div class="three columns"><input type="number" class="vmax u-full-width" name="vmax' + i + '" min="0" max="100" step="1" value="' + values.vmax + '" title="The algorithm will ensure that no more than this many people are in this slot."></div></div>';
+        content += '<div class="row"><div class="six columns"><input type="text" placeholder="Tuesday morning" class="slot u-full-width" id="slot' + i + '" value="' + htmlEntities(values.name) + '" title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform..."></div>';
+        content += '<div class="three columns"><input type="number" class="vmin u-full-width" id="vmin' + i + '" min="0" max="100" step="1" value="' + values.vmin + '" title="The algorithm will ensure that at least this many people are in this slot."></div>';
+        content += '<div class="three columns"><input type="number" class="vmax u-full-width" id="vmax' + i + '" min="0" max="100" step="1" value="' + values.vmax + '" title="The algorithm will ensure that no more than this many people are in this slot."></div></div>';
     }
-    $("#slots").html(content);
+    document.getElementById('slots').innerHTML = content;
     //$("input").bind('input propertychange', check_validity);
 }
 
@@ -195,10 +172,10 @@ function get_slot_val() {
     var slot = [];
     var vmin = [];
     var vmax = [];
-    for (var i = 0; $("input[name='slot" + i + "']").length; ++i) {
-        slot[i] = $("input[name='slot" + i + "']").val();
-        vmin[i] = Number($("input[name='vmin" + i + "']").val());
-        vmax[i] = Number($("input[name='vmax" + i + "']").val());
+    for (var i = 0; document.getElementById('slot' + i) !== null; ++i) {
+        slot[i] = document.getElementById('slot' + i).value;
+        vmin[i] = Number(document.getElementById('vmin' + i).value);
+        vmax[i] = Number(document.getElementById('vmax' + i).value);
     }
 
     return {

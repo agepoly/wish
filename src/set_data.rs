@@ -2,8 +2,6 @@ use util::create_mailer;
 
 use iron::prelude::*;
 use iron::status;
-use iron::modifiers::Header;
-use iron::headers::AccessControlAllowOrigin;
 
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -19,18 +17,16 @@ use rustc_serialize::json;
 
 use bson::{Document, Bson};
 
-use time;
-
-pub fn admin_update(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Response> {
-    println!("admin_update");
+pub fn set_data(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<Response> {
+    println!("set_data");
 
     #[derive(RustcDecodable)]
     struct Input {
         key: String,
-        deadline: i64,
         slots: Vec<String>,
         vmin: Vec<i32>,
         vmax: Vec<i32>,
+        // wishes: Vec<Vec<i32>>,
         sendmail: bool,
     }
 
@@ -40,8 +36,8 @@ pub fn admin_update(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<R
     let data: Input = match json::decode(&payload) {
         Ok(x) => x,
         Err(e) => {
-            println!("admin_update: {}\n{}", e, payload);
-            return Ok(Response::with((status::BadRequest, Header(AccessControlAllowOrigin::Any))));
+            println!("set_data: {}\n{}", e, payload);
+            return Ok(Response::with((status::BadRequest,)));
         }
     };
 
@@ -51,57 +47,43 @@ pub fn admin_update(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<R
             .find_one(Some(doc!{"admin_key" => (data.key.clone())}), None) {
             Ok(Some(x)) => x,
             Ok(None) => {
-                println!("admin_update: invalid key");
-                return Ok(Response::with((status::BadRequest,
-                                          "invalid key",
-                                          Header(AccessControlAllowOrigin::Any))));
+                println!("set_data: invalid key");
+                return Ok(Response::with((status::BadRequest, "invalid key")));
             }
             Err(e) => {
-                println!("admin_update: {}", e);
-                return Ok(Response::with((status::BadRequest,
-                                          format!("database {}", e),
-                                          Header(AccessControlAllowOrigin::Any))));
+                println!("set_data: {}", e);
+                return Ok(Response::with((status::BadRequest, format!("database {}", e))));
             }
         }
     };
 
     if data.vmin.len() != data.vmax.len() || data.vmin.len() != data.slots.len() {
-        return Ok(Response::with((status::NotFound,
-                                  "vmin, vmax, slots, length problem",
-                                  Header(AccessControlAllowOrigin::Any))));
+        return Ok(Response::with((status::NotFound, "vmin, vmax, slots, length problem")));
     }
 
     if data.vmax.iter().fold(0, |acc, &x| acc + x) <
        (event.get_array("people").unwrap_or(&Vec::new()).len() as i32) {
-        return Ok(Response::with((status::NotFound,
-                                  "not enough room for people",
-                                  Header(AccessControlAllowOrigin::Any))));
+        return Ok(Response::with((status::NotFound, "not enough room for people")));
     }
 
     if data.vmin.iter().fold(0, |acc, &x| acc + x) >
        (event.get_array("people").unwrap_or(&Vec::new()).len() as i32) {
-        return Ok(Response::with((status::NotFound,
-                                  "not enough people",
-                                  Header(AccessControlAllowOrigin::Any))));
+        return Ok(Response::with((status::NotFound, "not enough people")));
     }
 
 
     if data.vmax.len() != data.vmin.len() || data.vmax.len() != data.slots.len() {
-        println!("admin_update: array size problem");
+        println!("set_data: array size problem");
         return Ok(Response::with((status::BadRequest,
-                                  "vmin, vmax and slots must have the same size",
-                                  Header(AccessControlAllowOrigin::Any))));
+                                  "vmin, vmax and slots must have the same size")));
     }
 
     if data.vmin.iter().zip(data.vmax.iter()).any(|(&xmin, &xmax)| xmin > xmax) {
-        println!("admin_update: vmin > vmax");
-        return Ok(Response::with((status::BadRequest,
-                                  "there are vmin bigger than vmax",
-                                  Header(AccessControlAllowOrigin::Any))));
+        println!("set_data: vmin > vmax");
+        return Ok(Response::with((status::BadRequest, "there are vmin bigger than vmax")));
     }
 
     let mut document = Document::new();
-    document.insert("deadline", Bson::I64(data.deadline));
     document.insert("slots",
                     Bson::Array(data.slots.iter().map(|s| Bson::String(s.clone())).collect()));
     document.insert("vmin",
@@ -122,9 +104,6 @@ pub fn admin_update(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<R
         let name = event.get_str("name").unwrap_or("no name");
         let amail = event.get_str("amail").unwrap_or("");
         let slots = "<li>".to_string() + data.slots.join("</li><li>").as_str() + "</li>";
-        let deadline = time::strftime("%d %B %Y at %H:%M UTC",
-                                      &time::at_utc(time::Timespec::new(data.deadline, 0)))
-            .unwrap();
 
         let mut mailer = create_mailer(true).unwrap();
         let people = event.get_array("people").unwrap_or(&Vec::new()).clone();
@@ -141,7 +120,6 @@ pub fn admin_update(req: &mut Request, db: Arc<Mutex<Database>>) -> IronResult<R
 {slots}
 </ul>
 
-<p>The deadline is {deadline}</p>
 <p>Please update your wishes accordingly by <a href="{url}/wish#{key}">clicking here</a>.
 If you have problems to change your wishes,
 it might be because they have been rendered invalid due to the changes.
@@ -153,7 +131,6 @@ The Wish team</p>"#,
                                       slots = slots,
                                       name = name,
                                       url = url,
-                                      deadline = deadline,
                                       key = key);
 
                 let email = EmailBuilder::new()
@@ -176,13 +153,11 @@ The Wish team</p>"#,
             if data.sendmail {
                 sendit();
             }
-            Ok(Response::with((status::Ok, Header(AccessControlAllowOrigin::Any))))
+            Ok(Response::with((status::Ok,)))
         }
         Err(e) => {
-            println!("admin_update: {}", e);
-            Ok(Response::with((status::NotFound,
-                               format!("database error : {}", e),
-                               Header(AccessControlAllowOrigin::Any))))
+            println!("set_data: {}", e);
+            Ok(Response::with((status::NotFound, format!("database error : {}", e))))
         }
     };
 }
