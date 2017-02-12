@@ -50,8 +50,9 @@ function send() {
         type: "POST",
         url: window.location.origin + "/create",
         data: payload,
+        contentType: "application/json",
         success: function(data) {
-            console.log("creation success");
+            console.log("creation success " + data);
             swal("Creation succeed!", "A mail has been sent to " + $("input[name='amail']").val() + " to validate the activity.", "success");
             $('#send').prop('disabled', false);
             $('#send').text('Re create');
