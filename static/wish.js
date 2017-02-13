@@ -1,10 +1,37 @@
+var socket = io();
 var x = null;
 
-function main() {
+socket.on("get wish", function(content) {
+    "use strict";
+    x = content;
+    if (document.readyState != 'loading') {
+        init();
+    } else {
+        document.addEventListener('DOMContentLoaded', init);
+    }
+});
+
+socket.on('feedback', function(content) {
+    "use strict";
+    swal(content.title, content.message, content.type);
+    document.getElementById('save').value = "Save";
+});
+
+socket.emit("get wish", window.location.hash.substring(1));
+
+function init() {
     "use strict";
     var i;
 
-    document.getElementById('save').onclick = send;
+    document.getElementById('save').onclick = function() {
+        console.log(x);
+        document.getElementById('save').value = "Please wait...";
+
+        socket.emit("set wish", {
+            key: window.location.hash.substring(1),
+            wish: x.wish
+        });
+    };
     document.getElementById('mail').innerHTML = x.mail;
     document.getElementById('name').innerHTML = '<b>Activity name: </b>' + htmlEntities(x.name);
 
@@ -56,60 +83,3 @@ function check(event) {
 
     x.wish = wish;
 }
-
-function send() {
-    "use strict";
-    var payload = JSON.stringify({
-        key: window.location.hash.substring(1),
-        wish: x.wish
-    });
-    console.log(payload);
-
-    var request = new XMLHttpRequest();
-    request.open('POST', window.location.origin + '/set_wish', true);
-
-    request.onload = function() {
-        if (this.status >= 200 && this.status < 400) {
-            swal("Success", "Saved!", "success");
-        } else {
-            swal("Oops...", "Something went wrong!", "error");
-        }
-    };
-
-    request.onerror = function() {
-        swal("Oops...", "There was a connection error of some sort!", "error");
-    };
-
-    request.send(payload);
-}
-
-
-
-// Get x and run main
-
-var request = new XMLHttpRequest();
-request.open('POST', window.location.origin + '/get_wish', true);
-
-request.onload = function() {
-    if (this.status >= 200 && this.status < 400) {
-        // Success!
-        x = JSON.parse(this.response);
-        if (document.readyState != 'loading') {
-            main();
-        } else {
-            document.addEventListener('DOMContentLoaded', main);
-        }
-    } else {
-        swal("Oops...", "Something went wrong!", "error");
-    }
-};
-
-request.onerror = function() {
-    swal("Oops...", "There was a connection error of some sort!", "error");
-};
-
-var payload = JSON.stringify({
-    key: window.location.hash.substring(1),
-});
-
-request.send(payload);

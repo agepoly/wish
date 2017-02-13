@@ -1,4 +1,57 @@
+var socket = io();
+
+socket.on('feedback', function(content) {
+    "use strict";
+    swal(content.title, content.message, content.type);
+    document.getElementById('send').value = "Create";
+});
+
+if (document.readyState != 'loading') {
+    init();
+} else {
+    document.addEventListener('DOMContentLoaded', init);
+}
+
+function init() {
+    "use strict";
+    document.getElementById('nslots').onchange = create_slots;
+    document.getElementById('send').onclick = send;
+    create_slots();
+}
+
+function send() {
+    "use strict";
+    if (!check_validity()) {
+        return;
+    }
+
+    var slots = get_slot_val();
+
+    var mails = document.getElementById('mails').value;
+    mails = mails.split(/[\s,;]+/).filter(function(x) {
+        return x !== '';
+    });
+
+    var payload = {
+        name: document.getElementById('name').value,
+        admin_mail: document.getElementById('admin_mail').value,
+        mails: mails,
+        slots: slots.slot,
+        vmin: slots.vmin,
+        vmax: slots.vmax,
+        url: window.location.origin,
+        message: document.getElementById('message').value
+    };
+
+    console.log(payload);
+
+    document.getElementById('send').value = "Please wait...";
+
+    socket.emit("create", payload);
+}
+
 function check_validity() {
+    "use strict";
     var err_color = '#FF4000';
     var valid = true;
 
@@ -122,10 +175,6 @@ function check_validity() {
     return valid;
 }
 
-function htmlEntities(str) {
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 
 var oldvalues = {
     slot: [],
@@ -134,6 +183,7 @@ var oldvalues = {
 };
 
 function create_slots() {
+    "use strict";
     var n = Number(document.getElementById('nslots').value);
     if (n > Number(document.getElementById('nslots').getAttribute('max'))) {
         return;
@@ -167,8 +217,8 @@ function create_slots() {
     //$("input").bind('input propertychange', check_validity);
 }
 
-
 function get_slot_val() {
+    "use strict";
     var slot = [];
     var vmin = [];
     var vmax = [];

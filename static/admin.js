@@ -1,9 +1,36 @@
+var socket = io();
 var x = null;
 
-function main() {
+socket.on("get data", function(content) {
+    "use strict";
+    console.log(content);
+    x = content;
+    if (document.readyState != 'loading') {
+        init();
+    } else {
+        document.addEventListener('DOMContentLoaded', init);
+    }
+});
+
+socket.on('feedback', function(content) {
+    "use strict";
+    swal(content.title, content.message, content.type);
+    document.getElementById('save').value = "Save";
+});
+
+socket.emit("get data", window.location.hash.substring(1));
+
+function init() {
     "use strict";
     var i, j;
-    document.getElementById("save").onclick = save;
+    document.getElementById("save").onclick = function() {
+        socket.emit('set data', {
+            key: window.location.hash.substring(1),
+            mails: x.mails,
+            slots: x.slots,
+            wishes: x.wishes
+        });
+    };
     document.getElementById("name").innerHTML = x.name;
 
     CodeMirror.defineMode("csv", function() {
@@ -62,14 +89,15 @@ function main() {
         gutters: ["CodeMirror-lint-markers"],
         lint: true
     });
-    inputCode.on("change", function() {
-        // execute timer and compute results
-    });
 
     var outputCode = CodeMirror.fromTextArea(document.getElementById('output'), {
         lineNumbers: true,
         mode: "csv",
         readOnly: true
+    });
+
+    inputCode.on("change", function() {
+        // execute timer and compute results
     });
 
     var code = "[tasks]\n";
@@ -95,39 +123,3 @@ function main() {
 
     inputCode.setValue(code);
 }
-
-function save() {
-
-}
-
-
-
-
-
-
-var request = new XMLHttpRequest();
-request.open('POST', window.location.origin + '/get_data', true);
-
-request.onload = function() {
-    if (this.status >= 200 && this.status < 400) {
-        // Success!
-        x = JSON.parse(this.response);
-        if (document.readyState != 'loading') {
-            main();
-        } else {
-            document.addEventListener('DOMContentLoaded', main);
-        }
-    } else {
-        swal("Oops...", "Something went wrong!", "error");
-    }
-};
-
-request.onerror = function() {
-    swal("Oops...", "There was a connection error of some sort!", "error");
-};
-
-var payload = JSON.stringify({
-    key: window.location.hash.substring(1),
-});
-
-request.send(payload);
