@@ -53,8 +53,6 @@ io.on('connection', function(socket) {
             name: content.name,
             admin_mail: content.admin_mail,
             slots: content.slots,
-            vmin: content.vmin,
-            vmax: content.vmax,
             url: content.url,
             message: content.message,
             participants: []
@@ -300,8 +298,6 @@ The Wish team</p>`, {
                     socket.emit('get data', {
                         name: event.name,
                         slots: event.slots,
-                        vmin: event.vmin,
-                        vmax: event.vmax,
                         mails: mails,
                         status: status,
                         wishes: wishes
@@ -312,7 +308,7 @@ The Wish team</p>`, {
     });
 
     socket.on('set data', function(content) {
-        
+
         //TODO send mails to participants according to status content
         // 0=not send
         // 1=send

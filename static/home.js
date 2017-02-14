@@ -25,7 +25,7 @@ function send() {
         return;
     }
 
-    var slots = get_slot_val();
+    var slots = get_slots();
 
     var mails = document.getElementById('mails').value;
     mails = mails.split(/[\s,;]+/).filter(function(x) {
@@ -36,9 +36,7 @@ function send() {
         name: document.getElementById('name').value,
         admin_mail: document.getElementById('admin_mail').value,
         mails: mails,
-        slots: slots.slot,
-        vmin: slots.vmin,
-        vmax: slots.vmax,
+        slots: slots,
         url: window.location.origin,
         message: document.getElementById('message').value
     };
@@ -217,20 +215,16 @@ function create_slots() {
     //$("input").bind('input propertychange', check_validity);
 }
 
-function get_slot_val() {
+function get_slots() {
     "use strict";
-    var slot = [];
-    var vmin = [];
-    var vmax = [];
+    var slots = [];
     for (var i = 0; document.getElementById('slot' + i) !== null; ++i) {
-        slot[i] = document.getElementById('slot' + i).value;
-        vmin[i] = Number(document.getElementById('vmin' + i).value);
-        vmax[i] = Number(document.getElementById('vmax' + i).value);
+        slots[i] = {
+            name: document.getElementById('slot' + i).value,
+            vmin: Number(document.getElementById('vmin' + i).value),
+            vmax: Number(document.getElementById('vmax' + i).value)
+        };
     }
 
-    return {
-        slot: slot,
-        vmin: vmin,
-        vmax: vmax
-    };
+    return slots;
 }

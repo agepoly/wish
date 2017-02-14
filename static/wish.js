@@ -37,7 +37,7 @@ function init() {
 
     var content = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Your Wish</th></tr></thead><tbody>';
     for (i = 0; i < x.slots.length; ++i) {
-        content += '<tr><td>' + htmlEntities(x.slots[i]) + '</td><td>wanted <input type="range" name="wish' + i + '" min="0" max="' + (x.slots.length - 1) + '" step="1" value="' + x.wish[i] + '" /> hated</td></tr>';
+        content += '<tr><td>' + htmlEntities(x.slots[i].name) + '</td><td>wanted <input type="range" name="wish' + i + '" min="0" max="' + (x.slots.length - 1) + '" step="1" value="' + x.wish[i] + '" /> hated</td></tr>';
     }
     content += '</tbody></table>';
     document.getElementById("content").innerHTML = content;
