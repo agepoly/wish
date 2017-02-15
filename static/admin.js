@@ -246,7 +246,7 @@ function initDOM() {
 function initContent(content) {
     "use strict";
     var i, j;
-    document.getElementById("name").innerHTML = "Event name: <strong>" + content.name + "</strong>";
+    document.getElementById("name").innerHTML = "Event name: <strong>" + htmlEntities(content.name) + "</strong>";
 
     var code = "[slots]\n";
     var slots = [];

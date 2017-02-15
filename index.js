@@ -167,6 +167,14 @@ The Wish team</p>`, {
                 });
                 return;
             }
+            if (participant === null) {
+                socket.emit('feedback', {
+                    title: "Oops...",
+                    message: "Something went wrong!\n[key not found in the database]",
+                    type: "error"
+                });
+                return;
+            }
             db.events.findOne({
                 _id: participant.event
             }, function(err, event) {
