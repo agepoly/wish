@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="utf-8">
     <title>Wish</title>
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
+    <link rel="stylesheet" type="text/css" href="/lib/normalize.css">
+    <link rel="stylesheet" type="text/css" href="/lib/skeleton.css">
     <link rel="stylesheet" type="text/css" href="/style.css">
     <link rel="stylesheet" type="text/css" href="/lib/sweetalert.css">
     <link rel="stylesheet" type="text/css" href="/lib/codemirror.css">
@@ -26,23 +26,21 @@
     <div class="container">
         <h1 style="text-align: center"><a href="/" style="color: black; text-decoration: none;">Wish</a></h1>
 
-        <p id="name">Waiting for request... It may take time to send the mails</p>
+        <p id="name"></p>
 
-        <div class="row" id="reminder" hidden>
-            <span class="six columns">Some participants did not set their wishes</span><input id="reminder-button" type="button" class="six columns" value="Send reminder to participants">
+        <div class="row">
+            <input id="save" class="four columns button-primary" type="button" value="Save">
+            <input id="assign" class="four columns button-primary" type="button" value="Assign">
+            <input id="reminder" class="four columns button-primary" type="button" value="Send reminder">
         </div>
 
         <div class="row">
+            <label for="input">Data problem:</label>
             <textarea id="input" class="u-full-width"></textarea>
         </div>
 
         <div class="row">
-            <input id="save" class="four columns button-primary" type="button" value="Save">
-            <div id="error" class="four columns"></div>
-            <!--<label class="four columns u-pull-right"><input id="notify-users" type="checkbox"><span class="label-body">Send notification to users</span></label>-->
-        </div>
-
-        <div class="row">
+            <label for="output">Assignation:</label>
             <textarea id="output" class="u-full-width"></textarea>
         </div>
 

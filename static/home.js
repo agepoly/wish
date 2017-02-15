@@ -32,20 +32,16 @@ function send() {
         return x !== '';
     });
 
-    var payload = {
+    document.getElementById('send').value = "Please wait...";
+
+    socket.emit("create", {
         name: document.getElementById('name').value,
         admin_mail: document.getElementById('admin_mail').value,
         mails: mails,
         slots: slots,
         url: window.location.origin,
         message: document.getElementById('message').value
-    };
-
-    console.log(payload);
-
-    document.getElementById('send').value = "Please wait...";
-
-    socket.emit("create", payload);
+    });
 }
 
 function check_validity() {

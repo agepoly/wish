@@ -1,6 +1,2 @@
-# database files
 *.db
-
-# The following file may content private informations and should ne be commited with private informations
-# To make git ignore changed files : git update-index --assume-unchanged .../config.rs
-node_modules/config.rs
+node_modules

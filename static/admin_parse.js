@@ -141,7 +141,7 @@ function parse(text) {
                 eat();
             }
             slots.push({
-                slot: string,
+                name: string,
                 vmin: vmin,
                 vmax: vmax
             });
@@ -199,10 +199,13 @@ function parse(text) {
             eat();
             return;
         }
+        if (ch === null) {
+            return;
+        }
         errors.push({
             from: CodeMirror.Pos(l, c),
             to: CodeMirror.Pos(l, c + 1),
-            message: "expected"
+            message: "something expected"
         });
         skip_line();
         return;

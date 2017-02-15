@@ -38,16 +38,13 @@ app.get('/', function(req, res) {
 
 io.on('connection', function(socket) {
     "use strict";
-    console.log('a user connected');
 
     socket.on('disconnect', function() {
-        console.log('user disconnected');
     });
 
     /* ============================= creation ============================= */
     socket.on('create', function(content) {
         var i;
-        console.log(content);
 
         db.events.insert({
             name: content.name,
@@ -115,7 +112,6 @@ io.on('connection', function(socket) {
 An event has been created with your email address.
 If you are not concerned, please do not click on the following url.
 To administrate the activity, go to the following url : {{url}}/admin.html#{{key}}
-The first time that this administration page is opened, the invitation mails are sent to the participants.
 
 Have a nice day,
 The Wish team`, {
@@ -129,9 +125,7 @@ The Wish team`, {
                             data: Mustache.render(`<p>Hi,</p>
 <p>An event has been created with your email address.<br />
 <strong>If you are not concerned, please do not click on the following url.</strong><br />
-<a href="{{url}}/admin.html#{{key}}">Click here</a> to administrate the activity.
-The first time that this administration page is opened,
-the invitation mails are sent to the participants.</p>
+<a href="{{url}}/admin.html#{{key}}">Click here</a> to administrate the activity.</p>
 
 <p>Have a nice day,<br />
 The Wish team</p>`, {
@@ -289,7 +283,6 @@ The Wish team</p>`, {
                             our_participants.push(participants[i]);
                         }
                     }
-                    console.log(event.slots);
                     socket.emit('get data', {
                         name: event.name,
                         slots: event.slots,
@@ -301,10 +294,10 @@ The Wish team</p>`, {
     });
 
     socket.on('set data', function(content) {
-        console.log('set data');
 
-        db.events.findOne({ _id: content.key }, function(err, event) {
-            console.log(event);
+        db.events.findOne({
+            _id: content.key
+        }, function(err, event) {
             var i;
             if (err) {
                 socket.emit('feedback', {
@@ -362,9 +355,11 @@ The Wish team</p>`, {
 
             event.participants = []; // wipe and refill
             function addParticipant(i) {
-                console.log("add participant " + i);
                 if (i < content.participants.length) {
-                    db.participants.findOne({ mail: content.participants[i].mail, event: event._id }, function(err, participant) {
+                    db.participants.findOne({
+                        mail: content.participants[i].mail,
+                        event: event._id
+                    }, function(err, participant) {
                         if (err) {
                             socket.emit('feedback', {
                                 title: "Oops...",
@@ -392,31 +387,121 @@ The Wish team</p>`, {
                             content.participants[i].status = participant.status;
 
                             event.participants.push(participant._id);
-                            db.participants.update({ _id: participant._id }, { $set: { wish: content.participants[i].wish }}, function(err, numReplaced) {
+                            db.participants.update({
+                                _id: participant._id
+                            }, {
+                                $set: {
+                                    wish: content.participants[i].wish
+                                }
+                            }, function(err, numReplaced) {
                                 addParticipant(i + 1);
                             });
                         }
                     });
                 } else {
                     // all participants added
-                    db.events.update({ _id: event._id }, { $set: { participants: event.participants, slots: event.slots } }, function(err, numReplaced) {
-                        var mail_sent = 0;
-                        for (var j = 0; j < content.participants.length; ++j) {
-                            if (content.participants[j].status <= 0 || slots_changed) {
-                                mail_sent++;
-                                mailer.send({
-                                    text: Mustache.render(`Hi,
-{{url}}/wish.html#{{key}}
+                    db.events.update({
+                        _id: event._id
+                    }, {
+                        $set: {
+                            participants: event.participants,
+                            slots: event.slots
+                        }
+                    }, function(err, numReplaced) {
+
+                        var check_mail = function(id, mail) {
+                            return function(err, message) {
+                                if (err) {
+                                    socket.emit('feedback', {
+                                        title: "Oops...",
+                                        message: "Error when mail " + mail + "\n[" + err + "]",
+                                        type: "error"
+                                    });
+                                    db.participants.update({
+                                        _id: id
+                                    }, {
+                                        $set: {
+                                            status: -1
+                                        }
+                                    });
+                                } else {
+                                    db.participants.update({
+                                        _id: id
+                                    }, {
+                                        $set: {
+                                            status: 1
+                                        }
+                                    });
+                                }
+                            };
+                        };
+
+                        var first_mail = {
+                            text: `Hi,
+You have been invited by {{{amail}}} to give your wishes about the event : {{{name}}}
+{{{message}}}
+
+{{{url}}}/wish.html#{{{key}}}
 
 Have a nice day,
-The Wish team`, {
-                                        url: event.url,
-                                        key: content.participants[j]._id
-                                    }),
+The Wish team`,
+                            html: `<p>Hi,</p>
+<p>You have been invited by {{amail}} to give your wishes about the event : <strong>{{name}}</strong></p><br />
+<pre>{{message}}</pre>
+<p><a href="{{url}}/wish.html#{{key}}">Click here</a> to set your wishes.</p>
+<p>Have a nice day,<br />
+The Wish team</p>`
+                        };
+                        var recall_mail = {
+                            text: `Hi,
+The adimistrator ({{{amail}}}) of the event {{{name}}} has modified the slots.
+Please look at your wish.
+
+{{{url}}}/wish.html#{{{key}}}
+
+Have a nice day,
+The Wish team`,
+                            html: `<p>Hi,</p>
+<p>The adimistrator ({{amail}}) of the event <strong>{{name}}</strong> has modified the slots.</p><br />
+<p>Please look at <a href="{{url}}/wish.html#{{key}}">your wish</a>.</p>
+<p>Have a nice day,<br />
+The Wish team</p>`
+                        };
+
+                        var mail_sent = 0;
+                        for (var j = 0; j < content.participants.length; ++j) {
+                            var values = {
+                                amail: event.admin_mail,
+                                name: event.name,
+                                message: event.message,
+                                url: event.url,
+                                key: content.participants[j]._id
+                            };
+
+                            if (content.participants[j].status <= 0) {
+                                mail_sent++;
+                                mailer.send({
+                                    text: Mustache.render(first_mail.text, values),
                                     from: "Wish <wish@epfl.ch>",
                                     to: content.participants[j].mail,
-                                    subject: "Wish : " + content.name
-                                });
+                                    subject: "Wish : " + event.name,
+                                    attachment: [{
+                                        data: Mustache.render(first_mail.html, values),
+                                        alternative: true
+                                    }]
+                                }, check_mail(content.participants[j]._id, content.participants[j].mail));
+                            } else if (slots_changed) {
+                                mail_sent++;
+                                mailer.send({
+                                    text: Mustache.render(recall_mail.text, values),
+                                    from: "Wish <wish@epfl.ch>",
+                                    to: content.participants[j].mail,
+                                    subject: "Wish : " + event.name,
+                                    attachment: [{
+                                        data: Mustache.render(recall_mail.html, values),
+                                        alternative: true
+                                    }]
+                                }, check_mail(content.participants[j]._id, content.participants[j].mail));
                             }
                         }
                         socket.emit('feedback', {
