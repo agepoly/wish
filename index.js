@@ -517,7 +517,7 @@ The Wish team</p>`
     });
 });
 
-http.listen(3000, function() {
+http.listen(80, function() {
     "use strict";
-    console.log('listening on *:3000');
+    console.log('listening on *:80');
 });
