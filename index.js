@@ -517,7 +517,9 @@ The Wish team</p>`
     });
 });
 
-http.listen(80, function() {
+var port = process.argv[2] === undefined ? 3000 : Number(process.argv[2]);
+
+http.listen(port, function() {
     "use strict";
-    console.log('listening on *:80');
+    console.log('listening on *:' + port);
 });
