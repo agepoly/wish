@@ -192,9 +192,11 @@ The Wish team</p>`, {
                 });
             });
         });
-        db.update({
+        db.participants.update({
             _id: key,
-            status: { $lte: 1 } // 0=not send, 1=send
+            status: {
+                $lte: 1
+            } // 0=not send, 1=send
         }, {
             $set: {
                 status: 2 // =view
@@ -236,7 +238,7 @@ The Wish team</p>`, {
                     type: "error"
                 });
             } else {
-                db.update({
+                db.participants.update({
                     _id: content.key
                 }, {
                     $set: {
@@ -281,26 +283,17 @@ The Wish team</p>`, {
                         });
                         return;
                     }
-                    var wishes = [];
-                    var status = [];
-                    var mails = [];
-                    for (var i = 0; i < event.participants.length; ++i) {
-                        var id = event.participants[i];
-                        for (var j = 0; j < participants.length; ++j) {
-                            if (participants[j]._id == id) {
-                                wishes[i] = participants[j].wish;
-                                status[i] = participants[j].status;
-                                mails[i] = participants[j].mail;
-                                break;
-                            }
+                    var our_participants = [];
+                    for (var i = 0; i < participants.length; ++i) {
+                        if (event.participants.indexOf(participants[i]._id) != -1) {
+                            our_participants.push(participants[i]);
                         }
                     }
+                    console.log(event.slots);
                     socket.emit('get data', {
                         name: event.name,
                         slots: event.slots,
-                        mails: mails,
-                        status: status,
-                        wishes: wishes
+                        participants: our_participants
                     });
                 });
             }
@@ -308,12 +301,134 @@ The Wish team</p>`, {
     });
 
     socket.on('set data', function(content) {
+        console.log('set data');
 
-        //TODO send mails to participants according to status content
-        // 0=not send
-        // 1=send
-        socket.emit('info', 'mail sent to <...>');
+        db.events.findOne({ _id: content.key }, function(err, event) {
+            console.log(event);
+            var i;
+            if (err) {
+                socket.emit('feedback', {
+                    title: "Oops...",
+                    message: "Something went wrong!\n[" + err + "]",
+                    type: "error"
+                });
+                return;
+            }
+            if (event === null) {
+                socket.emit('feedback', {
+                    title: "Oops...",
+                    message: "Something went wrong!\n[key not found in the database]",
+                    type: "error"
+                });
+                return;
+            }
+            var vmin = 0,
+                vmax = 0;
+            for (i = 0; i < content.slots.lenght; ++i) {
+                if (content.slots[i].vmin > content.slots[i].vmax) {
+                    err = "vmin > vmax";
+                }
+                vmin += content.slots[i].vmin;
+                vmax += content.slots[i].vmax;
+            }
+            if (content.participants.lenght > vmax || content.participants.lenght < vmin) {
+                err = "amount of participants not in range [vmin, vmax]";
+            }
+            for (i = 0; i < content.participants.lenght; ++i) {
+                if (content.participants[i].wish.lenght != content.slots.lenght) {
+                    err = "size of wish not equal to amount of slots";
+                }
+            }
+            if (err) {
+                socket.emit('feedback', {
+                    title: "Oops...",
+                    message: "Something went wrong!\n[" + err + "]",
+                    type: "error"
+                });
+                return;
+            }
 
+            var slots_changed = false;
+            if (content.slots.length != event.slots.length) {
+                slots_changed = true;
+            } else {
+                for (i = 0; i < content.slots.length; ++i) {
+                    if (event.slots[i].name != content.slots[i].name) {
+                        slots_changed = true;
+                    }
+                }
+            }
+            event.slots = content.slots;
+
+            event.participants = []; // wipe and refill
+            function addParticipant(i) {
+                console.log("add participant " + i);
+                if (i < content.participants.length) {
+                    db.participants.findOne({ mail: content.participants[i].mail, event: event._id }, function(err, participant) {
+                        if (err) {
+                            socket.emit('feedback', {
+                                title: "Oops...",
+                                message: "Something went wrong!\n[" + err + "]",
+                                type: "error"
+                            });
+                            return;
+                        }
+                        if (participant === null) {
+                            // create a new one
+                            db.participants.insert({
+                                mail: content.participants[i].mail,
+                                wish: content.participants[i].wish,
+                                event: event._id,
+                                status: 0
+                            }, function(err, newParticipant) {
+                                content.participants[i]._id = newParticipant._id;
+                                content.participants[i].status = newParticipant.status;
+
+                                event.participants.push(newParticipant._id);
+                                addParticipant(i + 1);
+                            });
+                        } else {
+                            content.participants[i]._id = participant._id;
+                            content.participants[i].status = participant.status;
+
+                            event.participants.push(participant._id);
+                            db.participants.update({ _id: participant._id }, { $set: { wish: content.participants[i].wish }}, function(err, numReplaced) {
+                                addParticipant(i + 1);
+                            });
+                        }
+                    });
+                } else {
+                    // all participants added
+                    db.events.update({ _id: event._id }, { $set: { participants: event.participants, slots: event.slots } }, function(err, numReplaced) {
+                        var mail_sent = 0;
+                        for (var j = 0; j < content.participants.length; ++j) {
+                            if (content.participants[j].status <= 0 || slots_changed) {
+                                mail_sent++;
+                                mailer.send({
+                                    text: Mustache.render(`Hi,
+{{url}}/wish.html#{{key}}
+
+Have a nice day,
+The Wish team`, {
+                                        url: event.url,
+                                        key: content.participants[j]._id
+                                    }),
+                                    from: "Wish <wish@epfl.ch>",
+                                    to: content.participants[j].mail,
+                                    subject: "Wish : " + content.name
+                                });
+                            }
+                        }
+                        socket.emit('feedback', {
+                            title: "Saved",
+                            message: String(mail_sent) + " mails sended",
+                            type: "success"
+                        });
+                    });
+                }
+            }
+            addParticipant(0);
+        });
     });
 });
 

@@ -106,53 +106,47 @@ function init() {
             inputCode.focus();
             inputCode.setCursor(out.errors[0].from);
         } else {
-            var mails = [];
-            var wishes = [];
-            for (i = 0; i < out.participants.length; ++i) {
-                mails[i] = out.participants[i].mail;
-                wishes[i] = out.participants[i].wish;
-            }
+            console.log('set data');
             socket.emit('set data', {
                 key: window.location.hash.substring(1),
-                mails: mails,
-                tasks: out.tasks,
-                wishes: wishes
+                slots: out.slots,
+                participants: out.participants
             });
         }
     };
 
-    var code = "[tasks]\n";
-    var tasks = [];
+    var code = "[slots]\n";
+    var slots = [];
     for (i = 0; i < x.slots.length; ++i) {
-        tasks[i] = ['"' + x.slots[i] + '"', String(x.vmin[i]), String(x.vmax[i])];
+        slots[i] = ['"' + x.slots[i].name + '"', String(x.slots[i].vmin), String(x.slots[i].vmax)];
     }
-    code += format_columns(tasks);
+    code += format_columns(slots);
 
     code += "\n[participants]\n";
     var participants = [];
-    for (i = 0; i < x.mails.length; ++i) {
-        participants[i] = ['"' + x.mails[i] + '"'];
-        for (j = 0; j < x.wishes[i].length; ++j) {
-            participants[i].push(String(x.wishes[i][j]));
+    for (i = 0; i < x.participants.length; ++i) {
+        participants[i] = ['"' + x.participants[i].mail + '"'];
+        for (j = 0; j < x.participants[i].wish.length; ++j) {
+            participants[i].push(String(x.participants[i].wish[j]));
         }
-        switch (x.status[i]) {
+        switch (x.participants[i].status) {
             case -1:
-                code += participants[i].push("# mail error");
+                participants[i].push("# mail error");
                 break;
             case 0:
                 // mail not sent
                 break;
             case 1:
-                code += participants[i].push("# no activity");
+                participants[i].push("# no activity");
                 break;
             case 2:
-                code += participants[i].push("# view");
+                participants[i].push("# view");
                 break;
             case 3:
-                code += participants[i].push("# modified");
+                participants[i].push("# modified");
                 break;
             default:
-                code += participants[i].push("# [status error]");
+                participants[i].push("# [status error]");
         }
     }
     code += format_columns(participants);

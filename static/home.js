@@ -174,11 +174,7 @@ function check_validity() {
 }
 
 
-var oldvalues = {
-    slot: [],
-    vmin: [],
-    vmax: []
-};
+var oldvalues = [];
 
 function create_slots() {
     "use strict";
@@ -186,30 +182,28 @@ function create_slots() {
     if (n > Number(document.getElementById('nslots').getAttribute('max'))) {
         return;
     }
-    var old = get_slot_val();
-    for (var i = 0; i < old.slot.length; ++i) {
-        oldvalues.slot[i] = old.slot[i];
-        oldvalues.vmin[i] = old.vmin[i];
-        oldvalues.vmax[i] = old.vmax[i];
+    var old = get_slots();
+    for (var i = 0; i < old.length; ++i) {
+        oldvalues[i] = old[i];
     }
 
     var content = '<div class="row"><div class="six columns"><label title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform...">Slots</label></div>';
     content += '<div class="three columns"><label title="The algorithm will ensure that at least this many people are in this slot.">Min people</label></div>';
     content += '<div class="three columns"><label title="The algorithm will ensure that no more than this many people are in this slot.">Max people</label></div></div>';
     for (i = 0; i < n; ++i) {
-        var values = {
+        var slot = {
             name: "",
-            vmin: "0",
-            vmax: "10"
+            vmin: 0,
+            vmax: 10
         };
-        if (i < oldvalues.slot.length) {
-            values.name = oldvalues.slot[i];
-            values.vmin = oldvalues.vmin[i];
-            values.vmax = oldvalues.vmax[i];
+        if (i < oldvalues.length) {
+            slot.name = oldvalues[i].name;
+            slot.vmin = oldvalues[i].vmin;
+            slot.vmax = oldvalues[i].vmax;
         }
-        content += '<div class="row"><div class="six columns"><input type="text" placeholder="Tuesday morning" class="slot u-full-width" id="slot' + i + '" value="' + htmlEntities(values.name) + '" title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform..."></div>';
-        content += '<div class="three columns"><input type="number" class="vmin u-full-width" id="vmin' + i + '" min="0" max="100" step="1" value="' + values.vmin + '" title="The algorithm will ensure that at least this many people are in this slot."></div>';
-        content += '<div class="three columns"><input type="number" class="vmax u-full-width" id="vmax' + i + '" min="0" max="100" step="1" value="' + values.vmax + '" title="The algorithm will ensure that no more than this many people are in this slot."></div></div>';
+        content += '<div class="row"><div class="six columns"><input type="text" placeholder="Tuesday morning" class="slot u-full-width" id="slot' + i + '" value="' + htmlEntities(slot.name) + '" title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform..."></div>';
+        content += '<div class="three columns"><input type="number" class="vmin u-full-width" id="vmin' + i + '" min="0" max="100" step="1" value="' + slot.vmin + '" title="The algorithm will ensure that at least this many people are in this slot."></div>';
+        content += '<div class="three columns"><input type="number" class="vmax u-full-width" id="vmax' + i + '" min="0" max="100" step="1" value="' + slot.vmax + '" title="The algorithm will ensure that no more than this many people are in this slot."></div></div>';
     }
     document.getElementById('slots').innerHTML = content;
     //$("input").bind('input propertychange', check_validity);

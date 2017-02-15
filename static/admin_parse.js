@@ -8,7 +8,7 @@ function parse(text) {
     var c = 0;
 
     var section = null;
-    var tasks = [];
+    var slots = [];
     var participants = [];
 
     function eat() {
@@ -65,14 +65,14 @@ function parse(text) {
             return;
         }
         eat();
-        if (section === null && word !== "tasks") {
+        if (section === null && word !== "slots") {
             errors.push({
                 from: CodeMirror.Pos(l, cc),
                 to: CodeMirror.Pos(l, c),
-                message: "first section must be tasks"
+                message: "first section must be slots"
             });
         }
-        if (section === "tasks" && word !== "participants") {
+        if (section === "slots" && word !== "participants") {
             errors.push({
                 from: CodeMirror.Pos(l, cc),
                 to: CodeMirror.Pos(l, c),
@@ -91,7 +91,7 @@ function parse(text) {
             errors.push({
                 from: CodeMirror.Pos(l, c),
                 to: CodeMirror.Pos(l, c + 1),
-                message: "must begin with [tasks]"
+                message: "must begin with [slots]"
             });
             skip_line();
             return;
@@ -122,7 +122,7 @@ function parse(text) {
             eat();
         }
 
-        if (section === "tasks") {
+        if (section === "slots") {
             var vmin = eat_number();
             if (!is_space(ch)) {
                 errors.push({
@@ -140,7 +140,7 @@ function parse(text) {
             while (is_space(ch)) {
                 eat();
             }
-            tasks.push({
+            slots.push({
                 slot: string,
                 vmin: vmin,
                 vmax: vmax
@@ -166,7 +166,7 @@ function parse(text) {
                 wish: row
             });
 
-            if (row.length !== tasks.length) {
+            if (row.length !== slots.length) {
                 errors.push({
                     from: CodeMirror.Pos(l, 0),
                     to: CodeMirror.Pos(l, c),
@@ -276,14 +276,14 @@ function parse(text) {
     }
 
     var ok = true;
-    for (i = 0; i < errors.length; ++i) {
+    for (var i = 0; i < errors.length; ++i) {
         if (errors[i].severity !== "warning") {
             ok = false;
         }
     }
 
     return {
-        tasks: tasks,
+        slots: slots,
         participants: participants,
         errors: errors,
         ok: ok
