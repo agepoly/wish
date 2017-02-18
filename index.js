@@ -6,16 +6,25 @@ var email = require("emailjs");
 var Mustache = require('mustache');
 var conf = require("config");
 
-var https = require('https');
+var http = require('http');
+// var https = require('https');
 var express = require('express');
 var app = express();
 
-var options = {
-    key: fs.readFileSync('./file.pem'),
-    cert: fs.readFileSync('./file.crt')
-};
-var serverPort = 443;
-var server = https.createServer(options, app);
+
+/*
+$ openssl genrsa 1024 > file.pem
+$ openssl req -new -key file.pem -out csr.pem
+$ openssl x509 -req -days 365 -in csr.pem -signkey file.pem -out file.crt
+*/
+// var options = {
+//     key: fs.readFileSync('./file.pem'),
+//     cert: fs.readFileSync('./file.crt')
+// };
+var serverPort = Number(process.argv[2]) || 3000;
+// var serverPort = 443;
+var server = http.createServer(app);
+// var server = https.createServer(options, app);
 var io = require('socket.io')(server);
 
 var db = {
@@ -409,9 +418,7 @@ The Wish team</p>`
     });
 });
 
-// var port = process.argv[2] === undefined ? 3000 : Number(process.argv[2]);
-// var hostname = process.argv[3];
-
 server.listen(serverPort, function() {
     "use strict";
+    console.log("listening on port " + serverPort);
 });
