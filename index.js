@@ -1,14 +1,22 @@
 /* jshint esversion: 6 */
 
+var fs = require('fs');
+var Datastore = require('nedb');
+var email = require("emailjs");
 var Mustache = require('mustache');
+var conf = require("config");
+
+var https = require('https');
 var express = require('express');
 var app = express();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-var email = require("emailjs");
-var conf = require("config");
-var Datastore = require('nedb');
 
+var options = {
+    key: fs.readFileSync('./file.pem'),
+    cert: fs.readFileSync('./file.crt')
+};
+var serverPort = 443;
+var server = https.createServer(options, app);
+var io = require('socket.io')(server);
 
 var db = {
     events: new Datastore({
@@ -401,10 +409,9 @@ The Wish team</p>`
     });
 });
 
-var port = process.argv[2] === undefined ? 3000 : Number(process.argv[2]);
-var hostname = process.argv[3];
+// var port = process.argv[2] === undefined ? 3000 : Number(process.argv[2]);
+// var hostname = process.argv[3];
 
-http.listen(port, hostname, function() {
+server.listen(serverPort, function() {
     "use strict";
-    console.log('listening on *:' + port);
 });
