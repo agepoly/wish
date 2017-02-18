@@ -402,8 +402,9 @@ The Wish team</p>`
 });
 
 var port = process.argv[2] === undefined ? 3000 : Number(process.argv[2]);
+var hostname = process.argv[3];
 
-http.listen(port, function() {
+http.listen(port, hostname, function() {
     "use strict";
     console.log('listening on *:' + port);
 });
