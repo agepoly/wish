@@ -35,22 +35,30 @@ function init(content) {
         });
     };
     document.getElementById('mail').innerHTML = content.mail;
-    document.getElementById('name').innerHTML = '<b>Activity name: </b>' + htmlEntities(content.name);
+    document.getElementById('name').innerHTML = Mustache.render('<b>Activity name: </b> {{name}}', { name: content.name });
 
     var html = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Your Wish</th></tr></thead><tbody>';
     for (i = 0; i < content.slots.length; ++i) {
-        html += '<tr><td>' + htmlEntities(content.slots[i].name) + '</td><td>wanted <input id="wish' + i + '" type="range" min="0" max="' + (content.slots.length - 1) + '" step="1" value="' + content.wish[i] + '" /> hated</td></tr>';
+        html += Mustache.render('<tr><td>{{name}}</td><td>wanted <input id="wish{{no}}" type="range" min="0" max="{{max}}" step="1" value="{{value}}"> hated</td></tr>', {
+            name: content.slots[i].name,
+            no: i,
+            max: content.slots.length - 1,
+            value: wish[i]
+        });
     }
     html += '</tbody></table>';
     document.getElementById("content").innerHTML = html;
 
     var inputs = document.getElementsByTagName('input');
     for (i = 0; i < inputs.length; ++i) {
-        inputs[i].onchange = check;
+        inputs[i].onchange = slider_moved;
+        if (inputs[i].value != wish[i]) {
+            swal('Value out of bounds', '<strong>test</strong>');
+        }
     }
 }
 
-function check(event) {
+function slider_moved(event) {
     "use strict";
     var i;
 

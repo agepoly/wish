@@ -20,6 +20,8 @@ var db = {
         autoload: true
     })
 };
+db.events.persistence.setAutocompactionInterval(24 * 3600 * 1000);
+db.participants.persistence.setAutocompactionInterval(24 * 3600 * 1000);
 
 var mailer = email.server.connect({
     user: conf.user,
@@ -39,8 +41,27 @@ app.get('/', function(req, res) {
 io.on('connection', function(socket) {
     "use strict";
 
-    socket.on('disconnect', function() {
-    });
+    socket.on('disconnect', function() {});
+
+    function feedback_error(err, found) {
+        if (err !== null) {
+            socket.emit('feedback', {
+                title: "Oops...",
+                message: "Something went wrong!\n[" + err + "]",
+                type: "error"
+            });
+            return true;
+        }
+        if (found !== undefined && found === false) {
+            socket.emit('feedback', {
+                title: "Oops...",
+                message: "Something went wrong!\n[key not found in the database]",
+                type: "error"
+            });
+            return true;
+        }
+        return false;
+    }
 
     /* ============================= creation ============================= */
     socket.on('create', function(content) {
@@ -54,14 +75,7 @@ io.on('connection', function(socket) {
             message: content.message,
             participants: []
         }, function(err, newEvent) {
-            if (err !== null) {
-                socket.emit('feedback', {
-                    title: "Oops...",
-                    message: "Something went wrong!\n[" + err + "]",
-                    type: "error"
-                });
-                return;
-            }
+            if (feedback_error(err)) { return; }
 
             var wish = [];
             for (i = 0; i < content.slots.length; ++i) {
@@ -79,113 +93,66 @@ io.on('connection', function(socket) {
             }
 
             db.participants.insert(participants, function(err, newParticipants) {
-                if (err !== null) {
-                    socket.emit('feedback', {
-                        title: "Oops...",
-                        message: "Something went wrong!\n[" + err + "]",
-                        type: "error"
-                    });
-                    return;
-                }
+                if (feedback_error(err)) { return; }
+
                 var ids = [];
                 for (i = 0; i < newParticipants.length; ++i) {
                     ids[i] = newParticipants[i]._id;
                 }
 
-                db.events.update({
-                    _id: newEvent._id
-                }, {
-                    $set: {
-                        participants: ids
-                    },
-                }, {}, function(err, numReplaced) {
-                    if (err) {
-                        socket.emit('feedback', {
-                            title: "Oops...",
-                            message: "Something went wrong!\n[" + err + "]",
-                            type: "error"
-                        });
-                        return;
-                    }
-                    mailer.send({
-                        text: Mustache.render(`Hi,
+                db.events.update({ _id: newEvent._id }, { $set: { participants: ids }, }, {},
+                    function(err, numReplaced) {
+                        if (feedback_error(err, numReplaced === 1)) { return; }
+
+                        mailer.send({
+                            text: Mustache.render(`Hi,
 An event has been created with your email address.
 If you are not concerned, please do not click on the following url.
 To administrate the activity, go to the following url : {{url}}/admin.html#{{key}}
 
 Have a nice day,
 The Wish team`, {
-                            url: content.url,
-                            key: newEvent._id
-                        }),
-                        from: "Wish <wish@epfl.ch>",
-                        to: content.admin_mail,
-                        subject: "Wish : " + content.name,
-                        attachment: [{
-                            data: Mustache.render(`<p>Hi,</p>
+                                url: content.url,
+                                key: newEvent._id
+                            }),
+                            from: "Wish <wish@epfl.ch>",
+                            to: content.admin_mail,
+                            subject: "Wish : " + content.name,
+                            attachment: [{
+                                data: Mustache.render(`<p>Hi,</p>
 <p>An event has been created with your email address.<br />
 <strong>If you are not concerned, please do not click on the following url.</strong><br />
 <a href="{{url}}/admin.html#{{key}}">Click here</a> to administrate the activity.</p>
 
 <p>Have a nice day,<br />
 The Wish team</p>`, {
-                                url: content.url,
-                                key: newEvent._id
-                            }),
-                            alternative: true
-                        }]
-                    }, function(err, message) {
-                        if (err) {
+                                    url: content.url,
+                                    key: newEvent._id
+                                }),
+                                alternative: true
+                            }]
+                        }, function(err, message) {
+                            if (feedback_error(err)) { return; }
+
                             socket.emit('feedback', {
-                                title: "Oops...",
-                                message: "Something went wrong!\n[" + err + "]",
-                                type: "error"
+                                title: "Creation succeed!",
+                                message: "A mail has been sent to " + content.admin_mail + " to validate the activity.",
+                                type: "success"
                             });
-                            return;
-                        }
-                        socket.emit('feedback', {
-                            title: "Creation succeed!",
-                            message: "A mail has been sent to " + content.admin_mail + " to validate the activity.",
-                            type: "success"
                         });
                     });
-                });
             });
         });
     });
 
     /* ============================= wish ============================= */
     socket.on('get wish', function(key) {
-        db.participants.findOne({
-            _id: key
-        }, function(err, participant) {
-            if (err) {
-                socket.emit('feedback', {
-                    title: "Oops...",
-                    message: "Something went wrong!\n[" + err + "]",
-                    type: "error"
-                });
-                return;
-            }
-            if (participant === null) {
-                socket.emit('feedback', {
-                    title: "Oops...",
-                    message: "Something went wrong!\n[key not found in the database]",
-                    type: "error"
-                });
-                return;
-            }
-            db.events.findOne({
-                _id: participant.event
-            }, function(err, event) {
-                if (err) {
-                    socket.emit('feedback', {
-                        title: "Oops...",
-                        message: "Something went wrong!\n[" + err + "]",
-                        type: "error"
-                    });
-                    return;
-                }
+        db.participants.findOne({ _id: key }, function(err, participant) {
+            if (feedback_error(err, participant !== null)) { return; }
+
+            db.events.findOne({ _id: participant.event }, function(err, event) {
+                if (feedback_error(err, event)) { return; }
+
                 socket.emit('get wish', {
                     name: event.name,
                     mail: participant.mail,
@@ -194,16 +161,7 @@ The Wish team</p>`, {
                 });
             });
         });
-        db.participants.update({
-            _id: key,
-            status: {
-                $lte: 1
-            } // 0=not send, 1=send
-        }, {
-            $set: {
-                status: 2 // =view
-            }
-        });
+        db.participants.update({ _id: key, status: { $lte: 1 } }, { $set: { status: 2 } });
     });
 
     socket.on('set wish', function(content) {
@@ -220,123 +178,58 @@ The Wish team</p>`, {
             }
         }
 
-        db.participants.update({
-            _id: content.key
-        }, {
-            $set: {
-                wish: content.wish
-            }
-        }, {}, function(err, numReplaced) {
-            if (err) {
-                socket.emit('feedback', {
-                    title: "Oops...",
-                    message: "Something went wrong!\n[" + err + "]",
-                    type: "error"
-                });
-            } else if (numReplaced === 0) {
-                socket.emit('feedback', {
-                    title: "Oops...",
-                    message: "Something went wrong!\n[key not found in the database]",
-                    type: "error"
-                });
-            } else {
-                db.participants.update({
-                    _id: content.key
-                }, {
-                    $set: {
-                        status: 3 // =modified
-                    }
-                });
-                socket.emit('feedback', {
-                    title: "Saved",
-                    message: "Your wish as been saved.",
-                    type: "success"
-                });
-                io.emit('wishes modified');
-            }
+        db.participants.update({ _id: content.key }, { $set: { wish: content.wish, status: 3 } }, {}, function(err, numReplaced) {
+            if (feedback_error(err, numReplaced === 1)) { return; }
+
+            socket.emit('feedback', {
+                title: "Saved",
+                message: "Your wish as been saved.",
+                type: "success"
+            });
+            // io.emit('wishes modified'); TODO notify admin in real time
         });
     });
     /* ============================= admin ============================= */
     socket.on('get data', function(key) {
-        db.events.findOne({
-            _id: key
-        }, function(err, event) {
-            if (err) {
-                socket.emit('feedback', {
-                    title: "Oops...",
-                    message: "Something went wrong!\n[" + err + "]",
-                    type: "error"
+        db.events.findOne({ _id: key }, function(err, event) {
+            if (feedback_error(err, event !== null)) { return; }
+            db.participants.find({ event: key }, function(err, participants) {
+                if (feedback_error(err)) { return; }
+
+                // because participants can be removed in the event we have to filter
+                participants = participants.filter(function(p) {
+                    return event.participants.indexOf(p._id) !== -1;
                 });
-            } else if (event === null) {
-                socket.emit('feedback', {
-                    title: "Oops...",
-                    message: "Something went wrong!\n[key not found in the database]",
-                    type: "error"
+                participants.sort(function(p1, p2) {
+                    return p1.mail < p2.mail ? -1 : 1;
                 });
-            } else {
-                db.participants.find({
-                    event: key
-                }, function(err, participants) {
-                    if (err) {
-                        socket.emit('feedback', {
-                            title: "Oops...",
-                            message: "Something went wrong!\n[" + err + "]",
-                            type: "error"
-                        });
-                        return;
-                    }
-                    var our_participants = [];
-                    for (var i = 0; i < participants.length; ++i) {
-                        if (event.participants.indexOf(participants[i]._id) != -1) {
-                            our_participants.push(participants[i]);
-                        }
-                    }
-                    socket.emit('get data', {
-                        name: event.name,
-                        slots: event.slots,
-                        participants: our_participants
-                    });
+                socket.emit('get data', {
+                    name: event.name,
+                    slots: event.slots,
+                    participants: participants
                 });
-            }
+            });
         });
     });
 
     socket.on('set data', function(content) {
-
-        db.events.findOne({
-            _id: content.key
-        }, function(err, event) {
+        db.events.findOne({ _id: content.key }, function(err, event) {
+            if (feedback_error(err, event !== null)) { return; }
             var i;
-            if (err) {
-                socket.emit('feedback', {
-                    title: "Oops...",
-                    message: "Something went wrong!\n[" + err + "]",
-                    type: "error"
-                });
-                return;
-            }
-            if (event === null) {
-                socket.emit('feedback', {
-                    title: "Oops...",
-                    message: "Something went wrong!\n[key not found in the database]",
-                    type: "error"
-                });
-                return;
-            }
             var vmin = 0,
                 vmax = 0;
-            for (i = 0; i < content.slots.lenght; ++i) {
+            for (i = 0; i < content.slots.length; ++i) {
                 if (content.slots[i].vmin > content.slots[i].vmax) {
                     err = "vmin > vmax";
                 }
                 vmin += content.slots[i].vmin;
                 vmax += content.slots[i].vmax;
             }
-            if (content.participants.lenght > vmax || content.participants.lenght < vmin) {
+            if (content.participants.length > vmax || content.participants.length < vmin) {
                 err = "amount of participants not in range [vmin, vmax]";
             }
-            for (i = 0; i < content.participants.lenght; ++i) {
-                if (content.participants[i].wish.lenght != content.slots.lenght) {
+            for (i = 0; i < content.participants.length; ++i) {
+                if (content.participants[i].wish.length != content.slots.length) {
                     err = "size of wish not equal to amount of slots";
                 }
             }
@@ -362,20 +255,15 @@ The Wish team</p>`, {
             event.slots = content.slots;
 
             event.participants = []; // wipe and refill
+            addParticipant(0);
+
             function addParticipant(i) {
                 if (i < content.participants.length) {
                     db.participants.findOne({
                         mail: content.participants[i].mail,
                         event: event._id
                     }, function(err, participant) {
-                        if (err) {
-                            socket.emit('feedback', {
-                                title: "Oops...",
-                                message: "Something went wrong!\n[" + err + "]",
-                                type: "error"
-                            });
-                            return;
-                        }
+                        if (feedback_error(err)) { return; }
                         if (participant === null) {
                             // create a new one
                             db.participants.insert({
@@ -384,6 +272,8 @@ The Wish team</p>`, {
                                 event: event._id,
                                 status: 0
                             }, function(err, newParticipant) {
+                                if (feedback_error(err)) { return; }
+
                                 content.participants[i]._id = newParticipant._id;
                                 content.participants[i].status = newParticipant.status;
 
@@ -395,29 +285,28 @@ The Wish team</p>`, {
                             content.participants[i].status = participant.status;
 
                             event.participants.push(participant._id);
-                            db.participants.update({
-                                _id: participant._id
-                            }, {
-                                $set: {
-                                    wish: content.participants[i].wish
-                                }
+                            db.participants.update({ _id: participant._id }, {
+                                $set: { wish: content.participants[i].wish }
                             }, function(err, numReplaced) {
+                                if (feedback_error(err, numReplaced === 1)) { return; }
+
                                 addParticipant(i + 1);
                             });
                         }
                     });
                 } else {
                     // all participants added
-                    db.events.update({
-                        _id: event._id
-                    }, {
+                    // event.slots and event.participants contain the fresh values
+                    // content.participants contains the full&fresh participants values
+                    db.events.update({ _id: event._id }, {
                         $set: {
                             participants: event.participants,
                             slots: event.slots
                         }
                     }, function(err, numReplaced) {
+                        if (feedback_error(err, numReplaced === 1)) { return; }
 
-                        var check_mail = function(id, mail) {
+                        function check_mail(id, mail) {
                             return function(err, message) {
                                 if (err) {
                                     socket.emit('feedback', {
@@ -425,24 +314,12 @@ The Wish team</p>`, {
                                         message: "Error when mail " + mail + "\n[" + err + "]",
                                         type: "error"
                                     });
-                                    db.participants.update({
-                                        _id: id
-                                    }, {
-                                        $set: {
-                                            status: -1
-                                        }
-                                    });
+                                    db.participants.update({ _id: id }, { $set: { status: -1 } });
                                 } else {
-                                    db.participants.update({
-                                        _id: id
-                                    }, {
-                                        $set: {
-                                            status: 1
-                                        }
-                                    });
+                                    db.participants.update({ _id: id }, { $set: { status: 1 } });
                                 }
                             };
-                        };
+                        }
 
                         var first_mail = {
                             text: `Hi,
@@ -514,13 +391,12 @@ The Wish team</p>`
                         }
                         socket.emit('feedback', {
                             title: "Saved",
-                            message: String(mail_sent) + " mails sended",
+                            message: "Information saved." + (mail_sent > 0 ? String(mail_sent) + " mails sended." : ""),
                             type: "success"
                         });
                     });
                 }
             }
-            addParticipant(0);
         });
     });
 });
