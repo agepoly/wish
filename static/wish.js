@@ -55,7 +55,7 @@ function init(content) {
         if (input.value != wish[i]) {
             swal('Value out of bounds', Mustache.render('The value in the slot <strong>{{slot}}</strong> is out of bounds.</br>By saving, you put it back in the ranges.', { slot: content.slots[i].name }));
         }
-        wish[i] = input.value;
+        wish[i] = Number(input.value);
     }
 }
 
