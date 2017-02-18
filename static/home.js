@@ -14,13 +14,41 @@ if (document.readyState != 'loading') {
 
 function init() {
     "use strict";
-    document.getElementById('nslots').onchange = create_slots;
     document.getElementById('send').onclick = send;
+    document.getElementById('clear').onclick = clear;
+
+    document.getElementById('name').value = localStorage.name || "";
+    document.getElementById('name').onchange = function(event) {
+        localStorage.name = event.target.value;
+    };
+
+    document.getElementById('nslots').value = localStorage.nslots || "2";
+    document.getElementById('nslots').onchange = function(event) {
+        localStorage.nslots = event.target.value;
+        create_slots();
+    };
+
+    document.getElementById('admin_mail').value = localStorage.admin_mail || "";
+    document.getElementById('admin_mail').onchange = function(event) {
+        localStorage.admin_mail = event.target.value;
+    };
+
+    document.getElementById('mails').value = localStorage.mails || "";
+    document.getElementById('mails').onchange = function(event) {
+        localStorage.mails = event.target.value;
+    };
+
+    document.getElementById('message').value = localStorage.message || "";
+    document.getElementById('message').onchange = function(event) {
+        localStorage.message = event.target.value;
+    };
+
     create_slots();
 }
 
 function send() {
     "use strict";
+
     if (!check_validity()) {
         return;
     }
@@ -42,6 +70,19 @@ function send() {
         url: window.location.origin,
         message: document.getElementById('message').value
     });
+}
+
+function clear() {
+    "use strict";
+
+    document.getElementById('name').value = "";
+    document.getElementById('admin_mail').value = "";
+    document.getElementById('mails').value = "";
+    document.getElementById('message').value = "";
+
+    document.getElementById('slots').innerHTML = "";
+    localStorage.clear();
+    create_slots();
 }
 
 function check_validity() {
@@ -169,40 +210,48 @@ function check_validity() {
     return valid;
 }
 
-
-var oldvalues = [];
+function save_slots_in_local_storage() {
+    "use strict";
+    var saved_slots = JSON.parse(localStorage.saved_slots || "[]");
+    var current_slots = get_slots();
+    for (var i = 0; i < current_slots.length; ++i) {
+        saved_slots[i] = current_slots[i];
+    }
+    localStorage.saved_slots = JSON.stringify(saved_slots);
+    return saved_slots;
+}
 
 function create_slots() {
     "use strict";
+    var i;
     var n = Number(document.getElementById('nslots').value);
     if (n > Number(document.getElementById('nslots').getAttribute('max'))) {
         return;
     }
-    var old = get_slots();
-    for (var i = 0; i < old.length; ++i) {
-        oldvalues[i] = old[i];
-    }
+    var saved_slots = save_slots_in_local_storage();
 
-    var content = '<div class="row"><div class="six columns"><label title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform...">Slots</label></div>';
-    content += '<div class="three columns"><label title="The algorithm will ensure that at least this many people are in this slot.">Min people</label></div>';
-    content += '<div class="three columns"><label title="The algorithm will ensure that no more than this many people are in this slot.">Max people</label></div></div>';
+    var content = document.getElementById("slots_header").innerHTML;
+
     for (i = 0; i < n; ++i) {
-        var slot = {
+        var must = {
+            no: i,
             name: "",
             vmin: 0,
             vmax: 10
         };
-        if (i < oldvalues.length) {
-            slot.name = oldvalues[i].name;
-            slot.vmin = oldvalues[i].vmin;
-            slot.vmax = oldvalues[i].vmax;
+        if (saved_slots[i]) {
+            must.name = saved_slots[i].name;
+            must.vmin = saved_slots[i].vmin;
+            must.vmax = saved_slots[i].vmax;
         }
-        content += '<div class="row"><div class="six columns"><input type="text" placeholder="Tuesday morning" class="slot u-full-width" id="slot' + i + '" value="' + htmlEntities(slot.name) + '" title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform..."></div>';
-        content += '<div class="three columns"><input type="number" class="vmin u-full-width" id="vmin' + i + '" min="0" max="100" step="1" value="' + slot.vmin + '" title="The algorithm will ensure that at least this many people are in this slot."></div>';
-        content += '<div class="three columns"><input type="number" class="vmax u-full-width" id="vmax' + i + '" min="0" max="100" step="1" value="' + slot.vmax + '" title="The algorithm will ensure that no more than this many people are in this slot."></div></div>';
+        content += Mustache.render(document.getElementById("slots_entry").innerHTML, must);
     }
     document.getElementById('slots').innerHTML = content;
-    //$("input").bind('input propertychange', check_validity);
+    for (i = 0; i < n; ++i) {
+        document.getElementById('slot' + i).onchange = save_slots_in_local_storage;
+        document.getElementById('vmin' + i).onchange = save_slots_in_local_storage;
+        document.getElementById('vmax' + i).onchange = save_slots_in_local_storage;
+    }
 }
 
 function get_slots() {

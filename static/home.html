@@ -10,13 +10,14 @@
     <link rel="stylesheet" type="text/css" href="/style.css">
     <link rel="stylesheet" type="text/css" href="/lib/sweetalert2.css">
     <script src="/lib/sweetalert2.min.js"></script>
+    <script src="/lib/mustache.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/common.js"></script>
     <script src="/home.js"></script>
 </head>
 
 <body>
-    <a href="https://github.com/agepoly"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67"
+    <a href="https://github.com/agepoly">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67"
             alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png"></a>
 
     <div class="container">
@@ -38,6 +39,32 @@
 
         <div id="slots" class="u-full-width">
         </div>
+        <script id="slots_header" type="text/template">
+            <div class="row">
+                <div class="six columns">
+                    <label title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform...">Slots</label>
+                </div>
+                <div class="three columns">
+                    <label title="The algorithm will ensure that at least this many people are in this slot.">Min people</label>
+                </div>
+                <div class="three columns">
+                    <label title="The algorithm will ensure that no more than this many people are in this slot.">Max people</label>
+                </div>
+            </div>
+        </script>
+        <script id="slots_entry" type="text/template">
+            <div class="row">
+                <div class="six columns">
+                    <input id="slot{{no}}" class="slot u-full-width" type="text" value="{{name}}" placeholder="Tuesday morning" title="Introduce the names of the activities, the time slots for the oral exam, the names of the various tasks to perform...">
+                </div>
+                <div class="three columns">
+                    <input id="vmin{{no}}" class="vmin u-full-width" type="number" min="0" max="100" step="1" value="{{vmin}}" title="The algorithm will ensure that at least this many people are in this slot.">
+                </div>
+                <div class="three columns">
+                    <input id="vmax{{no}}" class="vmin u-full-width" type="number" min="0" max="100" step="1" value="{{vmax}}" title="The algorithm will ensure that no more than this many people are in this slot.">
+                </div>
+            </div>
+        </script>
         <div id="slots_error" style="color:red"></div>
 
         <div class="row" title="An activation mail containing a private link to the admin page will be sent to this address.">
@@ -59,7 +86,10 @@
             <textarea id="message" class="u-full-width"></textarea>
         </div>
 
-        <input id="send" class="u-full-width button-primary" type="button" value="Create">
+        <div class="row">
+            <input id="send" class="u-full-width button-primary eight columns" type="button" value="Create">
+            <input id="clear" class="u-full-width four columns" type="button" value="Clear">
+        </div>
     </div>
 
 </body>

@@ -246,7 +246,9 @@ function initDOM() {
 function initContent(content) {
     "use strict";
     var i, j;
-    document.getElementById("name").innerHTML = "Event name: <strong>" + htmlEntities(content.name) + "</strong>";
+    document.getElementById("name").innerHTML = Mustache.render("Event name: <strong>{{name}}</strong>", {
+        name: content.name
+    });
 
     var code = "[slots]\n";
     var slots = [];
