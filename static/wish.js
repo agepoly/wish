@@ -49,12 +49,13 @@ function init(content) {
     html += '</tbody></table>';
     document.getElementById("content").innerHTML = html;
 
-    var inputs = document.getElementsByTagName('input');
-    for (i = 0; i < inputs.length; ++i) {
-        inputs[i].onchange = slider_moved;
-        if (inputs[i].value != wish[i]) {
-            swal('Value out of bounds', '<strong>test</strong>');
+    for (i = 0; i < content.slots.length; ++i) {
+        var input = document.getElementById('wish' + i);
+        input.onchange = slider_moved;
+        if (input.value != wish[i]) {
+            swal('Value out of bounds', Mustache.render('The value in the slot <strong>{{slot}}</strong> is out of bounds.</br>By saving, you put it back in the ranges.', { slot: content.slots[i].name }));
         }
+        wish[i] = input.value;
     }
 }
 
