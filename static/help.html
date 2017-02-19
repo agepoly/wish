@@ -6,7 +6,7 @@
 	<meta charset="utf-8">
 	<title>Wish</title>
 	<link rel="stylesheet" type="text/css" href="/lib/normalize.css">
-    <link rel="stylesheet" type="text/css" href="/lib/skeleton.css">
+	<link rel="stylesheet" type="text/css" href="/lib/skeleton.css">
 	<link rel="stylesheet" type="text/css" href="/style.css">
 </head>
 
@@ -48,7 +48,7 @@
 		<h4>Users with special constraints</h4>
 		<p>Initially this algorithm was intended to put people in slots for an oral exam. In such a case, it can be that some people simply mustn’t be put in some slots because they have another exam at this time. In such a case, it’s nice to be able to avoid
 			the problem by putting a very high grade to the slots that the person mustn’t be put in.</p>
-		<p>Therefore, the administrator has special rights to access the user’s wish page and select some slots as “avoided” if he/she judges that the user has sufficient reasons to not be put is this slot (see as well <a href="#administrate-an-event">Administrate an event</a>).</p>
+		<!--<p>Therefore, the administrator has special rights to access the user’s wish page and select some slots as “avoided” if he/she judges that the user has sufficient reasons to not be put is this slot (see as well <a href="#administrate-an-event">Administrate an event</a>).</p>-->
 
 
 		<h3>Private url</h3>
@@ -79,28 +79,28 @@
 		<h4>Number of slots</h4>
 		<p>If you give too many slots, it will become a bit inconvenient for the users to set their wishes. If you are organizing an oral exam with a lot of students, a good solution is to gather three passage times in one slot and fit three people in the slot.</p>
 
-		<h4>Deadline</h4>
+		<!--<h4>Deadline</h4>
 		<p>The deadline will be on midnight of the selected date. The algorithm will run as soon as the deadline is passed and the administrator will receive a mail informing him/her that the results are available. He or she will have to go to the admin page to
-			send an email to the participants telling them that the results are available.</p>
+			send an email to the participants telling them that the results are available.</p>-->
 
 		<h4>Mailing list</h4>
 		<p>The mailing list should contain the e-mail of each of the participants to the event. If the administrator intends to be put in a slot to, his/her mail should be on the list too.</p>
 		<p>This list will be used to send the following mails:
 			<ul>
 				<li>Invitation mail: provides the user with an access to his/her wish page.</li>
-				<li>Update mail: if the administrator changes something in the event organization (slots/deadline), it is possible to send an update mail to warn the users.</li>
+				<li>Update mail: if the administrator changes something in the event organization (slots<!--/deadline-->), it is possible to send an update mail to warn the users.</li>
 				<li>Reminder mail: the adminisator can send a reminder to peoples that have not set their wishes.</li>
-				<li>Results mail: when the results have been computed, the administrator can inform the users.</li>
+				<!--<li>Results mail: when the results have been computed, the administrator can inform the users.</li>-->
 			</ul>
 		</p>
 
 		<h3 id="administrate-an-event">Administer an event</h3>
 		<h4>Activate the event and send the invitation mails</h4>
-		<p>Once an event has been created, the administrator receives an e-mail containing a link to the admin page. The first time that this page is opened, it sends the invitation mails to the participants.</p>
+		<p>Once an event has been created, the administrator receives an e-mail containing a link to the admin page. <!--The first time that this page is opened, it sends the invitation mails to the participants.--></p>
 
 
 		<h4>Administration of a user page and special admin rights</h4>
-		<p>If for some reasons a given user must not be in some of the slots, the administrator can make sure that it won’t happen. To do so, click on the admin link to the user’s page and check the “avoided” case in the corresponding slots.</p>
+		<!--<p>If for some reasons a given user must not be in some of the slots, the administrator can make sure that it won’t happen. To do so, click on the admin link to the user’s page and check the “avoided” case in the corresponding slots.</p>
 		<p>This assigns a very high grade to this slot in the user’s wish list and makes it therefore highly unlikely for the user to be in this slot. As a consequence, the choices of the user are made unfair, and therefore the user shouldn’t try to modify his/her
 			wish after this.</p>
 		<p>It is therefore recommended to perform this action shortly before the deadline. It can as well be performed after the deadline, in which case the results have to be computed again using the "Set and Recompute" button on the administrator page.</p>
@@ -110,12 +110,12 @@
 
 		<h4>Change the deadline</h4>
 		<p>In case the results have already been computed, changing the deadline suppresses them. They are computed again when the new deadline is over.</p>
-
+		-->
 		<h2>
 			If you have problems that this page doesn’t solve...
 		</h2>
 
-		<p>Contact us: write an e-mail at wish.agepoly@gmail.com<br /> Create an issue on GitHub: github.com/agepoly/wish</p>
+		<p>Contact us: write an e-mail at wish.agepoly@gmail.com<br />Or even better, create an issue on GitHub: github.com/agepoly/wish</p>
 
 	</div>
 </body>

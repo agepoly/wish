@@ -323,21 +323,6 @@ The Wish team</p>`, {
                     }, function(err, numReplaced) {
                         if (feedback_error(err, numReplaced === 1)) { return; }
 
-                        function check_mail(id, mail) {
-                            return function(err, message) {
-                                if (err) {
-                                    socket.emit('feedback', {
-                                        title: "Oops...",
-                                        message: "Error when mail " + mail + "\n[" + err + "]",
-                                        type: "error"
-                                    });
-                                    db.participants.update({ _id: id }, { $set: { status: -1 } });
-                                } else {
-                                    db.participants.update({ _id: id }, { $set: { status: 1 } });
-                                }
-                            };
-                        }
-
                         var first_mail = {
                             text: `Hi,
 You have been invited by {{{amail}}} to give your wishes about the event : {{{name}}}
@@ -350,7 +335,7 @@ The Wish team`,
                             html: `<p>Hi,</p>
 <p>You have been invited by {{amail}} to give your wishes about the event : <strong>{{name}}</strong></p><br />
 <pre>{{message}}</pre>
-<p><a href="{{url}}/wish.html#{{key}}">Click here</a> to set your wishes.</p>
+<p><a href="{{{url}}}/wish.html#{{{key}}}">Click here</a> to set your wishes.</p>
 <p>Have a nice day,<br />
 The Wish team</p>`
                         };
@@ -365,7 +350,7 @@ Have a nice day,
 The Wish team`,
                             html: `<p>Hi,</p>
 <p>The adimistrator ({{amail}}) of the event <strong>{{name}}</strong> has modified the slots.</p><br />
-<p>Please look at <a href="{{url}}/wish.html#{{key}}">your wish</a>.</p>
+<p>Please look at <a href="{{{url}}}/wish.html#{{{key}}}">your wish</a>.</p>
 <p>Have a nice day,<br />
 The Wish team</p>`
                         };
@@ -406,6 +391,22 @@ The Wish team</p>`
                                 }, check_mail(content.participants[j]._id, content.participants[j].mail));
                             }
                         }
+
+                        function check_mail(id, mail) {
+                            return function(err, message) {
+                                if (err) {
+                                    socket.emit('feedback', {
+                                        title: "Oops...",
+                                        message: "Error when mail " + mail + "\n[" + err + "]",
+                                        type: "error"
+                                    });
+                                    db.participants.update({ _id: id }, { $set: { status: -1 } });
+                                } else {
+                                    db.participants.update({ _id: id }, { $set: { status: 1 } });
+                                }
+                            };
+                        }
+
                         socket.emit('feedback', {
                             title: "Saved",
                             message: "Information saved." + (mail_sent > 0 ? String(mail_sent) + " mails sended." : ""),
@@ -414,6 +415,78 @@ The Wish team</p>`
                     });
                 }
             }
+        });
+    });
+
+    socket.on("remind", function(content) {
+        var mail = {
+            text: `Hi,
+Dont forget to fill your wish for the event {{{name}}},
+{{{url}}}/wish.html#{{{key}}}
+
+Have a nice day,
+The Wish team`,
+            html: `<p>Hi,</p>
+<p>Dont forget to fill <a href="{{{url}}}/wish.html#{{{key}}}">your wish</a> for the event {{name}}.</p>
+<p>Have a nice day,<br />
+The Wish team</p>`
+        };
+
+        db.events.findOne({ _id: content.key }, function(err, event) {
+            if (feedback_error(err, event !== null)) { return; }
+            db.participants.find({ _id: { $in: event.participants }, status: { $lt: 3 } }, function(err, participants) {
+                var count_mails = 0;
+
+                for (var i = 0; i < participants.length; ++i) {
+                    if (participants[i].status < 3) {
+                        count_mails++;
+
+                        var values = {
+                            name: event.name,
+                            url: event.url,
+                            key: participants[i]._id
+                        };
+                        mailer.send({
+                            text: Mustache.render(mail.text, values),
+                            from: "Wish <wish@epfl.ch>",
+                            to: participants[i].mail,
+                            subject: "Wish : " + event.name,
+                            attachment: [{
+                                data: Mustache.render(mail.html, values),
+                                alternative: true
+                            }]
+                        }, check_mail(participants[i]._id, participants[i].mail));
+                    }
+                }
+
+                function check_mail(id, mail) {
+                    return function(err, message) {
+                        if (err) {
+                            socket.emit('feedback', {
+                                title: "Oops...",
+                                message: "Error when mail " + mail + "\n[" + err + "]",
+                                type: "error"
+                            });
+                            db.participants.update({ _id: id }, { $set: { status: -1 } });
+                        } else {
+                            db.participants.update({ _id: id, status: { $lt: 1 } }, { $set: { status: 1 } });
+                        }
+                    };
+                }
+
+                if (count_mails > 0) {
+                    socket.emit('feedback', {
+                        title: "Mails sent",
+                        message: String(count_mails) + " has been sent",
+                        type: "success"
+                    });
+                } else {
+                    socket.emit('feedback', {
+                        title: "Not mail sent",
+                        message: "All the participants has already fill their wishes.",
+                    });
+                }
+            });
         });
     });
 });

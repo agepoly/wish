@@ -17,7 +17,6 @@ socket.on("get data", function(content) {
 socket.on('feedback', function(content) {
     "use strict";
     swal(content.title, content.message, content.type);
-    document.getElementById('save').value = "Save";
 });
 
 socket.emit("get data", window.location.hash.substring(1));
@@ -37,7 +36,7 @@ function initDOM() {
             token: function(stream, state) {
                 if (stream.sol()) {
                     state.commentLine = false;
-                    if (state.string) {
+                    if (state.string || state.section) {
                         state.error = true;
                     }
                 }
@@ -57,6 +56,8 @@ function initDOM() {
                 if (state.section) {
                     if (ch === ']') {
                         state.section = false;
+                    } else {
+                        return "atom";
                     }
                     return "keyword";
                 }
@@ -72,7 +73,10 @@ function initDOM() {
                     state.section = true;
                     return "keyword";
                 }
-                return "atom";
+                if ('0123456789.'.indexOf(ch) !== -1) {
+                    return "number";
+                }
+                return "error";
             }
         };
     });
@@ -110,6 +114,11 @@ function initDOM() {
                 participants: out.participants
             });
         }
+    };
+    document.getElementById("remind").onclick = function() {
+        socket.emit('remind', {
+            key: window.location.hash.substring(1)
+        });
     };
     document.getElementById("assign").onclick = function() {
         var i, j, k;
