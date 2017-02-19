@@ -64,7 +64,7 @@ io.on('connection', function(socket) {
         if (err !== null) {
             socket.emit('feedback', {
                 title: "Oops...",
-                message: "Something went wrong!\n[" + err + "]",
+                text: "Something went wrong!\n[" + err + "]",
                 type: "error"
             });
             return true;
@@ -72,7 +72,7 @@ io.on('connection', function(socket) {
         if (found !== undefined && found === false) {
             socket.emit('feedback', {
                 title: "Oops...",
-                message: "Something went wrong!\n[key not found in the database]",
+                text: "Something went wrong!\n[key not found in the database]",
                 type: "error"
             });
             return true;
@@ -153,7 +153,7 @@ The Wish team</p>`, {
 
                             socket.emit('feedback', {
                                 title: "Creation succeed!",
-                                message: "A mail has been sent to " + content.admin_mail + " to validate the activity.",
+                                text: "A mail has been sent to " + content.admin_mail + " to validate the activity.",
                                 type: "success"
                             });
                         });
@@ -188,7 +188,7 @@ The Wish team</p>`, {
             if (sorted[i] > i) {
                 socket.emit('feedback', {
                     title: "Oops...",
-                    message: "Something went wrong!\n[unfair wish]",
+                    text: "Something went wrong!\n[unfair wish]",
                     type: "error"
                 });
                 return;
@@ -200,7 +200,7 @@ The Wish team</p>`, {
 
             socket.emit('feedback', {
                 title: "Saved",
-                message: "Your wish as been saved.",
+                text: "Your wish as been saved.",
                 type: "success"
             });
             // io.emit('wishes modified'); TODO notify admin in real time
@@ -253,7 +253,7 @@ The Wish team</p>`, {
             if (err) {
                 socket.emit('feedback', {
                     title: "Oops...",
-                    message: "Something went wrong!\n[" + err + "]",
+                    text: "Something went wrong!\n[" + err + "]",
                     type: "error"
                 });
                 return;
@@ -397,7 +397,7 @@ The Wish team</p>`
                                 if (err) {
                                     socket.emit('feedback', {
                                         title: "Oops...",
-                                        message: "Error when mail " + mail + "\n[" + err + "]",
+                                        text: "Error when mail " + mail + "\n[" + err + "]",
                                         type: "error"
                                     });
                                     db.participants.update({ _id: id }, { $set: { status: -1 } });
@@ -409,7 +409,7 @@ The Wish team</p>`
 
                         socket.emit('feedback', {
                             title: "Saved",
-                            message: "Information saved." + (mail_sent > 0 ? String(mail_sent) + " mails sended." : ""),
+                            html: "Information saved." + (mail_sent > 0 ? "<br />" + mail_sent + " mails sent." : ""),
                             type: "success"
                         });
                     });
@@ -464,7 +464,7 @@ The Wish team</p>`
                         if (err) {
                             socket.emit('feedback', {
                                 title: "Oops...",
-                                message: "Error when mail " + mail + "\n[" + err + "]",
+                                text: "Error when mail " + mail + "\n[" + err + "]",
                                 type: "error"
                             });
                             db.participants.update({ _id: id }, { $set: { status: -1 } });
@@ -477,13 +477,13 @@ The Wish team</p>`
                 if (count_mails > 0) {
                     socket.emit('feedback', {
                         title: "Mails sent",
-                        message: String(count_mails) + " has been sent",
+                        text: String(count_mails) + " has been sent",
                         type: "success"
                     });
                 } else {
                     socket.emit('feedback', {
                         title: "Not mail sent",
-                        message: "All the participants has already fill their wishes.",
+                        text: "All the participants has already fill their wishes.",
                     });
                 }
             });

@@ -2,7 +2,7 @@ var socket = io();
 
 socket.on('feedback', function(content) {
     "use strict";
-    swal(content.title, content.message, content.type);
+    swal(content);
     document.getElementById('send').value = "Create";
 });
 

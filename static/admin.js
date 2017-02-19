@@ -16,7 +16,7 @@ socket.on("get data", function(content) {
 
 socket.on('feedback', function(content) {
     "use strict";
-    swal(content.title, content.message, content.type);
+    swal(content);
 });
 
 socket.emit("get data", window.location.hash.substring(1));
@@ -266,6 +266,7 @@ function initContent(content) {
     }
     code += format_columns(slots);
 
+    var mails_not_sent = false;
     code += "\n[participants]\n";
     var participants = [];
     for (i = 0; i < content.participants.length; ++i) {
@@ -278,10 +279,11 @@ function initContent(content) {
                 participants[i].push("# mail error");
                 break;
             case 0:
-                // mail not sent
+                participants[i].push("# mail not sent");
+                mails_not_sent = true;
                 break;
             case 1:
-                participants[i].push("# no activity");
+                participants[i].push("# mail sent but no activity from user");
                 break;
             case 2:
                 participants[i].push("# view");
@@ -296,6 +298,23 @@ function initContent(content) {
     code += format_columns(participants);
 
     inputCode.setValue(code);
+
+    if (mails_not_sent) {
+        swal({
+            title: "Mails ready to be sent",
+            html: "Do you want to send the invitation mails to the participants right now ?<br />Otherwise you can click on <strong>Save &amp; Send mails</strong>.",
+            type: "info",
+            showCancelButton: true,
+            confirmButtonText: "Send the mails",
+            cancelButtonText: "Later"
+        }).then(function () {
+            socket.emit('set data', {
+                key: window.location.hash.substring(1),
+                slots: content.slots,
+                participants: content.participants
+            });
+        });
+    }
 }
 
 function shuffle(a) {

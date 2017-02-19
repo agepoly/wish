@@ -14,7 +14,7 @@ socket.on("get wish", function(content) {
 
 socket.on('feedback', function(content) {
     "use strict";
-    swal(content.title, content.message, content.type);
+    swal(content);
     document.getElementById('save').value = "Save";
 });
 
