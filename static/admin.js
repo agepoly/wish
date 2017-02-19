@@ -189,10 +189,12 @@ function initDOM() {
             for (i = 0; i < result.length; ++i) {
                 score += Math.pow(out.participants[i].wish[result[i]], 2);
             }
-            var text = "# total score : " + score + "\n#\n";
+            var text = "[statistics]\n";
 
             var text_stats = [];
+            text_stats.push(['"total score"', String(score)]);
             var s;
+            var srow;
             for (i = 0; i < out.slots.length; ++i) {
                 var slot_choices = [];
                 var counter = 0;
@@ -211,13 +213,14 @@ function initDOM() {
                         slot_choices[j] = 0;
                     }
                 }
-                text_stats[i] = [
-                    "# \"" + out.slots[i].name + "\"",
+                srow = [
+                    '"' + out.slots[i].name + '"',
                     String(counter)
                 ];
                 for (j = 0; j < slot_choices.length; ++j) {
-                    text_stats[i].push(String(slot_choices[j]));
+                    srow.push(String(slot_choices[j]));
                 }
+                text_stats.push(srow);
             }
             var choices = [];
             for (i = 0; i < result.length; ++i) {
@@ -227,7 +230,7 @@ function initDOM() {
                 }
                 choices[s]++;
             }
-            var last_row = ["# total", out.participants.length];
+            var last_row = ['"total"', out.participants.length];
             for (j = 0; j < choices.length; ++j) {
                 if (choices[j] === undefined) {
                     last_row.push("0");
@@ -237,6 +240,8 @@ function initDOM() {
             }
             text_stats.push(last_row);
             text += format_columns(text_stats) + "\n";
+
+            text += "[results]\n";
 
             var text_result = [];
             for (i = 0; i < out.participants.length; ++i) {
@@ -266,7 +271,6 @@ function initContent(content) {
     }
     code += format_columns(slots);
 
-    var mails_not_sent = false;
     code += "\n[participants]\n";
     var participants = [];
     for (i = 0; i < content.participants.length; ++i) {
@@ -280,7 +284,6 @@ function initContent(content) {
                 break;
             case 0:
                 participants[i].push("# mail not sent");
-                mails_not_sent = true;
                 break;
             case 1:
                 participants[i].push("# mail sent but no activity from user");
@@ -299,7 +302,7 @@ function initContent(content) {
 
     inputCode.setValue(code);
 
-    if (mails_not_sent) {
+    if (content.participants.some(function(p) { return p.status === 0; })) {
         swal({
             title: "Mails ready to be sent",
             html: "Do you want to send the invitation mails to the participants right now ?<br />Otherwise you can click on <strong>Save &amp; Send mails</strong>.",
