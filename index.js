@@ -121,6 +121,12 @@ io.on('connection', function(socket) {
                     function(err, numReplaced) {
                         if (feedback_error(err, numReplaced === 1)) { return; }
 
+                        socket.emit('feedback', {
+                            title: "Sending mail...",
+                            text: Mustache.render("Waiting for sending mail to {{mail}}...", { mail: content.admin_mail }),
+                            type: "info"
+                        });
+
                         mailer.send({
                             text: Mustache.render(`Hi,
 An event has been created with your email address.
@@ -153,7 +159,7 @@ The Wish team</p>`, {
 
                             socket.emit('feedback', {
                                 title: "Creation succeed!",
-                                text: "A mail has been sent to " + content.admin_mail + " to validate the activity.",
+                                text: Mustache.render("A mail has been sent to {{mail}} to validate the activity.", { mail: content.admin_mail }),
                                 type: "success"
                             });
                         });
