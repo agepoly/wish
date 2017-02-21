@@ -411,7 +411,7 @@ The Wish team</p>`
                         function check_mail(id, mail) {
                             return function(err, message) {
                                 if (err) {
-                                    errors += Mustache.render("<p>Error with {{mail}}: <i>{{error}}</i>", {
+                                    errors += Mustache.render("<p>Error with <strong>{{mail}}</strong>: <i>{{error}}</i>", {
                                         mail: mail,
                                         error: String(err)
                                     });
