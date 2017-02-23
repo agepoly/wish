@@ -3,15 +3,7 @@ var inputCode, outputCode;
 
 socket.on("get data", function(content) {
     "use strict";
-    if (document.readyState != 'loading') {
-        initDOM();
-        initContent(content);
-    } else {
-        document.addEventListener('DOMContentLoaded', function() {
-            initDOM();
-            initContent(content);
-        });
-    }
+    update_content(content);
 });
 
 socket.on('feedback', function(content) {
@@ -19,7 +11,16 @@ socket.on('feedback', function(content) {
     swal(content);
 });
 
-socket.emit("get data", window.location.hash.substring(1));
+// socket.on('request reload', function() {
+//     "use strict";
+//     socket.emit("get data", window.location.hash.substring(1));
+// });
+
+if (document.readyState != 'loading') {
+    initDOM();
+} else {
+    document.addEventListener('DOMContentLoaded', initDOM);
+}
 
 function initDOM() {
     "use strict";
@@ -255,9 +256,13 @@ function initDOM() {
             outputCode.setValue(text);
         }
     };
+
+    socket.emit("get data", window.location.hash.substring(1));
 }
 
-function initContent(content) {
+var first_content_update = true;
+
+function update_content(content) {
     "use strict";
     var i, j;
     document.getElementById("name").innerHTML = Mustache.render("Event name: <strong>{{name}}</strong>", {
@@ -302,7 +307,7 @@ function initContent(content) {
 
     inputCode.setValue(code);
 
-    if (content.participants.some(function(p) { return p.status === 0; })) {
+    if (first_content_update && content.participants.some(function(p) { return p.status === 0; })) {
         swal({
             title: "Mails ready to be sent",
             html: "Do you want to send the invitation mails to the participants right now ?<br />Otherwise you can click on <strong>Save &amp; Send mails</strong>.",
@@ -310,7 +315,7 @@ function initContent(content) {
             showCancelButton: true,
             confirmButtonText: "Send the mails",
             cancelButtonText: "Later"
-        }).then(function () {
+        }).then(function() {
             socket.emit('set data', {
                 key: window.location.hash.substring(1),
                 slots: content.slots,
@@ -318,6 +323,7 @@ function initContent(content) {
             });
         });
     }
+    first_content_update = false;
 }
 
 function shuffle(a) {

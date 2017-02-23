@@ -122,10 +122,10 @@ io.on('connection', function(socket) {
                         if (feedback_error(err, numReplaced === 1)) { return; }
 
                         socket.emit('feedback', {
-                            title: "Sending mail...",
-                            text: Mustache.render("Waiting for sending mail to {{mail}}...", { mail: content.admin_mail }),
+                            title: 'Status',
+                            html: Mustache.render('<ol><li>Request sent</li><li>Event created</li><li>Waiting for sending mail to {{mail}}...</li></ol>', { mail: content.admin_mail }),
                             showConfirmButton: false,
-                            type: "info"
+                            type: 'info'
                         });
 
                         mailer.send({
@@ -159,8 +159,8 @@ The Wish team</p>`, {
                             if (feedback_error(err)) { return; }
 
                             socket.emit('feedback', {
-                                title: "Creation succeed!",
-                                text: Mustache.render("A mail has been sent to {{mail}} to validate the activity.", { mail: content.admin_mail }),
+                                title: "Status",
+                                html: Mustache.render('<ol><li>Request sent</li><li>Event created</li><li>Mail sent</li></ol>A mail has been sent to {{mail}} to validate the activity.', { mail: content.admin_mail }),
                                 type: "success"
                             });
                         });
@@ -214,7 +214,7 @@ The Wish team</p>`, {
         });
     });
     /* ============================= admin ============================= */
-    socket.on('get data', function(key) {
+    function send_data(key) {
         db.events.findOne({ _id: key }, function(err, event) {
             if (feedback_error(err, event !== null)) { return; }
             db.participants.find({ event: key }, function(err, participants) {
@@ -234,7 +234,8 @@ The Wish team</p>`, {
                 });
             });
         });
-    });
+    }
+    socket.on('get data', send_data);
 
     socket.on('set data', function(content) {
         db.events.findOne({ _id: content.key }, function(err, event) {
@@ -442,6 +443,7 @@ The Wish team</p>`
                                         showConfirmButton: sent_mails == total_mails
                                     });
                                 }
+                                send_data(content.key);
                             };
                         }
                     });

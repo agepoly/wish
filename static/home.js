@@ -3,7 +3,6 @@ var socket = io();
 socket.on('feedback', function(content) {
     "use strict";
     swal(content);
-    document.getElementById('send').value = "Create";
 });
 
 if (document.readyState != 'loading') {
@@ -60,8 +59,6 @@ function send() {
         return x !== '';
     });
 
-    document.getElementById('send').value = "Please wait...";
-
     socket.emit("create", {
         name: document.getElementById('name').value,
         admin_mail: document.getElementById('admin_mail').value,
@@ -69,6 +66,13 @@ function send() {
         slots: slots,
         url: window.location.origin,
         message: document.getElementById('message').value
+    });
+
+    swal({
+        title: 'Status',
+        html: '<ol><li>Request sent</li><li>Waiting for server response...</li></ol>',
+        showConfirmButton: false,
+        type: 'info'
     });
 }
 
