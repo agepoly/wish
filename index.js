@@ -123,7 +123,7 @@ io.on('connection', function(socket) {
 
                         socket.emit('feedback', {
                             title: 'Status',
-                            html: Mustache.render('<ol><li>Request sent</li><li>Event created</li><li>Waiting for sending mail to {{mail}}...</li></ol>', { mail: content.admin_mail }),
+                            html: Mustache.render('<ol><li>Request sent</li><li>Event created</li><li><strong>Waiting for sending mail to {{mail}}...</strong></li></ol>', { mail: content.admin_mail }),
                             showConfirmButton: false,
                             type: 'info'
                         });
@@ -331,12 +331,6 @@ The Wish team</p>`, {
                     }, function(err, numReplaced) {
                         if (feedback_error(err, numReplaced === 1)) { return; }
 
-                        socket.emit('feedback', {
-                            title: "Saved",
-                            html: "Information saved.",
-                            type: "success"
-                        });
-
                         var first_mail = {
                             text: `Hi,
 You have been invited by {{{amail}}} to give your wishes about the event : {{{name}}}
@@ -370,6 +364,9 @@ The Wish team</p>`
                         };
 
                         var total_mails = 0;
+                        var sent_mails = 0;
+                        var errors = "";
+
                         for (var j = 0; j < content.participants.length; ++j) {
                             var values = {
                                 amail: event.admin_mail,
@@ -406,8 +403,23 @@ The Wish team</p>`
                             }
                         }
 
-                        var sent_mails = 0;
-                        var errors = "";
+                        if (total_mails > 0) {
+                            socket.emit('feedback', {
+                                title: "Mails status",
+                                html: Mustache.render("{{sent}} over {{total}} mails sent !", {
+                                    sent: sent_mails,
+                                    total: total_mails
+                                }),
+                                type: "info",
+                                showConfirmButton: false
+                            });
+                        } else {
+                            socket.emit('feedback', {
+                                title: "Saved",
+                                html: "Information saved.",
+                                type: "success"
+                            });
+                        }
 
                         function check_mail(id, mail) {
                             return function(err, message) {
@@ -439,7 +451,7 @@ The Wish team</p>`
                                             sent: sent_mails,
                                             total: total_mails
                                         }),
-                                        type: "success",
+                                        type: sent_mails == total_mails ? "success" : "info",
                                         showConfirmButton: sent_mails == total_mails
                                     });
                                 }

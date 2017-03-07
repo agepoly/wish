@@ -1,20 +1,38 @@
 var socket = io();
 var inputCode, outputCode;
+var first_call = true;
+
+socket.on('feedback', swal);
 
 socket.on("get data", function(content) {
     "use strict";
-    update_content(content);
-});
 
-socket.on('feedback', function(content) {
-    "use strict";
-    swal(content);
-});
+    var code = into_code(content);
+    inputCode.setValue(code);
 
-// socket.on('request reload', function() {
-//     "use strict";
-//     socket.emit("get data", window.location.hash.substring(1));
-// });
+    document.getElementById("name").innerHTML = Mustache.render("Event name: <strong>{{name}}</strong>", {
+        name: content.name
+    });
+
+    if (first_call && content.participants.some(function(p) { return p.status === 0; })) {
+        swal({
+            title: "Mails ready to be sent",
+            html: "Do you want to send the invitation mails to the participants right now ?<br />Otherwise you can click on <strong>Save &amp; Send mails</strong>.",
+            type: "info",
+            showCancelButton: true,
+            confirmButtonText: "Send the mails",
+            cancelButtonText: "Later"
+        }).then(function() {
+            socket.emit('set data', {
+                key: window.location.hash.substring(1),
+                slots: content.slots,
+                participants: content.participants
+            });
+        }, function (dismiss) {
+        });
+    }
+    first_call = false;
+});
 
 if (document.readyState != 'loading') {
     initDOM();
@@ -84,7 +102,7 @@ function initDOM() {
 
     CodeMirror.registerHelper("lint", "csv", function(text) {
         var out = parse(text);
-        return out.errors;
+        return out.errors.concat(out.warnings);
     });
 
     inputCode = CodeMirror.fromTextArea(document.getElementById('input'), {
@@ -105,7 +123,7 @@ function initDOM() {
     document.getElementById("save").onclick = function() {
         var out = parse(inputCode.getValue());
 
-        if (!out.ok) {
+        if (out.errors.length > 0) {
             inputCode.focus();
             inputCode.setCursor(out.errors[0].from);
         } else {
@@ -122,152 +140,153 @@ function initDOM() {
         });
     };
     document.getElementById("assign").onclick = function() {
-        var i, j, k;
         var out = parse(inputCode.getValue());
 
-        if (!out.ok) {
+        if (out.errors.length > 0) {
             inputCode.focus();
             inputCode.setCursor(out.errors[0].from);
         } else {
-            var vmin = 0,
-                vmax = 0;
-            for (i = 0; i < out.slots.length; ++i) {
-                vmin += out.slots[i].vmin;
-                vmax += out.slots[i].vmax;
-            }
-
-            var permutation = [];
-            for (i = 0; i < out.participants.length; ++i) {
-                permutation.push(i);
-            }
-            shuffle(permutation);
-
-            var x = Math.pow(out.slots.length, 2);
-            for (i = 0; i < out.participants.length; ++i) {
-                for (j = 0; j < out.participants[i].wish.length; ++j) {
-                    x = Math.max(x, Math.pow(out.participants[i].wish[j], 2));
-                }
-            }
-
-            var cost = [];
-            for (i = 0; i < out.participants.length; ++i) {
-                var row = [];
-                for (j = 0; j < out.slots.length; ++j) {
-                    var c = Math.pow(out.participants[i].wish[j], 2);
-                    for (k = 0; k < out.slots[j].vmin; ++k) {
-                        row.push(c);
-                    }
-                    for (k = out.slots[j].vmin; k < out.slots[j].vmax; ++k) {
-                        row.push(x + c);
-                    }
-                }
-                cost[permutation[i]] = row;
-            }
-
-            var start_time = new Date().getTime();
-            var h = new Hungarian(cost);
-            var solution = h.execute();
-            var dt = new Date().getTime() - start_time;
-
-            console.log(dt + " ms");
-
-            for (i = 0; i < solution.length; ++i) {
-                for (j = 0; j < out.slots.length; ++j) {
-                    if (solution[i] >= out.slots[j].vmax) {
-                        solution[i] -= out.slots[j].vmax;
-                    } else {
-                        solution[i] = j;
-                        break;
-                    }
-                }
-            }
-            var result = [];
-            for (i = 0; i < solution.length; ++i) {
-                result[i] = solution[permutation[i]];
-            }
-
-            var score = 0;
-            for (i = 0; i < result.length; ++i) {
-                score += Math.pow(out.participants[i].wish[result[i]], 2);
-            }
-            var text = "[statistics]\n";
-
-            var text_stats = [];
-            text_stats.push(['"total score"', String(score)]);
-            var s;
-            var srow;
-            for (i = 0; i < out.slots.length; ++i) {
-                var slot_choices = [];
-                var counter = 0;
-                for (j = 0; j < result.length; ++j) {
-                    if (result[j] === i) {
-                        s = out.participants[j].wish[i];
-                        if (slot_choices[s] === undefined) {
-                            slot_choices[s] = 0;
-                        }
-                        slot_choices[s]++;
-                        counter++;
-                    }
-                }
-                for (j = 0; j < slot_choices.length; ++j) {
-                    if (slot_choices[j] === undefined) {
-                        slot_choices[j] = 0;
-                    }
-                }
-                srow = [
-                    '"' + out.slots[i].name + '"',
-                    String(counter)
-                ];
-                for (j = 0; j < slot_choices.length; ++j) {
-                    srow.push(String(slot_choices[j]));
-                }
-                text_stats.push(srow);
-            }
-            var choices = [];
-            for (i = 0; i < result.length; ++i) {
-                s = out.participants[i].wish[result[i]];
-                if (choices[s] === undefined) {
-                    choices[s] = 0;
-                }
-                choices[s]++;
-            }
-            var last_row = ['"total"', out.participants.length];
-            for (j = 0; j < choices.length; ++j) {
-                if (choices[j] === undefined) {
-                    last_row.push("0");
-                } else {
-                    last_row.push(String(choices[j]));
-                }
-            }
-            text_stats.push(last_row);
-            text += format_columns(text_stats) + "\n";
-
-            text += "[results]\n";
-
-            var text_result = [];
-            for (i = 0; i < out.participants.length; ++i) {
-                text_result[i] = [
-                    "\"" + out.participants[i].mail + "\"",
-                    "\"" + out.slots[result[i]].name + "\"",
-                    "# wish " + out.participants[i].wish[result[i]]
-                ];
-            }
-            text += format_columns(text_result);
-            outputCode.setValue(text);
+            assign(out);
         }
     };
 
     socket.emit("get data", window.location.hash.substring(1));
 }
 
-var first_content_update = true;
+function assign(content) {
+    "use strict";
+    var i, j, k;
 
-function update_content(content) {
+    var vmin = 0,
+        vmax = 0;
+    for (i = 0; i < content.slots.length; ++i) {
+        vmin += content.slots[i].vmin;
+        vmax += content.slots[i].vmax;
+    }
+
+    var permutation = [];
+    for (i = 0; i < content.participants.length; ++i) {
+        permutation.push(i);
+    }
+    shuffle(permutation);
+
+    var x = Math.pow(content.slots.length, 2);
+    for (i = 0; i < content.participants.length; ++i) {
+        for (j = 0; j < content.participants[i].wish.length; ++j) {
+            x = Math.max(x, Math.pow(content.participants[i].wish[j], 2));
+        }
+    }
+
+    var cost = [];
+    for (i = 0; i < content.participants.length; ++i) {
+        var row = [];
+        for (j = 0; j < content.slots.length; ++j) {
+            var c = Math.pow(content.participants[i].wish[j], 2);
+            for (k = 0; k < content.slots[j].vmin; ++k) {
+                row.push(c);
+            }
+            for (k = content.slots[j].vmin; k < content.slots[j].vmax; ++k) {
+                row.push(x + c);
+            }
+        }
+        cost[permutation[i]] = row;
+    }
+
+    var start_time = new Date().getTime();
+    var h = new Hungarian(cost);
+    var solution = h.execute();
+    var dt = new Date().getTime() - start_time;
+
+    console.log(dt + " ms");
+
+    for (i = 0; i < solution.length; ++i) {
+        for (j = 0; j < content.slots.length; ++j) {
+            if (solution[i] >= content.slots[j].vmax) {
+                solution[i] -= content.slots[j].vmax;
+            } else {
+                solution[i] = j;
+                break;
+            }
+        }
+    }
+    var result = [];
+    for (i = 0; i < solution.length; ++i) {
+        result[i] = solution[permutation[i]];
+    }
+
+    var score = 0;
+    for (i = 0; i < result.length; ++i) {
+        score += Math.pow(content.participants[i].wish[result[i]], 2);
+    }
+    var text = "[statistics]\n";
+
+    var text_stats = [];
+    text_stats.push(['"total score"', String(score)]);
+    var s;
+    var srow;
+    for (i = 0; i < content.slots.length; ++i) {
+        var slot_choices = [];
+        var counter = 0;
+        for (j = 0; j < result.length; ++j) {
+            if (result[j] === i) {
+                s = content.participants[j].wish[i];
+                if (slot_choices[s] === undefined) {
+                    slot_choices[s] = 0;
+                }
+                slot_choices[s]++;
+                counter++;
+            }
+        }
+        for (j = 0; j < slot_choices.length; ++j) {
+            if (slot_choices[j] === undefined) {
+                slot_choices[j] = 0;
+            }
+        }
+        srow = [
+            '"' + content.slots[i].name + '"',
+            String(counter)
+        ];
+        for (j = 0; j < slot_choices.length; ++j) {
+            srow.push(String(slot_choices[j]));
+        }
+        text_stats.push(srow);
+    }
+    var choices = [];
+    for (i = 0; i < result.length; ++i) {
+        s = content.participants[i].wish[result[i]];
+        if (choices[s] === undefined) {
+            choices[s] = 0;
+        }
+        choices[s]++;
+    }
+    var last_row = ['"total"', content.participants.length];
+    for (j = 0; j < choices.length; ++j) {
+        if (choices[j] === undefined) {
+            last_row.push("0");
+        } else {
+            last_row.push(String(choices[j]));
+        }
+    }
+    text_stats.push(last_row);
+    text += format_columns(text_stats) + "\n";
+
+    text += "[results]\n";
+
+    var text_result = [];
+    for (i = 0; i < content.participants.length; ++i) {
+        text_result[i] = [
+            "\"" + content.participants[i].mail + "\"",
+            "\"" + content.slots[result[i]].name + "\"",
+            "# wish " + content.participants[i].wish[result[i]]
+        ];
+    }
+    text += format_columns(text_result);
+    outputCode.setValue(text);
+}
+
+function into_code(content) {
     "use strict";
     var i, j;
-    document.getElementById("name").innerHTML = Mustache.render("Event name: <strong>{{name}}</strong>", {
-        name: content.name
-    });
 
     var code = "[slots]\n";
     var slots = [];
@@ -305,25 +324,7 @@ function update_content(content) {
     }
     code += format_columns(participants);
 
-    inputCode.setValue(code);
-
-    if (first_content_update && content.participants.some(function(p) { return p.status === 0; })) {
-        swal({
-            title: "Mails ready to be sent",
-            html: "Do you want to send the invitation mails to the participants right now ?<br />Otherwise you can click on <strong>Save &amp; Send mails</strong>.",
-            type: "info",
-            showCancelButton: true,
-            confirmButtonText: "Send the mails",
-            cancelButtonText: "Later"
-        }).then(function() {
-            socket.emit('set data', {
-                key: window.location.hash.substring(1),
-                slots: content.slots,
-                participants: content.participants
-            });
-        });
-    }
-    first_content_update = false;
+    return code;
 }
 
 function shuffle(a) {

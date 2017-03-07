@@ -1,17 +1,39 @@
 function parse(text) {
     "use strict";
     var errors = [];
+    var warnings = [];
 
     var ch = text.length === 0 ? null : text[0];
-    var k = 0;
-    var l = 0;
-    var c = 0;
+    var k = 0; // absolute position
+    var l = 0; // current line
+    var c = 0; // relative to the current line
 
     var section = null;
     var slots = [];
     var participants = [];
+    var sum_vmin = 0;
+    var sum_vmax = 0;
 
-    function eat() {
+    function is_space(ch) {
+        return ch === " " || ch === "\t";
+    }
+
+    function is_digit(ch) {
+        return ch !== null && (ch >= "0" && ch <= "9");
+    }
+
+    function is_alpha(ch) {
+        return ch !== null && ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'));
+    }
+
+    function eat(expected) {
+        if ((typeof expected === "string" && ch !== expected) || (typeof expected === "object" && !expected.test(ch))) {
+            errors.push({
+                from: CodeMirror.Pos(l, c),
+                to: CodeMirror.Pos(l, c + 1),
+                message: "expected character [" + expected + "] got [" + ch + "]"
+            });
+        }
         if (ch === "\n") {
             l++;
             c = 0;
@@ -26,98 +48,100 @@ function parse(text) {
         }
     }
 
-    function eat_line() {
-        while (is_space(ch)) {
+    function skip_line() {
+        while (ch !== "\n" && ch !== null) {
             eat();
         }
         if (ch === "\n") {
             eat();
-            return;
-        }
-        if (ch === "#") {
-            skip_line();
-            return;
-        }
-        if (ch === "[") {
-            eatSection();
-            skip_line();
-            return;
-        }
-        if (ch !== null) {
-            eat_row();
         }
     }
 
     function eatSection() {
-        var cc = c;
-        eat();
+        var begin = c;
+        eat('[');
         var word = "";
-        while (is_alpha(ch) || is_digit(ch)) {
+        while (is_alpha(ch) || is_digit(ch) || ch === " ") {
             word += ch;
             eat();
         }
-        if (ch !== "]") {
+        eat("]");
+
+        if ((section === null && word == "slots") || (section === "slots" && word == "participants")) {
+            section = word;
+        } else {
             errors.push({
-                from: CodeMirror.Pos(l, cc),
+                from: CodeMirror.Pos(l, begin),
                 to: CodeMirror.Pos(l, c),
-                message: "section must end with ]"
+                message: "unexpected section"
             });
-            return;
+            section = null;
         }
+    }
+
+    function eat_string() {
+        var begin = c;
+        eat("\"");
+        var word = "";
+        while (true) {
+            if (ch === "\"") {
+                eat();
+                return word;
+            }
+            if (ch === null || ch === "\n") {
+                break;
+            }
+            word += ch;
+            eat();
+        }
+        errors.push({
+            from: CodeMirror.Pos(l, begin),
+            to: CodeMirror.Pos(l, c),
+            message: "invalid string"
+        });
+        return null;
+    }
+
+    function eat_number() {
+        var entry = ch;
         eat();
-        if (section === null && word !== "slots") {
-            errors.push({
-                from: CodeMirror.Pos(l, cc),
-                to: CodeMirror.Pos(l, c),
-                message: "first section must be slots"
-            });
+        while (is_digit(ch)) {
+            entry += ch;
+            eat();
         }
-        if (section === "slots" && word !== "participants") {
+        var num = Number(entry);
+        if (isNaN(num) || num < 0 || entry[0] === "\n") {
             errors.push({
-                from: CodeMirror.Pos(l, cc),
+                from: CodeMirror.Pos(l, c - entry.length),
                 to: CodeMirror.Pos(l, c),
-                message: "second section must be participants"
+                message: "'" + entry + "' is not a non-negative number"
             });
+            return NaN;
         }
-        section = word;
+        return num;
     }
 
     function eat_row() {
         var i;
-        var cc;
-        var string;
 
         if (section === null) {
             errors.push({
-                from: CodeMirror.Pos(l, c),
-                to: CodeMirror.Pos(l, c + 1),
-                message: "must begin with [slots]"
+                from: CodeMirror.Pos(l, 0),
+                to: CodeMirror.Pos(l, 1),
+                severity: "warning",
+                message: "line ignored"
             });
             skip_line();
             return;
         }
 
-        if (ch !== "\"") {
-            errors.push({
-                from: CodeMirror.Pos(l, c),
-                to: CodeMirror.Pos(l, c + 1),
-                message: "string expected"
-            });
+        var string = eat_string();
+        if (string === null) {
             skip_line();
             return;
         }
 
-        string = eat_string();
-
-        if (!is_space(ch)) {
-            errors.push({
-                from: CodeMirror.Pos(l, c),
-                to: CodeMirror.Pos(l, c + 1),
-                message: "expected space after string"
-            });
-            skip_line();
-            return;
-        }
+        eat(/[ \t]/);
         while (is_space(ch)) {
             eat();
         }
@@ -126,9 +150,9 @@ function parse(text) {
             var vmin = eat_number();
             if (!is_space(ch)) {
                 errors.push({
-                    from: CodeMirror.Pos(l, c),
+                    from: CodeMirror.Pos(l, 0),
                     to: CodeMirror.Pos(l, c + 1),
-                    message: "expected space"
+                    message: "maximum bound expected"
                 });
                 skip_line();
                 return;
@@ -145,8 +169,16 @@ function parse(text) {
                 vmin: vmin,
                 vmax: vmax
             });
+            sum_vmin += vmin;
+            sum_vmax += vmax;
 
-            // TODO check vmin <= vmax
+            if (vmax < vmin) {
+                errors.push({
+                    from: CodeMirror.Pos(l, 0),
+                    to: CodeMirror.Pos(l, c + 1),
+                    message: "maximum bound must be greater or equal to minimum bound"
+                });
+            }
 
         } else if (section === "participants") {
             var row = [];
@@ -169,18 +201,24 @@ function parse(text) {
             if (row.length !== slots.length) {
                 errors.push({
                     from: CodeMirror.Pos(l, 0),
-                    to: CodeMirror.Pos(l, c),
-                    message: "not the right amount of values"
+                    to: CodeMirror.Pos(l, c + 1),
+                    message: "You have " + slots.length + " slots, therefore you need " + slots.length + " values"
                 });
             }
 
-            // TODO check sum_vmin <= participants <= sum_vmax
+            if (participants.length > sum_vmax) {
+                errors.push({
+                    from: CodeMirror.Pos(l, 0),
+                    to: CodeMirror.Pos(l, c),
+                    message: "Too much participants for the maximal bounds"
+                });
+            }
 
             var tmp = row.slice();
             tmp.sort();
             for (i = 0; i < tmp.length; ++i) {
                 if (tmp[i] > i) {
-                    errors.push({
+                    warnings.push({
                         from: CodeMirror.Pos(l, 0),
                         to: CodeMirror.Pos(l, c),
                         severity: "warning",
@@ -211,66 +249,25 @@ function parse(text) {
         return;
     }
 
-    function is_space(ch) {
-        return ch === " " || ch === "\t";
-    }
-
-    function is_digit(ch) {
-        return ch !== null && (ch >= "0" && ch <= "9");
-    }
-
-    function is_alpha(ch) {
-        return ch !== null && ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'));
-    }
-
-    function eat_string() {
-        var cc = c;
-        eat();
-        var word = "";
-        while (true) {
-            if (ch === "\"") {
-                eat();
-                return word;
-            }
-            if (ch === null || ch === "\n") {
-                break;
-            }
-            word += ch;
-            eat();
-        }
-        errors.push({
-            from: CodeMirror.Pos(l, cc),
-            to: CodeMirror.Pos(l, c),
-            message: "invalid string"
-        });
-        return "";
-    }
-
-    function eat_number() {
-        var entry = ch;
-        eat();
-        while (is_digit(ch)) {
-            entry += ch;
-            eat();
-        }
-        var num = Number(entry);
-        if (isNaN(num) || num < 0 || entry[0] === "\n") {
-            errors.push({
-                from: CodeMirror.Pos(l, c - entry.length),
-                to: CodeMirror.Pos(l, c),
-                message: "'" + entry + "' is not a non-negative number"
-            });
-            return NaN;
-        }
-        return num;
-    }
-
-    function skip_line() {
-        while (ch !== "\n" && ch !== null) {
+    function eat_line() {
+        while (is_space(ch)) {
             eat();
         }
         if (ch === "\n") {
             eat();
+            return;
+        }
+        if (ch === "#") {
+            skip_line();
+            return;
+        }
+        if (ch === "[") {
+            eatSection();
+            skip_line();
+            return;
+        }
+        if (ch !== null) {
+            eat_row();
         }
     }
 
@@ -278,17 +275,21 @@ function parse(text) {
         eat_line();
     }
 
-    var ok = true;
-    for (var i = 0; i < errors.length; ++i) {
-        if (errors[i].severity !== "warning") {
-            ok = false;
-        }
+    if (participants.length < sum_vmin) {
+        errors.push({
+            from: CodeMirror.Pos(l, 0),
+            to: CodeMirror.Pos(l, c + 1),
+            message: "Not enough participants for the minimal bounds"
+        });
     }
+
+    console.log(errors);
+    console.log(warnings);
 
     return {
         slots: slots,
         participants: participants,
         errors: errors,
-        ok: ok
+        warnings: warnings
     };
 }

@@ -1,9 +1,6 @@
 var socket = io();
 
-socket.on('feedback', function(content) {
-    "use strict";
-    swal(content);
-});
+socket.on('feedback', swal);
 
 if (document.readyState != 'loading') {
     init();
@@ -70,7 +67,7 @@ function send() {
 
     swal({
         title: 'Status',
-        html: '<ol><li>Request sent</li><li>Waiting for server response...</li></ol>',
+        html: '<ol><li>Request sent</li><li><strong>Waiting for server response...</strong></li></ol>',
         showConfirmButton: false,
         type: 'info'
     });
