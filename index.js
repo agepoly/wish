@@ -55,10 +55,49 @@ app.get('/', function(req, res) {
     res.sendFile(__dirname + '/static/home.html');
 });
 
+// Warn if overriding existing method
+if(Array.prototype.equals)
+    console.warn("Overriding existing Array.prototype.equals. Possible causes: New API defines the method, there's a framework conflict or you've got double inclusions in your code.");
+// attach the .equals method to Array's prototype to call it on any array
+Array.prototype.equals = function (array) {
+    "use strict";
+    // if the other array is a falsy value, return
+    if (!array)
+        return false;
+
+    // compare lengths - can save a lot of time
+    if (this.length != array.length)
+        return false;
+
+    for (var i = 0, l=this.length; i < l; i++) {
+        // Check if we have nested arrays
+        if (this[i] instanceof Array && array[i] instanceof Array) {
+            // recurse into the nested arrays
+            if (!this[i].equals(array[i]))
+                return false;
+        }
+        else if (this[i] != array[i]) {
+            // Warning - two different object instances will never be equal: {x:20} != {x:20}
+            return false;
+        }
+    }
+    return true;
+};
+// Hide method from for-in loops
+Object.defineProperty(Array.prototype, "equals", {enumerable: false});
+
+var connected_admins = [];
+
 io.on('connection', function(socket) {
     "use strict";
 
-    socket.on('disconnect', function() {});
+    socket.on('disconnect', function() {
+        for (var i = 0; i < connected_admins.length; ++i) {
+            if (connected_admins[i].socket === socket) {
+                connected_admins.splice(i, 1);
+            }
+        }
+    });
 
     function feedback_error(err, found) {
         if (err !== null) {
@@ -202,15 +241,30 @@ The Wish team</p>`, {
             }
         }
 
-        db.participants.update({ _id: content.key }, { $set: { wish: content.wish, status: 3 } }, {}, function(err, numReplaced) {
-            if (feedback_error(err, numReplaced === 1)) { return; }
+        db.participants.findOne({ _id: content.key }, function(err, participant) {
+            if (feedback_error(err)) { return; }
 
-            socket.emit('feedback', {
-                title: "Saved",
-                text: "Your wish as been saved.",
-                type: "success"
+            db.participants.update({ _id: content.key }, { $set: { wish: content.wish, status: 3 } }, {}, function(err, numReplaced) {
+                if (feedback_error(err, numReplaced === 1)) { return; }
+
+                socket.emit('feedback', {
+                    title: "Saved",
+                    text: "Your wish as been saved.",
+                    type: "success"
+                });
             });
-            // io.emit('wishes modified'); TODO notify admin in real time
+
+            if (participant.wish.equals(content.wish) === false) {
+                for (var i = 0; i < connected_admins.length; ++i) {
+                    if (connected_admins[i].key === participant.event) {
+                        connected_admins[i].socket.emit('feedback', {
+                            title: "Participant update",
+                            html: "A participant updates his wishes<br />Refresh the page to get updated datas.",
+                            type: "info"
+                        });
+                    }
+                }
+            }
         });
     });
     /* ============================= admin ============================= */
@@ -235,7 +289,13 @@ The Wish team</p>`, {
             });
         });
     }
-    socket.on('get data', send_data);
+    socket.on('get data', function(key) {
+        connected_admins.push({
+            key: key,
+            socket: socket
+        });
+        send_data(key);
+    });
 
     socket.on('set data', function(content) {
         db.events.findOne({ _id: content.key }, function(err, event) {
