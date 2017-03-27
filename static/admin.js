@@ -150,6 +150,15 @@ function initDOM() {
         }
     };
 
+    var warning_text = document.getElementById("warning").innerHTML;
+    socket.on("new wish", function(mail) {
+        var p = document.getElementById("warning");
+        p.innerHTML = Mustache.render(warning_text, {
+            mail: mail
+        });
+        p.hidden = false;
+    });
+
     socket.emit("get data", window.location.hash.substring(1));
 }
 
@@ -310,13 +319,13 @@ function into_code(content) {
                 participants[i].push("# mail not sent");
                 break;
             case 1:
-                participants[i].push("# mail sent but no activity from user");
+                participants[i].push("# mail sent but no activity from participant");
                 break;
             case 2:
-                participants[i].push("# view");
+                participants[i].push("# status : participant visited wish page");
                 break;
             case 3:
-                participants[i].push("# modified");
+                participants[i].push("# status : participant modified his wish");
                 break;
             default:
                 participants[i].push("# [status error]");

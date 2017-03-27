@@ -257,11 +257,7 @@ The Wish team</p>`, {
             if (participant.wish.equals(content.wish) === false) {
                 for (var i = 0; i < connected_admins.length; ++i) {
                     if (connected_admins[i].key === participant.event) {
-                        connected_admins[i].socket.emit('feedback', {
-                            title: "Participant update",
-                            html: "A participant updates his wishes<br />Refresh the page to get updated datas.",
-                            type: "info"
-                        });
+                        connected_admins[i].socket.emit('new wish', participant.mail);
                     }
                 }
             }
