@@ -1,29 +1,30 @@
-var socket = io();
-var inputCode, outputCode;
-var first_call = true;
+var SOCKET = io();
+var INPUT_CODE, OUTPUT_CODE;
+var FIRST_CALL = true;
+var RESULT = null;
 
-socket.on('feedback', swal);
+SOCKET.on('feedback', swal);
 
-socket.on("get data", function(content) {
+SOCKET.on("get data", function(content) {
     "use strict";
 
     var code = into_code(content);
-    inputCode.setValue(code);
+    INPUT_CODE.setValue(code);
 
     document.getElementById("name").innerHTML = Mustache.render("Event name: <strong>{{name}}</strong>", {
         name: content.name
     });
 
-    if (first_call && content.participants.some(function(p) { return p.status === 0; })) {
+    if (FIRST_CALL && content.participants.some(function(p) { return p.status === 0; })) {
         swal({
             title: "Mails ready to be sent",
-            html: "Do you want to send the invitation mails to the participants right now ?<br />Otherwise you can click on <strong>Save &amp; Send mails</strong>.",
+            html: "Do you want to send the invitation mails to the participants right now ?<br />Otherwise you can do it later by clicking on <strong>Save &amp; Send mails</strong>.",
             type: "info",
             showCancelButton: true,
             confirmButtonText: "Send the mails",
             cancelButtonText: "Later"
         }).then(function() {
-            socket.emit('set data', {
+            SOCKET.emit('set data', {
                 key: window.location.hash.substring(1),
                 slots: content.slots,
                 participants: content.participants
@@ -31,7 +32,7 @@ socket.on("get data", function(content) {
         }, function (dismiss) {
         });
     }
-    first_call = false;
+    FIRST_CALL = false;
 });
 
 if (document.readyState != 'loading') {
@@ -105,29 +106,29 @@ function initDOM() {
         return out.errors.concat(out.warnings);
     });
 
-    inputCode = CodeMirror.fromTextArea(document.getElementById('input'), {
+    INPUT_CODE = CodeMirror.fromTextArea(document.getElementById('input'), {
         lineNumbers: true,
         mode: "csv",
         gutters: ["CodeMirror-lint-markers"],
         lint: true
     });
 
-    outputCode = CodeMirror.fromTextArea(document.getElementById('output'), {
+    OUTPUT_CODE = CodeMirror.fromTextArea(document.getElementById('output'), {
         lineNumbers: true,
         mode: "csv",
         readOnly: true
     });
 
-    inputCode.on("change", function() {});
+    INPUT_CODE.on("change", function() {});
 
     document.getElementById("save").onclick = function() {
-        var out = parse(inputCode.getValue());
+        var out = parse(INPUT_CODE.getValue());
 
         if (out.errors.length > 0) {
-            inputCode.focus();
-            inputCode.setCursor(out.errors[0].from);
+            INPUT_CODE.focus();
+            INPUT_CODE.setCursor(out.errors[0].from);
         } else {
-            socket.emit('set data', {
+            SOCKET.emit('set data', {
                 key: window.location.hash.substring(1),
                 slots: out.slots,
                 participants: out.participants
@@ -135,23 +136,37 @@ function initDOM() {
         }
     };
     document.getElementById("remind").onclick = function() {
-        socket.emit('remind', {
+        SOCKET.emit('remind', {
             key: window.location.hash.substring(1)
         });
     };
     document.getElementById("assign").onclick = function() {
-        var out = parse(inputCode.getValue());
+        var out = parse(INPUT_CODE.getValue());
 
         if (out.errors.length > 0) {
-            inputCode.focus();
-            inputCode.setCursor(out.errors[0].from);
+            INPUT_CODE.focus();
+            INPUT_CODE.setCursor(out.errors[0].from);
         } else {
             assign(out);
         }
     };
+    document.getElementById("send").onclick = function() {
+        if (RESULT === null) {
+            swal({
+                title: "No results to send",
+                text: "Click on Assign to compute the results",
+                type: "error",
+            });
+        } else {
+            SOCKET.emit('send results', {
+                key: window.location.hash.substring(1),
+                result: RESULT
+            });
+        }
+    };
 
     var warning_text = document.getElementById("warning").innerHTML;
-    socket.on("new wish", function(mail) {
+    SOCKET.on("new wish", function(mail) {
         var p = document.getElementById("warning");
         p.innerHTML = Mustache.render(warning_text, {
             mail: mail
@@ -159,7 +174,7 @@ function initDOM() {
         p.hidden = false;
     });
 
-    socket.emit("get data", window.location.hash.substring(1));
+    SOCKET.emit("get data", window.location.hash.substring(1));
 }
 
 function assign(content) {
@@ -223,14 +238,23 @@ function assign(content) {
         result[i] = solution[permutation[i]];
     }
 
+    RESULT = [];
+    for (i = 0; i < result.length; ++i) {
+        RESULT[i] = {
+            mail: content.participants[i].mail,
+            slot: content.slots[result[i]].name
+        };
+    }
+
     var score = 0;
     for (i = 0; i < result.length; ++i) {
         score += Math.pow(content.participants[i].wish[result[i]], 2);
     }
     var text = "[statistics]\n";
+    text += '"total score" ' + String(score) + '\n\n';
 
     var text_stats = [];
-    text_stats.push(['"total score"', String(score)]);
+    text_stats.push(['# slot', '#participants', '#1st choice', '#2nd choice', '#3rd choice', '#4th choice', '...']);
     var s;
     var srow;
     for (i = 0; i < content.slots.length; ++i) {
@@ -268,7 +292,8 @@ function assign(content) {
         }
         choices[s]++;
     }
-    var last_row = ['"total"', content.participants.length];
+    text_stats[0].length = Math.min(text_stats[0].length, 2 + choices.length);
+    var last_row = ['"total"', String(content.participants.length)];
     for (j = 0; j < choices.length; ++j) {
         if (choices[j] === undefined) {
             last_row.push("0");
@@ -290,7 +315,7 @@ function assign(content) {
         ];
     }
     text += format_columns(text_result);
-    outputCode.setValue(text);
+    OUTPUT_CODE.setValue(text);
 }
 
 function into_code(content) {
@@ -325,7 +350,7 @@ function into_code(content) {
                 participants[i].push("# status : participant visited wish page");
                 break;
             case 3:
-                participants[i].push("# status : participant modified his wish");
+                participants[i].push("# status : participant modified his/her wish");
                 break;
             default:
                 participants[i].push("# [status error]");
@@ -366,14 +391,16 @@ function format_columns(matrix) {
 
     var text = "";
     for (i = 0; i < matrix.length; ++i) {
-        for (j = 0; j < matrix[i].length - 1; ++j) {
-            text += matrix[i][j];
-            for (k = matrix[i][j].length; k < max_len[j]; ++k) {
+        if (matrix[i].length > 0) {
+            for (j = 0; j < matrix[i].length - 1; ++j) {
+                text += matrix[i][j];
+                for (k = matrix[i][j].length; k < max_len[j]; ++k) {
+                    text += " ";
+                }
                 text += " ";
             }
-            text += " ";
+            text += matrix[i][matrix[i].length - 1];
         }
-        text += matrix[i][matrix[i].length - 1];
         text += "\n";
     }
     return text;

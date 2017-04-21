@@ -29,20 +29,24 @@
         <p id="name"></p>
 
         <div class="row">
-            <input id="save" class="four columns button-primary" type="button" value="Save &amp; Send mails">
-            <input id="assign" class="four columns button-primary" type="button" value="Assign" title="Run the hungarian algorithm locally and paste the result in 'assignation'">
-            <input id="remind" class="four columns" type="button" value="Send reminder">
+            <input id="save" class="four columns button-primary" type="button" value="Save &amp; Send mails" title="It will send mails to the new participants or to all the participants if a slot is modified/created/removed">
+            <input id="assign" class="four columns button-primary" type="button" value="Assign" title="Run the hungarian algorithm locally and write the result in 'assignation'">
+            <input id="remind" class="four columns" type="button" value="Send reminder" title="Send mail to participants who have not save his/her wish">
         </div>
 
         <div class="row">
             <label for="input">Data problem:</label>
-            <p id="warning" hidden style="background-color: orange; color: white; font-weight: bold; text-align: center;">Warning: The participant {{mail}} just modified his wish. Please relaoad the page.</p>
+            <p id="warning" hidden style="background-color: orange; color: white; font-weight: bold; text-align: center;">Warning: The participant {{mail}} just modified his/her wish. Please reload the page.</p>
             <textarea id="input" class="u-full-width"></textarea>
         </div>
 
         <div class="row">
             <label for="output">Assignation:</label>
             <textarea id="output" class="u-full-width"></textarea>
+        </div>
+
+        <div class="row">
+            <input id="send" class="four columns button-primary" type="button" value="Send results to participants" title="Send personal results to each participant">
         </div>
 
         <p class="u-pull-right"><a href="/help.html" target="_blank">help page</a></p>

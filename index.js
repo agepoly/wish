@@ -520,6 +520,79 @@ The Wish team</p>`
         });
     });
 
+    socket.on("send results", function(content) {
+        var mail = {
+            text: `Hi,
+You have been put in the slot {{{slot}}} for the event {{{event_name}}},
+
+Have a nice day,
+The Wish team`,
+            html: `<p>Hi,</p>
+<p>You have been put in the slot {{slot}} for the event {{event_name}}.</p>
+<p>Have a nice day,<br />
+The Wish team</p>`
+        };
+
+        db.events.findOne({ _id: content.key }, function(err, event) {
+            if (feedback_error(err, event !== null)) { return; }
+
+            for (var i = 0; i < content.result.length; ++i) {
+                var values = {
+                    slot: content.result[i].slot,
+                    event_name: event.name,
+                };
+                mailer.send({
+                    text: Mustache.render(mail.text, values),
+                    from: "Wish <wish@epfl.ch>",
+                    to: content.result[i].mail,
+                    subject: "Wish : " + event.name,
+                    attachment: [{
+                        data: Mustache.render(mail.html, values),
+                        alternative: true
+                    }]
+                }, check_mail(content.result[i].mail));
+            }
+
+            var sent_mails = 0;
+            var errors = "";
+
+            function check_mail(mail) {
+                return function(err, message) {
+                    if (err) {
+                        errors += Mustache.render("<p>Error with <strong>{{mail}}</strong>: <i>{{error}}</i>", {
+                            mail: mail,
+                            error: String(err)
+                        });
+                    } else {
+                        sent_mails++;
+                    }
+                    if (errors) {
+                        socket.emit('feedback', {
+                            title: "Mails status",
+                            html: Mustache.render("<p>{{sent}} over {{total}} mails sent</p>{{{errors}}}", {
+                                sent: sent_mails,
+                                total: content.result.length,
+                                errors: errors
+                            }),
+                            type: "error",
+                            showConfirmButton: true
+                        });
+                    } else {
+                        socket.emit('feedback', {
+                            title: "Mails status",
+                            html: Mustache.render("{{sent}} over {{total}} mails sent !", {
+                                sent: sent_mails,
+                                total: content.result.length
+                            }),
+                            type: "success",
+                            showConfirmButton: sent_mails == content.result.length
+                        });
+                    }
+                };
+            }
+        });
+    });
+
     socket.on("remind", function(content) {
         var mail = {
             text: `Hi,
@@ -537,7 +610,6 @@ The Wish team</p>`
         db.events.findOne({ _id: content.key }, function(err, event) {
             if (feedback_error(err, event !== null)) { return; }
             db.participants.find({ _id: { $in: event.participants }, status: { $lt: 3 } }, function(err, participants) {
-                participants = participants.filter(function(p) { return p.status < 3; });
 
                 if (participants.length > 0) {
                     socket.emit('feedback', {
@@ -548,7 +620,7 @@ The Wish team</p>`
                     });
                 } else {
                     socket.emit('feedback', {
-                        title: "Not mails to send",
+                        title: "No mails to send",
                         text: "All the participants has already fill their wishes.",
                     });
                 }

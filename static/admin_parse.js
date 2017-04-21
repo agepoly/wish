@@ -283,9 +283,6 @@ function parse(text) {
         });
     }
 
-    console.log(errors);
-    console.log(warnings);
-
     return {
         slots: slots,
         participants: participants,
