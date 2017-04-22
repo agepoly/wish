@@ -103,6 +103,15 @@ function parse(text) {
     }
 
     function eat_number() {
+        if (ch === null) {
+            errors.push({
+                from: CodeMirror.Pos(l, c),
+                to: CodeMirror.Pos(l, c),
+                message: "number expected here"
+            });
+            return NaN;
+        }
+
         var entry = ch;
         eat();
         while (is_digit(ch)) {
