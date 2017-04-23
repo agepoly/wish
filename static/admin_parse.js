@@ -224,7 +224,7 @@ function parse(text) {
             }
 
             var tmp = row.slice();
-            tmp.sort();
+            tmp.sort(function(a, b) { return a - b; });
             for (i = 0; i < tmp.length; ++i) {
                 if (tmp[i] > i) {
                     warnings.push({
