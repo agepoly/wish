@@ -10,6 +10,7 @@ SOCKET.on("get data", function(content) {
 
     var code = into_code(content);
     INPUT_CODE.setValue(code);
+    assign(content);
 
     document.getElementById("name").innerHTML = Mustache.render("Event name: <strong>{{name}}</strong>", {
         name: content.name

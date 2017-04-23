@@ -28,11 +28,19 @@ function initDOM() {
         readOnly: true
     });
 
-    var default_content = JSON.stringify({
+    var default_content = {
         slots: [{ name: "slot 1", vmin: 0, vmax: 5 }, { name: "slot 2", vmin: 0, vmax: 5 }],
         participants: [{ mail: "Alice", wish: [0, 1] }, { mail: "Bob", wish: [1, 0] }]
-    });
-    INPUT_CODE.setValue(into_code(JSON.parse(localStorage.content || default_content)));
+    };
+    var content;
+    if (localStorage.content) {
+        content = JSON.parse(localStorage.content);
+    } else {
+        content = default_content;
+    }
+
+    INPUT_CODE.setValue(into_code(content));
+    assign(content);
 
     document.getElementById("save").onclick = function() {
         var out = parse(INPUT_CODE.getValue());
