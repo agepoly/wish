@@ -238,7 +238,7 @@ function parse(text) {
             }
         }
 
-        if (ch === "#") {
+        if (ch === "#" || ch === "%") {
             skip_line();
             return;
         }
@@ -266,7 +266,7 @@ function parse(text) {
             eat();
             return;
         }
-        if (ch === "#") {
+        if (ch === "#" || ch === "%") {
             skip_line();
             return;
         }
