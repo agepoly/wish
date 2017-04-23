@@ -21,16 +21,18 @@
 		<h3>Aim of the algorithm</h3>
 
 		<p>The algorithm takes as input a matrix whose lines are the users and whose columns are the slots.</p>
-		<p>The matrix is filled in with non-negative integers describing the wishes of the users, which we can call “grades”. A small number means that the user would be very satisfied if put in this slot, and a high number means that the user would be disappointed
-			if put in this slot. For a given arrangement of the users in the slots, one can determine a “penalty”: it is the sum of the squares of the “grades” that each user has considering in which slot he/she is placed.</p>
-		<p>A maximum and minimum number of users is associated to each slot. The aim of the algorithm is to minimize the penalty under these constraints.</p>
+		<p>The matrix is filled in with non-negative integers describing the wishes of the users, which we can call "grades". A small number means that the user would be very satisfied if put in this slot, and a high number means that the user would be disappointed
+			if put in this slot. For a given arrangement of the users in the slots, one can determine a "penalty": it is the sum of the squares of the "grades" that each user has considering in which slot he/she is placed.</p>
+		<p>A maximum and minimum number of users is associated to each slot. We use the <a href="https://en.wikipedia.org/wiki/Hungarian_algorithm">Hungarian algorithm</a> to minimize the penalty under these constraints.</p>
 
 
 		<h3>Ensuring fair choices</h3>
 
 		<h4 id="rules-to-ensure-fair-choices">Rules to ensure fair choices</h4>
-		<p>To ensure that everyone has a fair chance of having his/her favorite slot, some rules must be imposed on the choices of the users. Indeed, one could manipulate the results by setting all slots to “hated” but one. A simple solution to this problem is
-			to impose that the user strictly orders all the slots. However, this can be uncomfortable from the user’s point of view, and besides no default value can replace a user that choose not to set his/her wishes.</p>
+		<p>To ensure that everyone has a fair chance of having his/her favorite slot, some rules must be imposed on the choices of the users.
+			Indeed, one could manipulate the results by setting all slots to "hated" but one.
+			A simple solution to this problem is to impose that the user strictly orders all the slots.
+			However, this can be uncomfortable from the user’s point of view, and besides no default value can replace a user who chooses not to set his/her wishes.</p>
 		<p>Therefore, another solution was found. Assume there are n slots. Then, the gradation from wanted to hated is 0, 1, 2,...n-1. Then the rule goes as follows:
 			<ul>
 				<li>Up to 1 slot can be hated (grade n-1)</li>
@@ -46,9 +48,9 @@
 		<p>When the users are setting their wishes, the sliders automatically prevent unfair wishes.</p>
 
 		<h4>Users with special constraints</h4>
-		<p>Initially this algorithm was intended to put people in slots for an oral exam. In such a case, it can be that some people simply mustn’t be put in some slots because they have another exam at this time. In such a case, it’s nice to be able to avoid
-			the problem by putting a very high grade to the slots that the person mustn’t be put in.</p>
-		<!--<p>Therefore, the administrator has special rights to access the user’s wish page and select some slots as “avoided” if he/she judges that the user has sufficient reasons to not be put is this slot (see as well <a href="#administrate-an-event">Administrate an event</a>).</p>-->
+		<p>Initially this algorithm was intended to put people in slots for an oral exam. It could happen that some people simply mustn't be put in some slots because they have another exam at this time. In such a case, it’s nice to be able to avoid
+			the problem by putting a very high grade to the slots that the person mustn't be put in. Therefore, the administrator has access to the choices of all the users and can modify them upon request (see <a href="#adminpage">Administration page</a>).</p>
+		<!--<p>Therefore, the administrator has special rights to access the user’s wish page and select some slots as "avoided" if he/she judges that the user has sufficient reasons to not be put is this slot (see as well <a href="#administrate-an-event">Administrate an event</a>).</p>-->
 
 
 		<h3>Private url</h3>
@@ -56,9 +58,9 @@
 			gives to the user a private access to his/her wish page.</p>
 
 
-		<h3>What Wish doesn’t do...</h3>
+		<h3>What Wish doesn't do...</h3>
 
-		<h4>Wish isn’t Doodle</h4>
+		<h4>Wish isn't Doodle</h4>
 		<p>The aim of the algorithm is to arrange people in various slots. It’s not the aim to put all people in the same slot.</p>
 
 		<h4>Each user is in only one slot in the end</h4>
@@ -70,37 +72,64 @@
 		</h2>
 
 		<h3>Tips and tricks</h3>
-		<p>If you are not sure how to use some features on the pages of the wish website, try keeping the mouse on this feature. In most cases, a “tip” can appear informing you about how the feature works.</p>
+		<p>If you are not sure how to use some features on the pages of the wish website, try keeping the mouse on this feature. In most cases, a "tip" can appear informing you about how the feature works.</p>
 
 		<h3>Set your wishes</h3>
 		<p>Before setting your wishes, you might want to take a look at the <a href="#rules-to-ensure-fair-choices">Rules to ensure fair choices</a> above.</p>
 
-		<h3>Create an event</h3>
-		<h4>Number of slots</h4>
-		<p>If you give too many slots, it will become a bit inconvenient for the users to set their wishes. If you are organizing an oral exam with a lot of students, a good solution is to gather three passage times in one slot and fit three people in the slot.</p>
+
+		<h3 id="administrate-an-event">Administer an event</h3>
+		<h4>Create an event</h4>
+		<p><b>Online/offline</b>
+		When it is not possible to contact the participants by email, the website can still be used in its "offline" shape. The offline page is very similar to the administration page, except the pseudocode is not automatically written down (though there is an example to help). Please have a look at the help about the <a href="#adminpage">admin page</a> for more info.</p>
+		<p><b>Number of slots</b> If you give too many slots, it will become a bit inconvenient for the users to set their wishes. If you are organizing an oral exam with a lot of students, a good solution is to gather three passage times in one slot and fit three people in the slot.</p>
 
 		<!--<h4>Deadline</h4>
 		<p>The deadline will be on midnight of the selected date. The algorithm will run as soon as the deadline is passed and the administrator will receive a mail informing him/her that the results are available. He or she will have to go to the admin page to
 			send an email to the participants telling them that the results are available.</p>-->
 
-		<h4>Mailing list</h4>
-		<p>The mailing list should contain the e-mail of each of the participants to the event. If the administrator intends to be put in a slot to, his/her mail should be on the list too.</p>
+		<p><b>Mailing list</b>
+		The mailing list should contain the e-mail of each of the participants to the event. If the administrator intends to be put in a slot to, his/her mail should be on the list too.</p>
 		<p>This list will be used to send the following mails:
 			<ul>
 				<li>Invitation mail: provides the user with an access to his/her wish page.</li>
-				<li>Update mail: if the administrator changes something in the event organization (slots<!--/deadline-->), it is possible to send an update mail to warn the users.</li>
-				<li>Reminder mail: the adminisator can send a reminder to peoples that have not set their wishes.</li>
-				<!--<li>Results mail: when the results have been computed, the administrator can inform the users.</li>-->
+				<li>Update mail: if the administrator changes something in the event organization.<!--, it is possible to send an update mail to warn the users.--></li>
+				<li>Reminder mail: the administrator can send a reminder to people who didn't set their wishes.</li>
+				<li>Results mail: when the results have been computed, the administrator can inform the users.</li>
 			</ul>
 		</p>
 
-		<h3 id="administrate-an-event">Administer an event</h3>
 		<h4>Activate the event and send the invitation mails</h4>
-		<p>Once an event has been created, the administrator receives an e-mail containing a link to the admin page. <!--The first time that this page is opened, it sends the invitation mails to the participants.--></p>
+		<p>Once an event has been created, the administrator receives an e-mail containing a link to the admin page. Once the administrator accesses this page, it is possible to send the invitation mail to all the participants, who will receive a private url to a page allowing them to set their choices.
+		</p>
 
 
-		<h4>Administration of a user page and special admin rights</h4>
-		<!--<p>If for some reasons a given user must not be in some of the slots, the administrator can make sure that it won’t happen. To do so, click on the admin link to the user’s page and check the “avoided” case in the corresponding slots.</p>
+		<h4 id="adminpage">Administration page</h4>
+		<p>The administration pages in the online and offline versions are very similar. The main item is a "problem settings" area, allowing to input all the parameters of the problem. There are as well two buttons, one to save the settings and the other ("assign") to perform the computations and assign the participants in various slots. The "Assignation" area presents the results. In the online case, additional features allow to send news to the participants or to send them a reminder if they haven't participated yet.</p>
+
+		<p><b>Problem settings</b> This area contains both the informations about the slots and the participants. Indeed, the list of the slots names is given along with the minimal and maximal number of participants allowed in each one. The list of the participants names/emails along with their preferences is given as well. In the online case, this area is automatically filled in with the parameters defined when creating the page and automatically updated when the users change their wishes.
+		This area can always be modified by the administrator, who can add and remove slots or participants, change the quotas in the slots and change the wishes of the participants if needed (for instance, when a person has two exams on the same day, the administrator can but a high grade to the slots which are inconvenient for the student, so that he/she cannot fall into these). In the offline case, the administrator must enter the complete settings, including the wishes of the participants. </p>
+
+		<p><b>Save / save and send mails</b> When the admin modifies the problem settings, it might affect some participants. This button allows to save the settings. In the online case, it allows as well to warn all the required participants depending on the performed change: only the new participants if they have been added, or all participants if the slots have been modified. </p>
+
+		<p><b>Send reminder</b> In the online case, the admin can send a reminder to users who didn't yet set their wishes.</p>
+
+		<p><b>Assign</b> In both the online and offline cases, this button allows to compute the results and display them in the "assignation" area.</p>
+
+		<p><b>Assignation area</b> This area is split in two parts: the "statistics" and the actual "results". The results give for each participant the title of the slot where he/she has been placed as well as the place it hold in his/her "wish list" (0 is best). The statistics describe for each slot as well as in total
+			<ul>
+				<li>how many participants are assigned</li>
+				<li>how many of them are in their 1st, 2nd, ... choice</li>
+			</ul>
+		and give as well the total score. These results can be copied if necessary.
+		</p>
+
+		<p><b>Send results</b> This button allows to send a personal email to each participant to give them their result. </p>
+
+
+
+
+		<!--<p>If for some reasons a given user must not be in some of the slots, the administrator can make sure that it won’t happen. To do so, click on the admin link to the user’s page and check the "avoided" case in the corresponding slots.</p>
 		<p>This assigns a very high grade to this slot in the user’s wish list and makes it therefore highly unlikely for the user to be in this slot. As a consequence, the choices of the user are made unfair, and therefore the user shouldn’t try to modify his/her
 			wish after this.</p>
 		<p>It is therefore recommended to perform this action shortly before the deadline. It can as well be performed after the deadline, in which case the results have to be computed again using the "Set and Recompute" button on the administrator page.</p>
@@ -112,7 +141,7 @@
 		<p>In case the results have already been computed, changing the deadline suppresses them. They are computed again when the new deadline is over.</p>
 		-->
 		<h2>
-			If you have problems that this page doesn’t solve...
+			If you have problems that this page doesn't solve...
 		</h2>
 
 		<p>Contact us: write an e-mail at wish.agepoly@gmail.com<br />Or even better, create an issue on GitHub: github.com/agepoly/wish</p>
