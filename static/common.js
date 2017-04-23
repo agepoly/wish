@@ -119,7 +119,7 @@ function result_into_text(content, result) {
     text += '"total score" ' + String(score) + '\n\n';
 
     var text_stats = [];
-    text_stats.push(['% slot', '# of participants', '# in 1st choice', '# in 2nd choice', '# in 3rd choice', '# in 4th choice', '...']);
+    text_stats.push(['% slot name', '# of participants', '# in wish 0', '# in wish 1', '# in wish 2', '# in wish 3', '...']);
     var s;
     var srow;
     for (i = 0; i < content.slots.length; ++i) {
