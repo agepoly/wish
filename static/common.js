@@ -119,7 +119,7 @@ function result_into_text(content, result) {
     text += '"total score" ' + String(score) + '\n\n';
 
     var text_stats = [];
-    text_stats.push(['# slot', '#participants', '#1st choice', '#2nd choice', '#3rd choice', '#4th choice', '...']);
+    text_stats.push(['% slot', '# of participants', '# in 1st choice', '# in 2nd choice', '# in 3rd choice', '# in 4th choice', '...']);
     var s;
     var srow;
     for (i = 0; i < content.slots.length; ++i) {
@@ -176,7 +176,7 @@ function result_into_text(content, result) {
         text_result[i] = [
             "\"" + content.participants[i].mail + "\"",
             "\"" + content.slots[result[i]].name + "\"",
-            "# wish " + content.participants[i].wish[result[i]]
+            "% wish=" + content.participants[i].wish[result[i]]
         ];
     }
     text += format_columns(text_result);
@@ -189,39 +189,49 @@ function into_code(content) {
 
     var code = "[slots]\n";
     var slots = [];
+    slots.push(["% slot name", "min", "max"]);
     for (i = 0; i < content.slots.length; ++i) {
-        slots[i] = ['"' + content.slots[i].name + '"', String(content.slots[i].vmin), String(content.slots[i].vmax)];
+        slots.push(['"' + content.slots[i].name + '"', 
+                    String(content.slots[i].vmin), 
+                    String(content.slots[i].vmax),
+                    "% slot #" + String(i + 1)]);
     }
     code += format_columns(slots);
 
     code += "\n[participants]\n";
     var participants = [];
+    var row = ["% slots:"];
+    for (i = 0; i < content.slots.length; ++i) {
+        row.push("#" + String(i + 1));
+    }
+    participants.push(row);
     for (i = 0; i < content.participants.length; ++i) {
-        participants[i] = ['"' + content.participants[i].mail + '"'];
+        row = ['"' + content.participants[i].mail + '"'];
         for (j = 0; j < content.participants[i].wish.length; ++j) {
-            participants[i].push(String(content.participants[i].wish[j]));
+            row.push(String(content.participants[i].wish[j]));
         }
         if (content.participants[i].status) {
             switch (content.participants[i].status) {
                 case -1:
-                    participants[i].push("# mail error");
+                    row.push("% mail error");
                     break;
                 case 0:
-                    participants[i].push("# mail not sent");
+                    row.push("% mail not sent");
                     break;
                 case 1:
-                    participants[i].push("# mail sent but no activity from participant");
+                    row.push("% mail sent but no activity from participant");
                     break;
                 case 2:
-                    participants[i].push("# status : participant visited wish page");
+                    row.push("% status : participant visited wish page");
                     break;
                 case 3:
-                    participants[i].push("# status : participant modified his/her wish");
+                    row.push("% status : participant modified his/her wish");
                     break;
                 default:
-                    participants[i].push("# [status error]");
+                    row.push("% [status error]");
             }
         }
+        participants.push(row);
     }
     code += format_columns(participants);
 
@@ -267,7 +277,7 @@ function csv_mode_for_code_mirror() {
                 }
                 return "keyword";
             }
-            if (ch === "#") {
+            if (ch === "#" || ch === "%") {
                 state.commentLine = true;
                 return "comment";
             }
