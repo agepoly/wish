@@ -123,6 +123,8 @@ io.on('connection', function(socket) {
     socket.on('create', function(content) {
         var i;
 
+        console.log("create(content = " + JSON.stringify(content) + ")");
+
         db.events.insert({
             name: content.name,
             admin_mail: content.admin_mail,
@@ -228,6 +230,8 @@ The Wish team</p>`, {
     });
 
     socket.on('set wish', function(content) {
+        console.log("set wish(content = " + JSON.stringify(content) + ")");
+
         var sorted = content.wish.slice(0);
         sorted.sort();
         for (var i = 0; i < sorted.length; ++i) {
@@ -294,6 +298,8 @@ The Wish team</p>`, {
     });
 
     socket.on('set data', function(content) {
+        console.log("set data(content = " + JSON.stringify(content) + ")");
+
         db.events.findOne({ _id: content.key }, function(err, event) {
             if (feedback_error(err, event !== null)) { return; }
             var i;
@@ -521,6 +527,8 @@ The Wish team</p>`
     });
 
     socket.on("send results", function(content) {
+        console.log("send results(content = " + JSON.stringify(content) + ")");
+
         var mail = {
             text: `Hi,
 You have been put in the slot {{{slot}}} for the event {{{event_name}}},
@@ -594,6 +602,8 @@ The Wish team</p>`
     });
 
     socket.on("remind", function(content) {
+        console.log("remind(content = " + JSON.stringify(content) + ")");
+
         var mail = {
             text: `Hi,
 Dont forget to fill your wish for the event {{{name}}},
