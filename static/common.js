@@ -89,7 +89,7 @@ function assign_hugarian(cost, slots, perm) {
     var solution = h.execute();
     var dt = new Date().getTime() - start_time;
 
-    console.log(dt + " ms");
+    console.log("Hungarian " + String(dt) + " ms");
 
     for (i = 0; i < solution.length; ++i) {
         for (j = 0; j < slots.length; ++j) {
@@ -191,8 +191,8 @@ function into_code(content) {
     var slots = [];
     slots.push(["% slot name", "min", "max"]);
     for (i = 0; i < content.slots.length; ++i) {
-        slots.push(['"' + content.slots[i].name + '"', 
-                    String(content.slots[i].vmin), 
+        slots.push(['"' + content.slots[i].name + '"',
+                    String(content.slots[i].vmin),
                     String(content.slots[i].vmax),
                     "% slot #" + String(i + 1)]);
     }

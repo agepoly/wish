@@ -11,7 +11,12 @@ function initDOM() {
     CodeMirror.defineMode("csv", csv_mode_for_code_mirror);
 
     CodeMirror.registerHelper("lint", "csv", function(text) {
+        var start_time = new Date().getTime();
         var out = parse(text);
+        var dt = new Date().getTime() - start_time;
+
+        console.log("Lint " + String(dt) + " ms");
+
         return out.errors.concat(out.warnings);
     });
 

@@ -31,7 +31,7 @@ function parse(text) {
             errors.push({
                 from: CodeMirror.Pos(l, c),
                 to: CodeMirror.Pos(l, c + 1),
-                message: "expected character [" + expected + "] got [" + ch + "]"
+                message: "Expected character [" + expected + "] got [" + ch + "]"
             });
         }
         if (ch === "\n") {
@@ -67,16 +67,35 @@ function parse(text) {
         }
         eat("]");
 
-        if ((section === null && word == "slots") || (section === "slots" && word == "participants")) {
-            section = word;
-        } else {
+        if (section === null && word != "slots") {
             errors.push({
                 from: CodeMirror.Pos(l, begin),
                 to: CodeMirror.Pos(l, c),
-                message: "unexpected section"
+                message: "Unexpected section. Expecting [slots]"
             });
             section = null;
+            return;
         }
+        if (section === "slots" && word != "participants") {
+            errors.push({
+                from: CodeMirror.Pos(l, begin),
+                to: CodeMirror.Pos(l, c),
+                message: "Unexpected section. Expecting [participants]"
+            });
+            section = null;
+            return;
+        }
+        if (section !== null && section !== "slots") {
+            errors.push({
+                from: CodeMirror.Pos(l, begin),
+                to: CodeMirror.Pos(l, c),
+                message: "Unexpected section"
+            });
+            section = null;
+            return;
+        }
+
+        section = word;
     }
 
     function eat_string() {
@@ -97,7 +116,7 @@ function parse(text) {
         errors.push({
             from: CodeMirror.Pos(l, begin),
             to: CodeMirror.Pos(l, c),
-            message: "invalid string"
+            message: "Invalid string"
         });
         return null;
     }
@@ -107,7 +126,7 @@ function parse(text) {
             errors.push({
                 from: CodeMirror.Pos(l, c),
                 to: CodeMirror.Pos(l, c),
-                message: "number expected here"
+                message: "Number expected here"
             });
             return NaN;
         }
@@ -136,9 +155,9 @@ function parse(text) {
         if (section === null) {
             errors.push({
                 from: CodeMirror.Pos(l, 0),
-                to: CodeMirror.Pos(l, 1),
+                to: CodeMirror.Pos(l, 100),
                 severity: "warning",
-                message: "line ignored"
+                message: "This line is ignored because not in a section. [slots] is missing ?"
             });
             skip_line();
             return;
@@ -161,13 +180,22 @@ function parse(text) {
                 errors.push({
                     from: CodeMirror.Pos(l, 0),
                     to: CodeMirror.Pos(l, c + 1),
-                    message: "maximum bound expected"
+                    message: "Maximum bound expected"
                 });
                 skip_line();
                 return;
             }
             while (is_space(ch)) {
                 eat();
+            }
+            if (!is_digit(ch)) {
+                errors.push({
+                    from: CodeMirror.Pos(l, 0),
+                    to: CodeMirror.Pos(l, c + 1),
+                    message: "Maximum bound expected"
+                });
+                skip_line();
+                return;
             }
             var vmax = eat_number();
             while (is_space(ch)) {
@@ -185,7 +213,7 @@ function parse(text) {
                 errors.push({
                     from: CodeMirror.Pos(l, 0),
                     to: CodeMirror.Pos(l, c + 1),
-                    message: "maximum bound must be greater or equal to minimum bound"
+                    message: "The maximum bound must be greater or equal to minimum bound"
                 });
             }
 
@@ -211,7 +239,7 @@ function parse(text) {
                 errors.push({
                     from: CodeMirror.Pos(l, 0),
                     to: CodeMirror.Pos(l, c + 1),
-                    message: "You have " + slots.length + " slots, therefore you need " + slots.length + " values"
+                    message: "You have " + slots.length + " slots, therefore you need " + slots.length + " wishes per participant, not " + row.length
                 });
             }
 
@@ -223,17 +251,19 @@ function parse(text) {
                 });
             }
 
-            var tmp = row.slice();
-            tmp.sort(function(a, b) { return a - b; });
-            for (i = 0; i < tmp.length; ++i) {
-                if (tmp[i] > i) {
-                    warnings.push({
-                        from: CodeMirror.Pos(l, 0),
-                        to: CodeMirror.Pos(l, c),
-                        severity: "warning",
-                        message: "This wish is not fair"
-                    });
-                    break;
+            if (errors.length === 0) {
+                var tmp = row.slice();
+                tmp.sort(function(a, b) { return a - b; });
+                for (i = 0; i < tmp.length; ++i) {
+                    if (tmp[i] > i) {
+                        warnings.push({
+                            from: CodeMirror.Pos(l, 0),
+                            to: CodeMirror.Pos(l, c),
+                            severity: "warning",
+                            message: "This wish is not fair"
+                        });
+                        break;
+                    }
                 }
             }
         }
@@ -252,7 +282,7 @@ function parse(text) {
         errors.push({
             from: CodeMirror.Pos(l, c),
             to: CodeMirror.Pos(l, c + 1),
-            message: "something expected"
+            message: "This character is unexpected"
         });
         skip_line();
         return;
@@ -281,10 +311,11 @@ function parse(text) {
     }
 
     while (ch !== null) {
+        if (errors.length > 0) { break; }
         eat_line();
     }
 
-    if (participants.length < sum_vmin) {
+    if (errors.length === 0 && participants.length < sum_vmin) {
         errors.push({
             from: CodeMirror.Pos(l, 0),
             to: CodeMirror.Pos(l, c + 1),
