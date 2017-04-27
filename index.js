@@ -180,7 +180,7 @@ The Wish team`, {
                                 url: content.url,
                                 key: newEvent._id
                             }),
-                            from: "Wish <wish@epfl.ch>",
+                            from: conf.mail,
                             to: content.admin_mail,
                             subject: "Wish : " + content.name,
                             attachment: [{
@@ -419,7 +419,7 @@ Please look at your wish.
 Have a nice day,
 The Wish team`,
                             html: `<p>Hi,</p>
-<p>The adimistrator ({{amail}}) of the event <strong>{{name}}</strong> has modified the slots.</p><br />
+<p>The adimistrator ({{amail}}) of the event <strong>{{name}}</strong> has modified the slots.</p>
 <p>Please look at <a href="{{{url}}}/wish.html#{{{key}}}">your wish</a>.</p>
 <p>Have a nice day,<br />
 The Wish team</p>`
@@ -442,7 +442,7 @@ The Wish team</p>`
                                 total_mails++;
                                 mailer.send({
                                     text: Mustache.render(first_mail.text, values),
-                                    from: "Wish <wish@epfl.ch>",
+                                    from: conf.mail,
                                     to: content.participants[j].mail,
                                     subject: "Wish : " + event.name,
                                     attachment: [{
@@ -454,7 +454,7 @@ The Wish team</p>`
                                 total_mails++;
                                 mailer.send({
                                     text: Mustache.render(recall_mail.text, values),
-                                    from: "Wish <wish@epfl.ch>",
+                                    from: conf.mail,
                                     to: content.participants[j].mail,
                                     subject: "Wish : " + event.name,
                                     attachment: [{
@@ -551,7 +551,7 @@ The Wish team</p>`
                 };
                 mailer.send({
                     text: Mustache.render(mail.text, values),
-                    from: "Wish <wish@epfl.ch>",
+                    from: conf.mail,
                     to: content.result[i].mail,
                     subject: "Wish : " + event.name,
                     attachment: [{
@@ -643,7 +643,7 @@ The Wish team</p>`
                     };
                     mailer.send({
                         text: Mustache.render(mail.text, values),
-                        from: "Wish <wish@epfl.ch>",
+                        from: conf.mail,
                         to: participants[i].mail,
                         subject: "Wish : " + event.name,
                         attachment: [{
