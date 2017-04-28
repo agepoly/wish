@@ -149,13 +149,6 @@ function check_validity() {
 
         var mails_list = mails.value.split(/[\s,;]+/).filter(function(x) { return x !== ''; });
 
-        for (i = 0; i < mails_list.length; ++i) {
-            if (mails_list[i] === "") {
-                mails.setAttribute('style', 'border-color: ' + err_color);
-                valid = false;
-            }
-        }
-
         if (mails_list.length > total_vmax) {
             for (j = 0; j < n; ++j) {
                 document.getElementById('vmax' + j).setAttribute('style', 'border-color: ' + err_color);
@@ -184,22 +177,6 @@ function check_validity() {
                 document.getElementById('mails_error').innerText = "A mail address appear more than once.";
                 valid = false;
             }
-        }
-    }
-    if (typeof x !== 'undefined' && typeof x.mails !== 'undefined') {
-        if (x.mails.length > total_vmax) {
-            for (j = 0; j < n; ++j) {
-                document.getElementById('vmax' + j).setAttribute('style', 'border-color: ' + err_color);
-            }
-            document.getElementById('slots_error').innerText = "Too many participants for the maximum bounds.";
-            valid = false;
-        }
-        if (x.mails.length < total_vmin) {
-            for (j = 0; j < n; ++j) {
-                document.getElementById('vmin' + j).setAttribute('style', 'border-color: ' + err_color);
-            }
-            document.getElementById('slots_error').innerText = "Not enough participants for the minimum bounds.";
-            valid = false;
         }
     }
 
