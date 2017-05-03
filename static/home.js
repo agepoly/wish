@@ -90,6 +90,7 @@ function check_validity() {
     "use strict";
     var err_color = '#FF4000';
     var valid = true;
+    var i, j;
 
     var xs = document.getElementsByTagName('input');
     for (i = 0; i < xs.length; ++i) {
@@ -110,7 +111,7 @@ function check_validity() {
     var total_vmin = 0;
     var total_vmax = 0;
 
-    for (var i = 0; i < n; ++i) {
+    for (i = 0; i < n; ++i) {
         var slot = document.getElementById('slot' + i);
         if (slot.value === "") {
             slot.setAttribute('style', 'border-color: ' + err_color);
