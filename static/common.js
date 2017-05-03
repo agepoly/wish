@@ -172,11 +172,13 @@ function result_into_text(content, result) {
     text += "[results]\n";
 
     var text_result = [];
+    text_result[0] = ["% mail", "slot name", "slot number", "wish value"];
     for (i = 0; i < content.participants.length; ++i) {
-        text_result[i] = [
+        text_result[i + 1] = [
             "\"" + content.participants[i].mail + "\"",
             "\"" + content.slots[result[i]].name + "\"",
-            "% wish=" + content.participants[i].wish[result[i]]
+            String(result[i]),
+            String(content.participants[i].wish[result[i]])
         ];
     }
     text += format_columns(text_result);
