@@ -131,7 +131,8 @@ io.on('connection', function(socket) {
             slots: content.slots,
             url: content.url,
             message: content.message,
-            participants: []
+            participants: [],
+            creation_time: + new Date()
         }, function(err, newEvent) {
             if (feedback_error(err)) { return; }
 
@@ -693,6 +694,22 @@ The Wish team</p>`
                     };
                 }
             });
+        });
+    });
+
+    /* ============================= history ============================= */
+    socket.on("ask history", function() {
+        db.events.find({}).sort({ creation_time: -1 }).exec(function(err, events) {
+            var i;
+            var text = "<ul>";
+            for (i = 0; i < events.length; ++i) {
+                text += Mustache.render("<li><strong>{{name}}</strong>: {{message}}</li>", {
+                    name: events[i].name,
+                    message: events[i].message
+                });
+            }
+            text += "</ul>";
+            socket.emit('get history', text);
         });
     });
 });
