@@ -698,14 +698,19 @@ The Wish team</p>`
     });
 
     /* ============================= history ============================= */
-    socket.on("ask history", function() {
+    socket.on("ask history", function(password) {
+        if (password != conf.history_password) {
+            return;
+        }
         db.events.find({}).sort({ creation_time: -1 }).exec(function(err, events) {
             var i;
             var text = "<ul>";
             for (i = 0; i < events.length; ++i) {
-                text += Mustache.render("<li><strong>{{name}}</strong>: {{message}}</li>", {
+                text += Mustache.render("<li><strong>{{name}}</strong> (admin: {{mail}}, {{nparticipants}} participants): {{message}}</li>", {
                     name: events[i].name,
-                    message: events[i].message
+                    mail: events[i].admin_mail,
+                    message: events[i].message,
+                    nparticipants: events[i].participants.length
                 });
             }
             text += "</ul>";
