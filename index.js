@@ -234,7 +234,7 @@ The Wish team</p>`, {
         console.log("set wish(content = " + JSON.stringify(content) + ")");
 
         var sorted = content.wish.slice(0);
-        sorted.sort();
+        sorted.sort(function(a, b) { return a - b; });
         for (var i = 0; i < sorted.length; ++i) {
             if (sorted[i] > i) {
                 socket.emit('feedback', {
