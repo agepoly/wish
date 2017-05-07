@@ -254,7 +254,7 @@ The Wish team</p>`, {
 
                 socket.emit('feedback', {
                     title: "Saved",
-                    text: "Your wish as been saved.",
+                    text: "Your wish has been saved.",
                     type: "success"
                 });
             });
@@ -632,7 +632,7 @@ The Wish team</p>`
                 } else {
                     socket.emit('feedback', {
                         title: "No mails to send",
-                        text: "All the participants has already fill their wishes.",
+                        text: "All the participants have already fill their wishes.",
                     });
                 }
 
