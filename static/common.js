@@ -194,9 +194,10 @@ function into_code(content) {
     slots.push(["% slot name", "min", "max"]);
     for (i = 0; i < content.slots.length; ++i) {
         slots.push(['"' + content.slots[i].name + '"',
-                    String(content.slots[i].vmin),
-                    String(content.slots[i].vmax),
-                    "% slot #" + String(i + 1)]);
+            String(content.slots[i].vmin),
+            String(content.slots[i].vmax),
+            "% slot #" + String(i + 1)
+        ]);
     }
     code += format_columns(slots);
 
@@ -232,6 +233,9 @@ function into_code(content) {
                 default:
                     row.push("% [status error]");
             }
+        }
+        if (content.participants[i]._id) {
+            row.push("wish.html#" + content.participants[i]._id);
         }
         participants.push(row);
     }
