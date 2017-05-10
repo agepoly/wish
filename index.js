@@ -218,6 +218,14 @@ The Wish team</p>`, {
             db.events.findOne({ _id: participant.event }, function(err, event) {
                 if (feedback_error(err, event)) { return; }
 
+                if (event.slots.length != participant.wish.length) {
+                    console.log("error (event.slots.length != participant.wish.length) event = " + JSON.stringify(event) + " and participant = " + JSON.stringify(participant));
+                    participant.wish = [];
+                    for (i = 0; i < event.slots.length; ++i) {
+                        participant.wish[i] = 0;
+                    }
+                }
+
                 socket.emit('get wish', {
                     name: event.name,
                     mail: participant.mail,
