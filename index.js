@@ -56,10 +56,10 @@ app.get('/', function(req, res) {
 });
 
 // Warn if overriding existing method
-if(Array.prototype.equals)
+if (Array.prototype.equals)
     console.warn("Overriding existing Array.prototype.equals. Possible causes: New API defines the method, there's a framework conflict or you've got double inclusions in your code.");
 // attach the .equals method to Array's prototype to call it on any array
-Array.prototype.equals = function (array) {
+Array.prototype.equals = function(array) {
     "use strict";
     // if the other array is a falsy value, return
     if (!array)
@@ -69,14 +69,13 @@ Array.prototype.equals = function (array) {
     if (this.length != array.length)
         return false;
 
-    for (var i = 0, l=this.length; i < l; i++) {
+    for (var i = 0, l = this.length; i < l; i++) {
         // Check if we have nested arrays
         if (this[i] instanceof Array && array[i] instanceof Array) {
             // recurse into the nested arrays
             if (!this[i].equals(array[i]))
                 return false;
-        }
-        else if (this[i] != array[i]) {
+        } else if (this[i] != array[i]) {
             // Warning - two different object instances will never be equal: {x:20} != {x:20}
             return false;
         }
@@ -84,7 +83,7 @@ Array.prototype.equals = function (array) {
     return true;
 };
 // Hide method from for-in loops
-Object.defineProperty(Array.prototype, "equals", {enumerable: false});
+Object.defineProperty(Array.prototype, "equals", { enumerable: false });
 
 var connected_admins = [];
 
@@ -132,7 +131,7 @@ io.on('connection', function(socket) {
             url: content.url,
             message: content.message,
             participants: [],
-            creation_time: + new Date()
+            creation_time: +new Date()
         }, function(err, newEvent) {
             if (feedback_error(err)) { return; }
 
@@ -239,7 +238,7 @@ The Wish team</p>`, {
             if (sorted[i] > i) {
                 socket.emit('feedback', {
                     title: "Oops...",
-                    text: "Something went wrong!\n[unfair wish]",
+                    html: "Something went wrong!<br />Your wish is <strong>unfair</strong>",
                     type: "error"
                 });
                 return;
@@ -249,23 +248,36 @@ The Wish team</p>`, {
         db.participants.findOne({ _id: content.key }, function(err, participant) {
             if (feedback_error(err)) { return; }
 
-            db.participants.update({ _id: content.key }, { $set: { wish: content.wish, status: 3 } }, {}, function(err, numReplaced) {
-                if (feedback_error(err, numReplaced === 1)) { return; }
+            db.events.findOne({ _id: participant.event }, function(err, event) {
+                if (feedback_error(err)) { return; }
 
-                socket.emit('feedback', {
-                    title: "Saved",
-                    text: "Your wish has been saved.",
-                    type: "success"
+                if (event.slots.length != content.wish.length) {
+                    socket.emit('feedback', {
+                        title: "Oops...",
+                        html: "Something went wrong!<br /><strong>The amount of slots is invalid</strong><br />Maybe reload the page will fix the problem",
+                        type: "error"
+                    });
+                    return;
+                }
+
+                db.participants.update({ _id: content.key }, { $set: { wish: content.wish, status: 3 } }, {}, function(err, numReplaced) {
+                    if (feedback_error(err, numReplaced === 1)) { return; }
+
+                    socket.emit('feedback', {
+                        title: "Saved",
+                        text: "Your wish has been saved.",
+                        type: "success"
+                    });
                 });
-            });
 
-            if (participant.wish.equals(content.wish) === false) {
-                for (var i = 0; i < connected_admins.length; ++i) {
-                    if (connected_admins[i].key === participant.event) {
-                        connected_admins[i].socket.emit('new wish', participant.mail);
+                if (participant.wish.equals(content.wish) === false) {
+                    for (var i = 0; i < connected_admins.length; ++i) {
+                        if (connected_admins[i].key === participant.event) {
+                            connected_admins[i].socket.emit('new wish', participant.mail);
+                        }
                     }
                 }
-            }
+            });
         });
     });
     /* ============================= admin ============================= */
