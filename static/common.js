@@ -241,6 +241,33 @@ function into_code(content) {
     }
     code += format_columns(participants);
 
+    var status_count = [];
+    for (i = 0; i < content.participants.length; ++i) {
+        if (content.participants[i].status) {
+            var status = content.participants[i].status;
+            if (status_count[status]) {
+                status_count[status] += 1;
+            } else {
+                status_count[status] = 1;
+            }
+        }
+    }
+    if (status_count[-1]) {
+        code += "\n% mail error: " + status_count[-1];
+    }
+    if (status_count[0]) {
+        code += "\n% mail not sent: " + status_count[0];
+    }
+    if (status_count[1]) {
+        code += "\n% mail sent but no activity from participant: " + status_count[1];
+    }
+    if (status_count[2]) {
+        code += "\n% participant visited wish page: " + status_count[2];
+    }
+    if (status_count[3]) {
+        code += "\n% participant modified his/her wish: " + status_count[3];
+    }
+
     return code;
 }
 
