@@ -235,7 +235,7 @@ function into_code(content) {
             }
         }
         if (content.participants[i]._id) {
-            row.push("wish.html#" + content.participants[i]._id);
+            row.push("% wish.html#" + content.participants[i]._id);
         }
         participants.push(row);
     }
