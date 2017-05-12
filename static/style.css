@@ -22,7 +22,7 @@
 .container {
     /* max-width: 640px; */
     top: 50px;
-     text-align: justify; 
+    text-align: justify;
 }
 
 h4 {
@@ -30,7 +30,7 @@ h4 {
     font-style: italic;
 }
 
-h3{
+h3 {
     font-size: 1.5em;
 }
 
@@ -41,6 +41,7 @@ h3{
 #slots {
     display: inline-block;
 }
+
 
 /*
 br {
