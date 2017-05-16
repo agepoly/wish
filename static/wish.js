@@ -39,7 +39,7 @@ function init(content) {
 
     var html = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Your Wish</th></tr></thead><tbody>';
     for (i = 0; i < content.slots.length; ++i) {
-        html += Mustache.render('<tr><td>{{name}}</td><td>Prefered <input id="wish{{no}}" type="range" min="0" max="{{max}}" step="1" value="{{value}}"> Unwanted</td></tr>', {
+        html += Mustache.render('<tr><td>{{name}}</td><td>Preferred <input id="wish{{no}}" type="range" min="0" max="{{max}}" step="1" value="{{value}}"> Unwanted</td></tr>', {
             name: content.slots[i].name,
             no: i,
             max: content.slots.length - 1,
