@@ -32,6 +32,7 @@ function init() {
     document.getElementById('mails').value = localStorage.mails || "";
     document.getElementById('mails').onchange = function(event) {
         localStorage.mails = event.target.value;
+        count_participants();
     };
 
     document.getElementById('message').value = localStorage.message || "";
@@ -40,6 +41,13 @@ function init() {
     };
 
     create_slots();
+    count_participants();
+}
+
+function count_participants() {
+    "use strict";
+    var mails_list = mails.value.split(/[\s,;]+/).filter(function(x) { return x !== ''; });
+    document.getElementById('participants_counter').innerText = mails_list.length + " participants";
 }
 
 function send() {
@@ -176,6 +184,14 @@ function check_validity() {
             if (mails_list[i - 1] == mails_list[i]) {
                 mails.setAttribute('style', 'border-color: ' + err_color);
                 document.getElementById('mails_error').innerText = "A mail address appear more than once.";
+                valid = false;
+            }
+        }
+
+        for (i = 0; i < mails_list.length; ++i) {
+            var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            if (!re.test(mails_list[i])) {
+                document.getElementById('mails_error').innerText = mails_list[i] + " is not a valid email address.";
                 valid = false;
             }
         }
