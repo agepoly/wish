@@ -177,7 +177,7 @@ function result_into_text(content, result) {
         text_result[i + 1] = [
             "\"" + content.participants[i].mail + "\"",
             "\"" + content.slots[result[i]].name + "\"",
-            String(result[i]),
+            String(result[i] + 1),
             String(content.participants[i].wish[result[i]])
         ];
     }
