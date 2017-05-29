@@ -158,6 +158,11 @@ function result_into_text(content, result) {
         choices[s]++;
     }
     text_stats[0].length = Math.min(text_stats[0].length, 2 + choices.length);
+    var separation_row = ['% ==='];
+    while (separation_row.length < text_stats[0].length) {
+        separation_row.push("===");
+    }
+    text_stats.push(separation_row);
     var last_row = ['"total"', String(content.participants.length)];
     for (j = 0; j < choices.length; ++j) {
         if (choices[j] === undefined) {
