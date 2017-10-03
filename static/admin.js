@@ -57,6 +57,9 @@ function initDOM() {
 
     INPUT_CODE = CodeMirror.fromTextArea(document.getElementById('input'), {
         lineNumbers: true,
+        scrollbarStyle: "null",
+        viewportMargin: Infinity,
+        lineWrapping: true,
         mode: "csv",
         gutters: ["CodeMirror-lint-markers"],
         lint: true
@@ -64,6 +67,9 @@ function initDOM() {
 
     OUTPUT_CODE = CodeMirror.fromTextArea(document.getElementById('output'), {
         lineNumbers: true,
+        scrollbarStyle: "null",
+        viewportMargin: Infinity,
+        lineWrapping: true,
         mode: "csv",
         readOnly: true
     });
