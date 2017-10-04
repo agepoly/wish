@@ -1,0 +1,10 @@
+.cm-s-wish.CodeMirror { background: #fff; color: #bbb; }
+.cm-s-wish div.CodeMirror-selected { background: #abe !important; }
+.cm-s-wish .CodeMirror-gutters { background: #eee; border-right: 0px; }
+.cm-s-wish .CodeMirror-linenumber { color: #bbb; }
+
+.cm-s-wish span.cm-number { color: #04f; }
+.cm-s-wish span.cm-string { color: #05a; }
+.cm-s-wish span.cm-keyword, .cm-s-wish span.cm-atom { color: #00f; font-weight: bold; }
+.cm-s-wish span.cm-error, .cm-s-wish span.cm-invalidchar { color: #f00; }
+.cm-s-wish span.cm-comment { color: #666; }
