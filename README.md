@@ -8,7 +8,7 @@ download the dependances
 
 add configuration file
 
-    echo "module.exports = { mail: \"Wish <wish@epfl.ch>\", user: \"jojo\", password: \"1234\", host: \"mail.school.com\", port: 465, history_password: \"1234\" };" > node_modules/config.js
+    echo "module.exports = { mail: \"Wish <wish@epfl.ch>\", user: \"jojo\", password: \"1234\", host: \"mail.school.com\", port: 465, history_password: \"1234\" };" > config.js
 
 run the server
 

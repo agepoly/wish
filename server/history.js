@@ -1,6 +1,6 @@
 /* jshint esversion: 6 */
 var Mustache = require('mustache');
-var conf = require("config");
+var conf = require("../config.js");
 
 module.exports = function(socket, db) {
     "use strict";

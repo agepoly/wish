@@ -2,7 +2,7 @@
 
 var Datastore = require('nedb');
 var email = require("emailjs");
-var conf = require("config");
+var conf = require("./config.js");
 var http = require('http');
 var express = require('express');
 require('./util/array_equal.js')();

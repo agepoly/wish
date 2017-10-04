@@ -1,6 +1,6 @@
 /* jshint esversion: 6 */
 var Mustache = require('mustache');
-var conf = require("config");
+var conf = require("../config.js");
 
 module.exports = function(socket, db, mailer, connected_admins, feedback_error) {
     "use strict";
@@ -26,7 +26,7 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
             });
         });
     }
-    
+
     socket.on('get data', function(key) {
         connected_admins.push({
             key: key,
