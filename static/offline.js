@@ -21,16 +21,24 @@ function initDOM() {
     });
 
     INPUT_CODE = CodeMirror.fromTextArea(document.getElementById('input'), {
-        lineNumbers: true,
+        lineNumbers: false,
+        scrollbarStyle: "null",
+        viewportMargin: Infinity,
+        lineWrapping: true,
         mode: "csv",
         gutters: ["CodeMirror-lint-markers"],
-        lint: true
+        lint: true,
+        theme: 'wish'
     });
 
     OUTPUT_CODE = CodeMirror.fromTextArea(document.getElementById('output'), {
-        lineNumbers: true,
+        lineNumbers: false,
+        scrollbarStyle: "null",
+        viewportMargin: Infinity,
+        lineWrapping: true,
         mode: "csv",
-        readOnly: true
+        readOnly: true,
+        theme: 'wish'
     });
 
     var default_content = {
