@@ -72,7 +72,8 @@ function cost_matrix(content, perm) {
             for (k = 0; k < content.slots[j].vmin; ++k) {
                 row.push(c);
             }
-            for (k = content.slots[j].vmin; k < content.slots[j].vmax; ++k) {
+            var vmax = Math.min(content.slots[j].vmax, content.participants.length);
+            for (k = content.slots[j].vmin; k < vmax; ++k) {
                 row.push(x + c);
             }
         }
