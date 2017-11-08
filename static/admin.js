@@ -138,7 +138,7 @@ function assign(content) {
 
     var perm = permutation(content.participants.length);
     var cost = cost_matrix(content, perm);
-    var result = assign_hugarian(cost, content.slots, perm);
+    var result = assign_hugarian(cost, content, perm);
 
     RESULT = [];
     for (i = 0; i < result.length; ++i) {

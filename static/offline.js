@@ -91,7 +91,7 @@ function assign(content) {
     "use strict";
     var perm = permutation(content.participants.length);
     var cost = cost_matrix(content, perm);
-    var result = assign_hugarian(cost, content.slots, perm);
+    var result = assign_hugarian(cost, content, perm);
     var text = result_into_text(content, result);
     OUTPUT_CODE.setValue(text);
 }

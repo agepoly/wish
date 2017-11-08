@@ -82,7 +82,7 @@ function cost_matrix(content, perm) {
     return cost;
 }
 
-function assign_hugarian(cost, slots, perm) {
+function assign_hugarian(cost, content, perm) {
     "use strict";
     var i, j;
     var start_time = new Date().getTime();
@@ -93,9 +93,10 @@ function assign_hugarian(cost, slots, perm) {
     console.log("Hungarian " + String(dt) + " ms");
 
     for (i = 0; i < solution.length; ++i) {
-        for (j = 0; j < slots.length; ++j) {
-            if (solution[i] >= slots[j].vmax) {
-                solution[i] -= slots[j].vmax;
+        for (j = 0; j < content.slots.length; ++j) {
+            var vmax = Math.min(content.slots[j].vmax, content.participants.length);
+            if (solution[i] >= vmax) {
+                solution[i] -= vmax;
             } else {
                 solution[i] = j;
                 break;
