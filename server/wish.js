@@ -24,7 +24,8 @@ module.exports = function(socket, db, connected_admins, feedback_error) {
                 });
             });
         });
-        db.participants.update({ _id: key, status: { $lte: 1 } }, { $set: { status: 2 } });
+        // 30 == participant visited wish page
+        db.participants.update({ _id: key, status: { $lt: 30 } }, { $set: { status: 30 } });
     });
 
     socket.on('set wish', function(content) {
@@ -58,7 +59,8 @@ module.exports = function(socket, db, connected_admins, feedback_error) {
                     return;
                 }
 
-                db.participants.update({ _id: content.key }, { $set: { wish: content.wish, status: 3 } }, {}, function(err, numReplaced) {
+                // 40 == participant modified his/her wish
+                db.participants.update({ _id: content.key }, { $set: { wish: content.wish, status: 40 } }, {}, function(err, numReplaced) {
                     if (feedback_error(err, numReplaced === 1)) { return; }
 
                     socket.emit('feedback', {

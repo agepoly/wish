@@ -95,7 +95,7 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                                 mail: content.participants[i].mail,
                                 wish: content.participants[i].wish,
                                 event: event._id,
-                                status: 0
+                                status: 0 // 0 == mail not sent
                             }, function(err, newParticipant) {
                                 if (feedback_error(err)) { return; }
 
@@ -106,12 +106,16 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                                 addParticipant(i + 1);
                             });
                         } else {
+                            if (slots_changed && participant.status > 10) {
+                                participant.status = 10; // 10 == update mail not sent
+                            }
+
                             content.participants[i]._id = participant._id;
                             content.participants[i].status = participant.status;
 
                             event.participants.push(participant._id);
                             db.participants.update({ _id: participant._id }, {
-                                $set: { wish: content.participants[i].wish }
+                                $set: { wish: content.participants[i].wish, status: participant.status }
                             }, function(err, numReplaced) {
                                 if (feedback_error(err, numReplaced === 1)) { return; }
 
@@ -131,43 +135,43 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                     }, function(err, numReplaced) {
                         if (feedback_error(err, numReplaced === 1)) { return; }
 
-                        var first_mail = {
-                            text: `Hi,
-    You have been invited by {{{amail}}} to give your wishes about the event : {{{name}}}
-    {{{message}}}
-
-    {{{url}}}/wish.html#{{{key}}}
-
-    Have a nice day,
-    The Wish team`,
-                            html: `<p>Hi,</p>
-    <p>You have been invited by {{amail}} to give your wishes about the event : <strong>{{name}}</strong></p><br />
-    <pre>{{message}}</pre>
-    <p><a href="{{{url}}}/wish.html#{{{key}}}">Click here</a> to set your wishes.</p>
-    <p>Have a nice day,<br />
-    The Wish team</p>`
-                        };
-                        var recall_mail = {
-                            text: `Hi,
-    The adimistrator ({{{amail}}}) of the event {{{name}}} has modified the slots.
-    Please look at your wish.
-
-    {{{url}}}/wish.html#{{{key}}}
-
-    Have a nice day,
-    The Wish team`,
-                            html: `<p>Hi,</p>
-    <p>The adimistrator ({{amail}}) of the event <strong>{{name}}</strong> has modified the slots.</p>
-    <p>Please look at <a href="{{{url}}}/wish.html#{{{key}}}">your wish</a>.</p>
-    <p>Have a nice day,<br />
-    The Wish team</p>`
-                        };
-
-                        var total_mails = 0;
-                        var sent_mails = 0;
-                        var errors = "";
-
                         if (send_mails) {
+                            var first_mail = {
+                                text: `Hi,
+You have been invited by {{{amail}}} to give your wishes about the event : {{{name}}}
+{{{message}}}
+
+{{{url}}}/wish.html#{{{key}}}
+
+Have a nice day,
+The Wish team`,
+                                html: `<p>Hi,</p>
+<p>You have been invited by {{amail}} to give your wishes about the event : <strong>{{name}}</strong></p><br />
+<pre>{{message}}</pre>
+<p><a href="{{{url}}}/wish.html#{{{key}}}">Click here</a> to set your wishes.</p>
+<p>Have a nice day,<br />
+The Wish team</p>`
+                            };
+                            var recall_mail = {
+                                text: `Hi,
+The adimistrator ({{{amail}}}) of the event {{{name}}} has modified the slots.
+Please look at your wish.
+
+{{{url}}}/wish.html#{{{key}}}
+
+Have a nice day,
+The Wish team`,
+                                html: `<p>Hi,</p>
+<p>The adimistrator ({{amail}}) of the event <strong>{{name}}</strong> has modified the slots.</p>
+<p>Please look at <a href="{{{url}}}/wish.html#{{{key}}}">your wish</a>.</p>
+<p>Have a nice day,<br />
+The Wish team</p>`
+                            };
+
+                            var total_mails = 0;
+                            var sent_mails = 0;
+                            var errors = "";
+
                             for (var j = 0; j < content.participants.length; ++j) {
                                 var values = {
                                     amail: event.admin_mail,
@@ -177,7 +181,7 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                                     key: content.participants[j]._id
                                 };
 
-                                if (content.participants[j].status <= 0) {
+                                if (content.participants[j].status <= 0) { // 0 == mail not sent
                                     total_mails++;
                                     mailer.send({
                                         text: Mustache.render(first_mail.text, values),
@@ -189,7 +193,7 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                                             alternative: true
                                         }]
                                     }, check_mail(content.participants[j]._id, content.participants[j].mail));
-                                } else if (slots_changed) {
+                                } else if (content.participants[j].status <= 10) { // 10 == update not sent
                                     total_mails++;
                                     mailer.send({
                                         text: Mustache.render(recall_mail.text, values),
@@ -232,10 +236,10 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                                         mail: mail,
                                         error: String(err)
                                     });
-                                    db.participants.update({ _id: id }, { $set: { status: -1 } });
+                                    db.participants.update({ _id: id }, { $set: { status: -10 } }); // -10 == error mail
                                 } else {
                                     sent_mails++;
-                                    db.participants.update({ _id: id }, { $set: { status: 1 } });
+                                    db.participants.update({ _id: id }, { $set: { status: 20 } }); // 20 == mail sent but no activity
                                 }
                                 if (errors) {
                                     socket.emit('feedback', {
@@ -273,44 +277,44 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
 
         var mail = {
             text: `Hi,
-    You have been put in the slot {{{slot}}} for the event {{{event_name}}},
+You have been put in the slot {{{slot}}} for the event {{{event_name}}},
 
-    Have a nice day,
-    The Wish team`,
+Have a nice day,
+The Wish team`,
             html: `<p>Hi,</p>
-    <p>You have been put in the slot <strong>{{slot}}</strong> for the event <strong>{{event_name}}</strong>.</p>
-    <p>Have a nice day,<br />
-    The Wish team</p>`
+<p>You have been put in the slot <strong>{{slot}}</strong> for the event <strong>{{event_name}}</strong>.</p>
+<p>Have a nice day,<br />
+The Wish team</p>`
         };
 
         var admin_mail = {
             text: `Hi,
-    The following information have been sent to the participants of the event {{event_name}}.
+The following information have been sent to the participants of the event {{event_name}}.
 
-    {{#result}}
-    {{mail}}  {{slot}}
-    {{/result}}
+{{#result}}
+{{mail}}  {{slot}}
+{{/result}}
 
-    Have a nice day,
-    The Wish team`,
+Have a nice day,
+The Wish team`,
             html: `<p>Hi,</p>
-    <p>The following information have been sent to the participants of the event <strong>{{event_name}}</strong>.</p>
+<p>The following information have been sent to the participants of the event <strong>{{event_name}}</strong>.</p>
 
-    <table>
-      <tr>
-        <th>mail</th>
-        <th>slot</th>
-      </tr>
-      {{#result}}
-      <tr>
-        <td>{{mail}}</td>
-        <td>{{slot}}</td>
-      </tr>
-      {{/result}}
-    </table>
+<table>
+  <tr>
+    <th>mail</th>
+    <th>slot</th>
+  </tr>
+  {{#result}}
+  <tr>
+    <td>{{mail}}</td>
+    <td>{{slot}}</td>
+  </tr>
+  {{/result}}
+</table>
 
-    <p>Have a nice day,<br />
-    The Wish team</p>`
+<p>Have a nice day,<br />
+The Wish team</p>`
         };
 
         db.events.findOne({ _id: content.key }, function(err, event) {
@@ -395,20 +399,21 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
 
         var mail = {
             text: `Hi,
-    Dont forget to fill your wish for the event {{{name}}},
-    {{{url}}}/wish.html#{{{key}}}
+Dont forget to fill your wish for the event {{{name}}},
+{{{url}}}/wish.html#{{{key}}}
 
-    Have a nice day,
-    The Wish team`,
+Have a nice day,
+The Wish team`,
             html: `<p>Hi,</p>
-    <p>Dont forget to fill <a href="{{{url}}}/wish.html#{{{key}}}">your wish</a> for the event {{name}}.</p>
-    <p>Have a nice day,<br />
-    The Wish team</p>`
+<p>Dont forget to fill <a href="{{{url}}}/wish.html#{{{key}}}">your wish</a> for the event {{name}}.</p>
+<p>Have a nice day,<br />
+The Wish team</p>`
         };
 
         db.events.findOne({ _id: content.key }, function(err, event) {
             if (feedback_error(err, event !== null)) { return; }
-            db.participants.find({ _id: { $in: event.participants }, status: { $lt: 3 } }, function(err, participants) {
+            // 30 == participant visited wish page
+            db.participants.find({ _id: { $in: event.participants }, status: { $lt: 35 } }, function(err, participants) {
 
                 if (participants.length > 0) {
                     socket.emit('feedback', {
@@ -452,10 +457,11 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                                 mail: mail,
                                 error: String(err)
                             });
-                            db.participants.update({ _id: id }, { $set: { status: -1 } });
+                            db.participants.update({ _id: id }, { $set: { status: -10 } }); // -10 == mail error
                         } else {
                             sent_mails++;
-                            db.participants.update({ _id: id, status: { $lt: 1 } }, { $set: { status: 1 } });
+                            // 20 == mail sent but no activity from participant
+                            db.participants.update({ _id: id, status: { $lt: 20 } }, { $set: { status: 20 } });
                         }
                         if (errors) {
                             socket.emit('feedback', {

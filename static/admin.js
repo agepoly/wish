@@ -17,10 +17,27 @@ SOCKET.on("get data", function(content, mailing_in_progress) {
         name: content.name
     });
 
-    if (!mailing_in_progress && content.participants.some(function(p) { return p.status === 0; })) {
+    // 0 == new users
+    // 10 == update mail not sent
+    if (!mailing_in_progress && content.participants.some(function(p) { return p.status <= 10; })) {
+        var mails_error = content.participants.filter(function(p) { return p.status < 0; }).map(function(p) { return p.mail; });
+        var mails_new = content.participants.filter(function(p) { return p.status >= 0 && p.status < 10; }).map(function(p) { return p.mail; });
+        var mails_update = content.participants.filter(function(p) { return p.status == 10; }).map(function(p) { return p.mail; });
+
+        var to_who = "";
+        if (mails_error.length > 0) {
+            to_who += "<br />Due to previous errors: " + mails_error.join(", ");
+        }
+        if (mails_new.length > 0) {
+            to_who += "<br />New users: " + mails_new.join(", ");
+        }
+        if (mails_update.length > 0) {
+            to_who += "<br />Update mail: " + mails_update.join(", ");
+        }
+
         swal({
             title: "Mails ready to be sent",
-            html: "Do you want to send the invitation mails to the participants right now ?",
+            html: to_who,
             type: "info",
             showCancelButton: true,
             confirmButtonText: "Send the mails",

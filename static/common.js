@@ -222,19 +222,22 @@ function into_code(content) {
         }
         if (content.participants[i].status !== null) {
             switch (content.participants[i].status) {
-                case -1:
+                case -10:
                     row.push("% mail error");
                     break;
                 case 0:
                     row.push("% mail not sent");
                     break;
-                case 1:
+                case 10:
+                    row.push("% update mail not sent");
+                    break;
+                case 20:
                     row.push("% mail sent but no activity from participant");
                     break;
-                case 2:
+                case 30:
                     row.push("% status : participant visited wish page");
                     break;
-                case 3:
+                case 40:
                     row.push("% status : participant modified his/her wish");
                     break;
                 default:
@@ -252,27 +255,30 @@ function into_code(content) {
     for (i = 0; i < content.participants.length; ++i) {
         if (content.participants[i].status !== null) {
             var status = content.participants[i].status;
-            if (status_count[status]) {
+            if (status_count[status] !== null) {
                 status_count[status] += 1;
             } else {
                 status_count[status] = 1;
             }
         }
     }
-    if (status_count[-1]) {
-        code += "\n% mail error: " + status_count[-1];
+    if (status_count[-10]) {
+        code += "\n% mail error: " + status_count[-10];
     }
     if (status_count[0]) {
         code += "\n% mail not sent: " + status_count[0];
     }
-    if (status_count[1]) {
-        code += "\n% mail sent but no activity from participant: " + status_count[1];
+    if (status_count[10]) {
+        code += "\n% update mail not sent: " + status_count[10];
     }
-    if (status_count[2]) {
-        code += "\n% participant visited wish page: " + status_count[2];
+    if (status_count[20]) {
+        code += "\n% mail sent but no activity from participant: " + status_count[20];
     }
-    if (status_count[3]) {
-        code += "\n% participant modified his/her wish: " + status_count[3];
+    if (status_count[30]) {
+        code += "\n% participant visited wish page: " + status_count[30];
+    }
+    if (status_count[40]) {
+        code += "\n% participant modified his/her wish: " + status_count[40];
     }
 
     return code;
