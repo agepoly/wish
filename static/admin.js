@@ -9,7 +9,9 @@ SOCKET.on("get data", function(content, mailing_in_progress) {
 
     var code = into_code(content);
     INPUT_CODE.setValue(code);
-    assign(content);
+
+    RESULT = null;
+    OUTPUT_CODE.setValue("");
 
     document.getElementById("name").innerHTML = Mustache.render("Event name: <strong>{{name}}</strong>", {
         name: content.name
@@ -118,7 +120,7 @@ function initDOM() {
         if (RESULT === null) {
             swal({
                 title: "No results to send",
-                text: "Click on Assign to compute the results",
+                text: "Click on Compute Assignation to compute the results",
                 type: "error",
             });
         } else {

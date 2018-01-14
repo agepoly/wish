@@ -278,7 +278,37 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
     Have a nice day,
     The Wish team`,
             html: `<p>Hi,</p>
-    <p>You have been put in the slot {{slot}} for the event {{event_name}}.</p>
+    <p>You have been put in the slot <strong>{{slot}}</strong> for the event <strong>{{event_name}}</strong>.</p>
+    <p>Have a nice day,<br />
+    The Wish team</p>`
+        };
+
+        var admin_mail = {
+            text: `Hi,
+    The following information have been sent to the participants of the event {{event_name}}.
+
+    {{#result}}
+    {{mail}}  {{slot}}
+    {{/result}}
+
+    Have a nice day,
+    The Wish team`,
+            html: `<p>Hi,</p>
+    <p>The following information have been sent to the participants of the event <strong>{{event_name}}</strong>.</p>
+
+    <table>
+      <tr>
+        <th>mail</th>
+        <th>slot</th>
+      </tr>
+      {{#result}}
+      <tr>
+        <td>{{mail}}</td>
+        <td>{{slot}}</td>
+      </tr>
+      {{/result}}
+    </table>
+
     <p>Have a nice day,<br />
     The Wish team</p>`
         };
@@ -303,6 +333,23 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                 }, check_mail(content.result[i].mail));
             }
 
+            // send mail to admin
+            var values = {
+                event_name: event.name,
+                result: content.result,
+            };
+
+            mailer.send({
+                text: Mustache.render(admin_mail.text, values),
+                from: conf.mail,
+                to: event.admin_mail,
+                subject: "Wish : " + event.name,
+                attachment: [{
+                    data: Mustache.render(admin_mail.html, values),
+                    alternative: true
+                }]
+            }, check_mail(event.admin_mail));
+
             var sent_mails = 0;
             var errors = "";
 
@@ -321,7 +368,7 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                             title: "Mails status",
                             html: Mustache.render("<p>{{sent}} over {{total}} mails sent</p>{{{errors}}}", {
                                 sent: sent_mails,
-                                total: content.result.length,
+                                total: content.result.length + 1,
                                 errors: errors
                             }),
                             type: "error",
@@ -332,10 +379,10 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                             title: "Mails status",
                             html: Mustache.render("{{sent}} over {{total}} mails sent !", {
                                 sent: sent_mails,
-                                total: content.result.length
+                                total: content.result.length + 1
                             }),
                             type: "success",
-                            showConfirmButton: sent_mails == content.result.length
+                            showConfirmButton: sent_mails == content.result.length + 1
                         });
                     }
                 };
