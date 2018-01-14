@@ -2,6 +2,17 @@ var SOCKET = io();
 var INPUT_CODE, OUTPUT_CODE;
 var RESULT = null;
 
+function when_swal_is_ready(fun) {
+    "use strict";
+    if (swal.isVisible()) {
+        setTimeout(function() {
+            when_swal_is_ready(fun);
+        }, 500);
+    } else {
+        fun();
+    }
+}
+
 SOCKET.on('feedback', swal);
 
 SOCKET.on("get data", function(content, mailing_in_progress) {
@@ -19,10 +30,24 @@ SOCKET.on("get data", function(content, mailing_in_progress) {
 
     // 0 == new users
     // 10 == update mail not sent
-    if (!mailing_in_progress && content.participants.some(function(p) { return p.status <= 10; })) {
-        var mails_error = content.participants.filter(function(p) { return p.status < 0; }).map(function(p) { return p.mail; });
-        var mails_new = content.participants.filter(function(p) { return p.status >= 0 && p.status < 10; }).map(function(p) { return p.mail; });
-        var mails_update = content.participants.filter(function(p) { return p.status == 10; }).map(function(p) { return p.mail; });
+    if (!mailing_in_progress && content.participants.some(function(p) {
+            return p.status <= 10;
+        })) {
+        var mails_error = content.participants.filter(function(p) {
+            return p.status < 0;
+        }).map(function(p) {
+            return p.mail;
+        });
+        var mails_new = content.participants.filter(function(p) {
+            return p.status >= 0 && p.status < 10;
+        }).map(function(p) {
+            return p.mail;
+        });
+        var mails_update = content.participants.filter(function(p) {
+            return p.status == 10;
+        }).map(function(p) {
+            return p.mail;
+        });
 
         var to_who = "";
         if (mails_error.length > 0) {
@@ -35,20 +60,22 @@ SOCKET.on("get data", function(content, mailing_in_progress) {
             to_who += "<br />Update mail: " + mails_update.join(", ");
         }
 
-        swal({
-            title: "Mails ready to be sent",
-            html: to_who,
-            type: "info",
-            showCancelButton: true,
-            confirmButtonText: "Send the mails",
-            cancelButtonText: "Later"
-        }).then(function() {
-            SOCKET.emit('set data', {
-                key: window.location.hash.substring(1),
-                slots: content.slots,
-                participants: content.participants
-            }, true);
-        }, function(dismiss) {});
+        when_swal_is_ready(function() {
+            swal({
+                title: "Mails ready to be sent",
+                html: to_who,
+                type: "info",
+                showCancelButton: true,
+                confirmButtonText: "Send the mails",
+                cancelButtonText: "Later"
+            }).then(function() {
+                SOCKET.emit('set data', {
+                    key: window.location.hash.substring(1),
+                    slots: content.slots,
+                    participants: content.participants
+                }, true);
+            }, function(dismiss) {});
+        });
     }
 });
 

@@ -135,6 +135,10 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                     }, function(err, numReplaced) {
                         if (feedback_error(err, numReplaced === 1)) { return; }
 
+                        var total_mails = 0;
+                        var sent_mails = 0;
+                        var errors = "";
+
                         if (send_mails) {
                             var first_mail = {
                                 text: `Hi,
@@ -167,10 +171,6 @@ The Wish team`,
 <p>Have a nice day,<br />
 The Wish team</p>`
                             };
-
-                            var total_mails = 0;
-                            var sent_mails = 0;
-                            var errors = "";
 
                             for (var j = 0; j < content.participants.length; ++j) {
                                 var values = {
@@ -319,9 +319,10 @@ The Wish team</p>`
 
         db.events.findOne({ _id: content.key }, function(err, event) {
             if (feedback_error(err, event !== null)) { return; }
+            var values;
 
             for (var i = 0; i < content.result.length; ++i) {
-                var values = {
+                values = {
                     slot: content.result[i].slot,
                     event_name: event.name,
                 };
@@ -338,7 +339,7 @@ The Wish team</p>`
             }
 
             // send mail to admin
-            var values = {
+            values = {
                 event_name: event.name,
                 result: content.result,
             };
