@@ -1,11 +1,10 @@
 var SOCKET = io();
 var INPUT_CODE, OUTPUT_CODE;
-var FIRST_CALL = true;
 var RESULT = null;
 
 SOCKET.on('feedback', swal);
 
-SOCKET.on("get data", function(content) {
+SOCKET.on("get data", function(content, mailing_in_progress) {
     "use strict";
 
     var code = into_code(content);
@@ -16,10 +15,10 @@ SOCKET.on("get data", function(content) {
         name: content.name
     });
 
-    if (FIRST_CALL && content.participants.some(function(p) { return p.status === 0; })) {
+    if (!mailing_in_progress && content.participants.some(function(p) { return p.status === 0; })) {
         swal({
             title: "Mails ready to be sent",
-            html: "Do you want to send the invitation mails to the participants right now ?<br />Otherwise you can do it later by clicking on <strong>Save &amp; Send mails</strong>.",
+            html: "Do you want to send the invitation mails to the participants right now ?",
             type: "info",
             showCancelButton: true,
             confirmButtonText: "Send the mails",
@@ -29,10 +28,9 @@ SOCKET.on("get data", function(content) {
                 key: window.location.hash.substring(1),
                 slots: content.slots,
                 participants: content.participants
-            });
+            }, true);
         }, function(dismiss) {});
     }
-    FIRST_CALL = false;
 });
 
 if (document.readyState != 'loading') {
@@ -80,14 +78,25 @@ function initDOM() {
         var out = parse(INPUT_CODE.getValue());
 
         if (out.errors.length > 0) {
-            INPUT_CODE.focus();
-            INPUT_CODE.setCursor(out.errors[0].from);
+            var error = out.errors[0];
+
+            swal({
+                title: "Error",
+                html: Mustache.render("At line {{line}}: {{message}}", {
+                    line: error.from.line,
+                    message: error.message
+                }),
+                type: "error",
+            }).then(function() {
+                INPUT_CODE.focus();
+                INPUT_CODE.setCursor(out.errors[0].from);
+            });
         } else {
             SOCKET.emit('set data', {
                 key: window.location.hash.substring(1),
                 slots: out.slots,
                 participants: out.participants
-            });
+            }, false);
         }
     };
     document.getElementById("remind").onclick = function() {

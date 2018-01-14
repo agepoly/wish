@@ -230,6 +230,17 @@ function parse(text) {
                 }
             }
 
+            for (i = 0; i < participants.length; ++i) {
+                if (participants[i].mail == string) {
+                    errors.push({
+                        from: CodeMirror.Pos(l, 0),
+                        to: CodeMirror.Pos(l, c + 1),
+                        message: "This mail appear multiple times"
+                    });
+                    break;
+                }
+            }
+
             participants.push({
                 mail: string,
                 wish: row

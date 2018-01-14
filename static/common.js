@@ -220,7 +220,7 @@ function into_code(content) {
         for (j = 0; j < content.participants[i].wish.length; ++j) {
             row.push(String(content.participants[i].wish[j]));
         }
-        if (content.participants[i].status) {
+        if (content.participants[i].status !== null) {
             switch (content.participants[i].status) {
                 case -1:
                     row.push("% mail error");
@@ -250,7 +250,7 @@ function into_code(content) {
 
     var status_count = [];
     for (i = 0; i < content.participants.length; ++i) {
-        if (content.participants[i].status) {
+        if (content.participants[i].status !== null) {
             var status = content.participants[i].status;
             if (status_count[status]) {
                 status_count[status] += 1;

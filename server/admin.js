@@ -5,7 +5,7 @@ var conf = require("../config.js");
 module.exports = function(socket, db, mailer, connected_admins, feedback_error) {
     "use strict";
 
-    function send_data(key) {
+    function send_data(key, mailing_in_progress) {
         db.events.findOne({ _id: key }, function(err, event) {
             if (feedback_error(err, event !== null)) { return; }
             db.participants.find({ event: key }, function(err, participants) {
@@ -22,7 +22,7 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                     name: event.name,
                     slots: event.slots,
                     participants: participants
-                });
+                }, mailing_in_progress);
             });
         });
     }
@@ -32,10 +32,10 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
             key: key,
             socket: socket
         });
-        send_data(key);
+        send_data(key, false);
     });
 
-    socket.on('set data', function(content) {
+    socket.on('set data', function(content, send_mails) {
         console.log("set data(content = " + JSON.stringify(content) + ")");
 
         db.events.findOne({ _id: content.key }, function(err, event) {
@@ -167,39 +167,41 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                         var sent_mails = 0;
                         var errors = "";
 
-                        for (var j = 0; j < content.participants.length; ++j) {
-                            var values = {
-                                amail: event.admin_mail,
-                                name: event.name,
-                                message: event.message,
-                                url: event.url,
-                                key: content.participants[j]._id
-                            };
+                        if (send_mails) {
+                            for (var j = 0; j < content.participants.length; ++j) {
+                                var values = {
+                                    amail: event.admin_mail,
+                                    name: event.name,
+                                    message: event.message,
+                                    url: event.url,
+                                    key: content.participants[j]._id
+                                };
 
-                            if (content.participants[j].status <= 0) {
-                                total_mails++;
-                                mailer.send({
-                                    text: Mustache.render(first_mail.text, values),
-                                    from: conf.mail,
-                                    to: content.participants[j].mail,
-                                    subject: "Wish : " + event.name,
-                                    attachment: [{
-                                        data: Mustache.render(first_mail.html, values),
-                                        alternative: true
-                                    }]
-                                }, check_mail(content.participants[j]._id, content.participants[j].mail));
-                            } else if (slots_changed) {
-                                total_mails++;
-                                mailer.send({
-                                    text: Mustache.render(recall_mail.text, values),
-                                    from: conf.mail,
-                                    to: content.participants[j].mail,
-                                    subject: "Wish : " + event.name,
-                                    attachment: [{
-                                        data: Mustache.render(recall_mail.html, values),
-                                        alternative: true
-                                    }]
-                                }, check_mail(content.participants[j]._id, content.participants[j].mail));
+                                if (content.participants[j].status <= 0) {
+                                    total_mails++;
+                                    mailer.send({
+                                        text: Mustache.render(first_mail.text, values),
+                                        from: conf.mail,
+                                        to: content.participants[j].mail,
+                                        subject: "Wish : " + event.name,
+                                        attachment: [{
+                                            data: Mustache.render(first_mail.html, values),
+                                            alternative: true
+                                        }]
+                                    }, check_mail(content.participants[j]._id, content.participants[j].mail));
+                                } else if (slots_changed) {
+                                    total_mails++;
+                                    mailer.send({
+                                        text: Mustache.render(recall_mail.text, values),
+                                        from: conf.mail,
+                                        to: content.participants[j].mail,
+                                        subject: "Wish : " + event.name,
+                                        attachment: [{
+                                            data: Mustache.render(recall_mail.html, values),
+                                            alternative: true
+                                        }]
+                                    }, check_mail(content.participants[j]._id, content.participants[j].mail));
+                                }
                             }
                         }
 
@@ -219,6 +221,8 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                                 html: "Information saved.",
                                 type: "success"
                             });
+
+                            send_data(content.key, false);
                         }
 
                         function check_mail(id, mail) {
@@ -255,7 +259,7 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                                         showConfirmButton: sent_mails == total_mails
                                     });
                                 }
-                                send_data(content.key);
+                                send_data(content.key, true);
                             };
                         }
                     });
