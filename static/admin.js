@@ -51,13 +51,19 @@ SOCKET.on("get data", function(content, mailing_in_progress) {
 
         var to_who = "";
         if (mails_error.length > 0) {
-            to_who += "<br />Due to previous errors: " + mails_error.join(", ");
+            to_who += Mustache.render("<br />Due to previous errors: {{mail}}", {
+                mail: mails_error.join(", ")
+            });
         }
         if (mails_new.length > 0) {
-            to_who += "<br />New users: " + mails_new.join(", ");
+            to_who += Mustache.render("<br />New users: {{mail}}", {
+                mail: mails_new.join(", ")
+            });
         }
         if (mails_update.length > 0) {
-            to_who += "<br />Update mail: " + mails_update.join(", ");
+            to_who += Mustache.render("<br />Update mail: {{mail}}", {
+                mail: mails_update.join(", ")
+            });
         }
 
         when_swal_is_ready(function() {
