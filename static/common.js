@@ -220,7 +220,7 @@ function into_code(content) {
         for (j = 0; j < content.participants[i].wish.length; ++j) {
             row.push(String(content.participants[i].wish[j]));
         }
-        if (content.participants[i].status !== null) {
+        if (content.participants[i].status !== undefined) {
             switch (content.participants[i].status) {
                 case -10:
                     row.push("% mail error");
@@ -253,15 +253,16 @@ function into_code(content) {
 
     var status_count = [];
     for (i = 0; i < content.participants.length; ++i) {
-        if (content.participants[i].status !== null) {
+        if (content.participants[i].status !== undefined) {
             var status = content.participants[i].status;
-            if (status_count[status] !== null) {
+            if (status_count[status] !== undefined) {
                 status_count[status] += 1;
             } else {
                 status_count[status] = 1;
             }
         }
     }
+
     if (status_count[-10]) {
         code += "\n% mail error: " + status_count[-10];
     }
