@@ -15,13 +15,14 @@ module.exports = function(socket, db) {
             var i;
             var text = "<ul>";
             for (i = 0; i < events.length; ++i) {
-                text += Mustache.render("<li><a href=\"{{{url}}}/admin.html#{{{key}}}\"><strong>{{name}}</strong></a> (admin: {{mail}}, {{nparticipants}} participants): {{message}}</li>", {
+                text += Mustache.render("<li>{{date}} <a href=\"{{{url}}}/admin.html#{{{key}}}\"><strong>{{name}}</strong></a> (admin: {{mail}}, {{nparticipants}} participants): {{message}}</li>", {
                     name: events[i].name,
                     mail: events[i].admin_mail,
                     message: events[i].message,
                     nparticipants: events[i].participants.length,
                     url: events[i].url,
-                    key: events[i]._id
+                    key: events[i]._id,
+                    date: new Date(events[i].creation_time).toDateString(),
                 });
             }
             text += "</ul>";
