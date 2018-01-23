@@ -145,14 +145,14 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
 You have been invited by {{{amail}}} to give your wishes about the event : {{{name}}}
 {{{message}}}
 
-{{{url}}}/wish.html#{{{key}}}
+{{{url}}}/wish#{{{key}}}
 
 Have a nice day,
 The Wish team`,
                                 html: `<p>Hi,</p>
 <p>You have been invited by {{amail}} to give your wishes about the event : <strong>{{name}}</strong></p><br />
 <pre>{{message}}</pre>
-<p><a href="{{{url}}}/wish.html#{{{key}}}">Click here</a> to set your wishes.</p>
+<p><a href="{{{url}}}/wish#{{{key}}}">Click here</a> to set your wishes.</p>
 <p>Have a nice day,<br />
 The Wish team</p>`
                             };
@@ -161,13 +161,13 @@ The Wish team</p>`
 The adimistrator ({{{amail}}}) of the event {{{name}}} has modified the slots.
 Please look at your wish.
 
-{{{url}}}/wish.html#{{{key}}}
+{{{url}}}/wish#{{{key}}}
 
 Have a nice day,
 The Wish team`,
                                 html: `<p>Hi,</p>
 <p>The adimistrator ({{amail}}) of the event <strong>{{name}}</strong> has modified the slots.</p>
-<p>Please look at <a href="{{{url}}}/wish.html#{{{key}}}">your wish</a>.</p>
+<p>Please look at <a href="{{{url}}}/wish#{{{key}}}">your wish</a>.</p>
 <p>Have a nice day,<br />
 The Wish team</p>`
                             };
@@ -401,12 +401,12 @@ The Wish team</p>`
         var mail = {
             text: `Hi,
 Dont forget to fill your wish for the event {{{name}}},
-{{{url}}}/wish.html#{{{key}}}
+{{{url}}}/wish#{{{key}}}
 
 Have a nice day,
 The Wish team`,
             html: `<p>Hi,</p>
-<p>Dont forget to fill <a href="{{{url}}}/wish.html#{{{key}}}">your wish</a> for the event {{name}}.</p>
+<p>Dont forget to fill <a href="{{{url}}}/wish#{{{key}}}">your wish</a> for the event {{name}}.</p>
 <p>Have a nice day,<br />
 The Wish team</p>`
         };

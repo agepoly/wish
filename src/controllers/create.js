@@ -58,7 +58,7 @@ module.exports = function(socket, db, mailer, feedback_error) {
                             text: Mustache.render(`Hi,
 An event has been created with your email address.
 If you are not concerned, please do not click on the following url.
-To administrate the activity, go to the following url : {{url}}/admin.html#{{key}}
+To administrate the activity, go to the following url : {{url}}/admin#{{key}}
 
 Have a nice day,
 The Wish team`, {
@@ -72,7 +72,7 @@ The Wish team`, {
                                 data: Mustache.render(`<p>Hi,</p>
 <p>An event has been created with your email address.<br />
 <strong>If you are not concerned, please do not click on the following url.</strong><br />
-<a href="{{url}}/admin.html#{{key}}">Click here</a> to administrate the activity.</p>
+<a href="{{url}}/admin#{{key}}">Click here</a> to administrate the activity.</p>
 
 <p>Have a nice day,<br />
 The Wish team</p>`, {

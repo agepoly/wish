@@ -11,11 +11,36 @@ require('./util/array_equal.js')();
 var app = express();
 var server = http.createServer(app);
 
-app.use(express.static(__dirname + '/static'));
+app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(req, res) {
     "use strict";
-    res.sendFile(__dirname + '/static/home.html');
+    res.sendFile(__dirname + '/public/html/home.html');
+});
+
+app.get('/admin(.html)?', function(req, res) {
+    "use strict";
+    res.sendFile(__dirname + '/public/html/admin.html');
+});
+
+app.get('/wish(.html)?', function(req, res) {
+    "use strict";
+    res.sendFile(__dirname + '/public/html/wish.html');
+});
+
+app.get('/help(.html)?', function(req, res) {
+    "use strict";
+    res.sendFile(__dirname + '/public/html/help.html');
+});
+
+app.get('/history(.html)?', function(req, res) {
+    "use strict";
+    res.sendFile(__dirname + '/public/html/history.html');
+});
+
+app.get('/offline(.html)?', function(req, res) {
+    "use strict";
+    res.sendFile(__dirname + '/public/html/offline.html');
 });
 
 /* Database */
@@ -77,10 +102,10 @@ io.on('connection', function(socket) {
         return false;
     }
 
-    require('./server/create.js')(socket, db, mailer, feedback_error);
-    require('./server/wish.js')(socket, db, connected_admins, feedback_error);
-    require('./server/admin.js')(socket, db, mailer, connected_admins, feedback_error);
-    require('./server/history.js')(socket, db);
+    require('./controllers/create.js')(socket, db, mailer, feedback_error);
+    require('./controllers/wish.js')(socket, db, connected_admins, feedback_error);
+    require('./controllers/admin.js')(socket, db, mailer, connected_admins, feedback_error);
+    require('./controllers/history.js')(socket, db);
 });
 
 /* Run the server */
@@ -90,21 +115,3 @@ server.listen(serverPort, function() {
     "use strict";
     console.log("listening on port " + serverPort);
 });
-
-
-
-/* for https
-$ openssl genrsa 1024 > file.pem
-$ openssl req -new -key file.pem -out csr.pem
-$ openssl x509 -req -days 365 -in csr.pem -signkey file.pem -out file.crt
-*/
-/*
-var fs = require('fs');
-var https = require('https');
-var options = {
-    key: fs.readFileSync('./file.pem'),
-    cert: fs.readFileSync('./file.crt')
-};
-var serverPort = 443;
-var server = https.createServer(options, app);
-*/

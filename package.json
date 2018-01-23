@@ -1,8 +1,8 @@
 {
     "name": "wish",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "website to solve assignment problem",
-    "main": "index.js",
+    "main": "src/index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
@@ -15,7 +15,7 @@
     "bugs": {
         "url": "https://github.com/agepoly/wish/issues"
     },
-    "homepage": "https://github.com/agepoly/wish#readme",
+    "homepage": "https://wish.agepoly.ch",
     "dependencies": {
         "emailjs": "^1.0.8",
         "express": "^4.14.1",
