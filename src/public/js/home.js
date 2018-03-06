@@ -32,7 +32,10 @@ function init() {
     document.getElementById('mails').value = localStorage.mails || "";
     document.getElementById('mails').onchange = function(event) {
         localStorage.mails = event.target.value;
+    };
+    document.getElementById('mails').oninput = function(event) {
         count_participants();
+        check_validity();
     };
 
     document.getElementById('message').value = localStorage.message || "";
