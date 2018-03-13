@@ -37,13 +37,14 @@ function init(content) {
     document.getElementById('mail').innerHTML = content.mail;
     document.getElementById('name').innerHTML = Mustache.render('<b>Activity name: </b> {{name}}', { name: content.name });
 
-    var html = '<table class="u-full-width"><thead><tr><th>Slot</th><th>Your Wish</th></tr></thead><tbody>';
+    var html = '<table class="u-full-width">  <col><col width="220px"><thead><tr><th>Slot</th><th>Your Wish</th></tr></thead><tbody>';
+    var max = content.slots.length - 1;
     for (i = 0; i < content.slots.length; ++i) {
-        html += Mustache.render('<tr><td>{{name}}</td><td>Preferred <input id="wish{{no}}" type="range" min="0" max="{{max}}" step="1" value="{{value}}"> Unwanted</td></tr>', {
+        html += Mustache.render('<tr><td>{{name}}</td><td>&#9785; <input id="wish{{no}}" type="range" min="0" max="{{max}}" step="1" value="{{value}}"> &#9825;</td></tr>', {
             name: content.slots[i].name,
             no: i,
-            max: content.slots.length - 1,
-            value: wish[i]
+            max: max,
+            value: max - wish[i]
         });
     }
     html += '</tbody></table>';
@@ -52,10 +53,10 @@ function init(content) {
     for (i = 0; i < content.slots.length; ++i) {
         var input = document.getElementById('wish' + i);
         input.onchange = slider_moved;
-        if (input.value != wish[i]) {
+        if (input.value != input.max - wish[i]) {
             swal('Value out of bounds', Mustache.render('The value in the slot <strong>{{slot}}</strong> is out of bounds.</br>By saving, you put it back in the ranges.', { slot: content.slots[i].name }));
         }
-        wish[i] = Number(input.value);
+        wish[i] = Number(input.max) - Number(input.value);
     }
 }
 
@@ -65,7 +66,8 @@ function slider_moved(event) {
 
 
     var slot = Number(event.target.id.substring(4));
-    var value = Number(event.target.value);
+    var max = Number(event.target.max);
+    var value = max - Number(event.target.value);
     console.log("slot = " + slot + " value = " + value);
 
     for (var v = wish[slot] + 1; v <= value; ++v) {
@@ -80,7 +82,7 @@ function slider_moved(event) {
             for (i = 0; i < wish.length; ++i) {
                 if (i == slot) continue;
                 if (wish[i] == v) {
-                    document.getElementById('wish' + i).value = v - 1;
+                    document.getElementById('wish' + i).value = max - (v - 1);
                     wish[i] = v - 1;
                     break;
                 }
