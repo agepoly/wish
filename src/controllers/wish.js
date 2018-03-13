@@ -1,4 +1,6 @@
 /* jshint esversion: 6 */
+//@ts-check
+
 module.exports = function(socket, db, connected_admins, feedback_error) {
     "use strict";
     socket.on('get wish', function(key) {
@@ -11,7 +13,7 @@ module.exports = function(socket, db, connected_admins, feedback_error) {
                 if (event.slots.length != participant.wish.length) {
                     console.log("error (event.slots.length != participant.wish.length) event = " + JSON.stringify(event) + " and participant = " + JSON.stringify(participant));
                     participant.wish = [];
-                    for (i = 0; i < event.slots.length; ++i) {
+                    for (let i = 0; i < event.slots.length; ++i) {
                         participant.wish[i] = 0;
                     }
                 }

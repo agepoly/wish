@@ -1,4 +1,6 @@
 /* jshint esversion: 6 */
+//@ts-check
+
 var Mustache = require('mustache');
 var conf = require("../config.js");
 

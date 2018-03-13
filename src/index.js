@@ -1,4 +1,5 @@
 /* jshint esversion: 6 */
+//@ts-check
 
 var Datastore = require('nedb');
 var email = require("emailjs");
