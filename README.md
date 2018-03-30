@@ -6,9 +6,18 @@ download the dependances
 
     npm install
 
-add configuration file
+add configuration file `src/config.js`
 
-    echo "module.exports = { mail: \"Wish <wish@epfl.ch>\", user: \"jojo\", password: \"1234\", host: \"mail.school.com\", port: 465, history_password: \"1234\" };" > src/config.js
+```js
+module.exports = {
+    mail: "Wish <wish@epfl.ch>",
+    user: "jojo",
+    password: "1234",
+    host: "mail.school.com",
+    port: 465,
+    history_password: "1234"
+};
+```
 
 run the server
 
