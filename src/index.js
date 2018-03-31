@@ -1,7 +1,8 @@
 /* jshint esversion: 6 */
 //@ts-check
 
-var Datastore = require('nedb');
+var MongoClient = require('mongodb').MongoClient;
+var Logger = require('mongodb').Logger;
 var email = require("emailjs");
 var conf = require("./config.js");
 var http = require('http');
@@ -14,49 +15,35 @@ var server = http.createServer(app);
 
 app.use(express.static(__dirname + '/public'));
 
-app.get('/', function(req, res) {
+app.get('/', function (req, res) {
     "use strict";
     res.sendFile(__dirname + '/public/html/home.html');
 });
 
-app.get('/admin(.html)?', function(req, res) {
+app.get('/admin(.html)?', function (req, res) {
     "use strict";
     res.sendFile(__dirname + '/public/html/admin.html');
 });
 
-app.get('/wish(.html)?', function(req, res) {
+app.get('/wish(.html)?', function (req, res) {
     "use strict";
     res.sendFile(__dirname + '/public/html/wish.html');
 });
 
-app.get('/help(.html)?', function(req, res) {
+app.get('/help(.html)?', function (req, res) {
     "use strict";
     res.sendFile(__dirname + '/public/html/help.html');
 });
 
-app.get('/history(.html)?', function(req, res) {
+app.get('/history(.html)?', function (req, res) {
     "use strict";
     res.sendFile(__dirname + '/public/html/history.html');
 });
 
-app.get('/offline(.html)?', function(req, res) {
+app.get('/offline(.html)?', function (req, res) {
     "use strict";
     res.sendFile(__dirname + '/public/html/offline.html');
 });
-
-/* Database */
-var db = {
-    events: new Datastore({
-        filename: 'events.db',
-        autoload: true
-    }),
-    participants: new Datastore({
-        filename: 'participants.db',
-        autoload: true
-    })
-};
-db.events.persistence.setAutocompactionInterval(24 * 3600 * 1000);
-db.participants.persistence.setAutocompactionInterval(24 * 3600 * 1000);
 
 /* Mailer */
 var mailer = email.server.connect({
@@ -72,10 +59,12 @@ var io = require('socket.io')(server);
 
 var connected_admins = [];
 
-io.on('connection', function(socket) {
+var db;
+
+io.on('connection', function (socket) {
     "use strict";
 
-    socket.on('disconnect', function() {
+    socket.on('disconnect', function () {
         for (var i = 0; i < connected_admins.length; ++i) {
             if (connected_admins[i].socket === socket) {
                 connected_admins.splice(i, 1);
@@ -109,10 +98,18 @@ io.on('connection', function(socket) {
     require('./controllers/history.js')(socket, db);
 });
 
-/* Run the server */
-var serverPort = Number(process.argv[2]) || 3000;
+MongoClient.connect(conf.mongodb_url, (err, client) => {
+    if (err) return console.log(err)
+    db = client.db('wish')
 
-server.listen(serverPort, function() {
-    "use strict";
-    console.log("listening on port " + serverPort);
+    Logger.setLevel('debug');
+    Logger.filter('class', ['Db']);
+
+    /* Run the server */
+    var serverPort = Number(process.argv[2]) || 3000;
+
+    server.listen(serverPort, function () {
+        "use strict";
+        console.log("listening on port " + serverPort);
+    });
 });

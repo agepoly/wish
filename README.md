@@ -15,7 +15,8 @@ module.exports = {
     password: "1234",
     host: "mail.school.com",
     port: 465,
-    history_password: "1234"
+    history_password: "1234",
+    mongodb_url: "mongodb://localhost:27017/"
 };
 ```
 
