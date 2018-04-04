@@ -14,32 +14,32 @@ function init() {
     document.getElementById('clear').onclick = clear;
 
     document.getElementById('name').value = localStorage.name || "";
-    document.getElementById('name').onchange = function(event) {
+    document.getElementById('name').onchange = function (event) {
         localStorage.name = event.target.value;
     };
 
     document.getElementById('nslots').value = localStorage.nslots || "2";
-    document.getElementById('nslots').onchange = function(event) {
+    document.getElementById('nslots').onchange = function (event) {
         localStorage.nslots = event.target.value;
         create_slots();
     };
 
     document.getElementById('admin_mail').value = localStorage.admin_mail || "";
-    document.getElementById('admin_mail').onchange = function(event) {
+    document.getElementById('admin_mail').onchange = function (event) {
         localStorage.admin_mail = event.target.value;
     };
 
     document.getElementById('mails').value = localStorage.mails || "";
-    document.getElementById('mails').onchange = function(event) {
+    document.getElementById('mails').onchange = function (event) {
         localStorage.mails = event.target.value;
     };
-    document.getElementById('mails').oninput = function(event) {
+    document.getElementById('mails').oninput = function (event) {
         count_participants();
         check_validity();
     };
 
     document.getElementById('message').value = localStorage.message || "";
-    document.getElementById('message').onchange = function(event) {
+    document.getElementById('message').onchange = function (event) {
         localStorage.message = event.target.value;
     };
 
@@ -49,7 +49,7 @@ function init() {
 
 function count_participants() {
     "use strict";
-    var mails_list = mails.value.split(/[\s,;]+/).filter(function(x) { return x !== ''; });
+    var mails_list = mails.value.split(/[\s,;]+/).filter(function (x) { return x !== ''; });
     document.getElementById('participants_counter').innerText = mails_list.length + " participants";
 }
 
@@ -63,7 +63,7 @@ function send() {
     var slots = get_slots();
 
     var mails = document.getElementById('mails').value;
-    mails = mails.split(/[\s,;]+/).filter(function(x) {
+    mails = mails.split(/[\s,;]+/).filter(function (x) {
         return x !== '';
     });
 
@@ -159,7 +159,7 @@ function check_validity() {
             valid = false;
         }
 
-        var mails_list = mails.value.split(/[\s,;]+/).filter(function(x) { return x !== ''; });
+        var mails_list = mails.value.split(/[\s,;]+/).filter(function (x) { return x !== ''; });
 
         if (mails_list.length > total_vmax) {
             for (j = 0; j < n; ++j) {
@@ -245,10 +245,18 @@ function create_slots() {
         content += Mustache.render(document.getElementById("slots_entry").innerHTML, must);
     }
     document.getElementById('slots').innerHTML = content;
+
+    var check_and_save = function () {
+        if (document.getElementById('mails_error').innerText != "") {
+            check_validity();
+        }
+        save_slots_in_local_storage();
+    };
+
     for (i = 0; i < n; ++i) {
-        document.getElementById('slot' + i).onchange = save_slots_in_local_storage;
-        document.getElementById('vmin' + i).onchange = save_slots_in_local_storage;
-        document.getElementById('vmax' + i).onchange = save_slots_in_local_storage;
+        document.getElementById('slot' + i).onchange = check_and_save;
+        document.getElementById('vmin' + i).onchange = check_and_save;
+        document.getElementById('vmax' + i).onchange = check_and_save;
     }
 }
 
