@@ -11,9 +11,9 @@ module.exports = function(socket, db) {
         if (password != conf.history_password) {
             return;
         }
-        db.events.find({}).sort({
+        db.collection("events").find({}).sort({
             creation_time: -1
-        }).exec(function(err, events) {
+        }).toArray(function(err, events) {
             var i;
             var text = "<ul>";
             for (i = 0; i < events.length; ++i) {

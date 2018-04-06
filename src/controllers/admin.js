@@ -3,21 +3,24 @@
 
 var Mustache = require('mustache');
 var conf = require("../config.js");
+var crypto = require("crypto");
 
-module.exports = function(socket, db, mailer, connected_admins, feedback_error) {
+module.exports = function (socket, db, mailer, connected_admins, feedback_error) {
     "use strict";
 
     function send_data(key, mailing_in_progress) {
-        db.events.findOne({ _id: key }, function(err, event) {
+        db.collection("events").findOne({ _id: key }, null, function (err, event) {
             if (feedback_error(err, event !== null)) { return; }
-            db.participants.find({ event: key }, function(err, participants) {
-                if (feedback_error(err)) { return; }
 
+            db.collection("participants").find({ event: key }).toArray(function (err, participants) {
                 // because participants can be removed in the event we have to filter
-                participants = participants.filter(function(p) {
-                    return event.participants.indexOf(p._id) !== -1;
+                participants = participants.filter(function (p) {
+                    for (var i = 0; i < event.participants.length; ++i) {
+                        if (event.participants[i] === p._id) return true;
+                    }
+                    return false;
                 });
-                participants.sort(function(p1, p2) {
+                participants.sort(function (p1, p2) {
                     return p1.mail < p2.mail ? -1 : 1;
                 });
                 socket.emit('get data', {
@@ -29,7 +32,7 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
         });
     }
 
-    socket.on('get data', function(key) {
+    socket.on('get data', function (key) {
         connected_admins.push({
             key: key,
             socket: socket
@@ -37,10 +40,10 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
         send_data(key, false);
     });
 
-    socket.on('set data', function(content, send_mails) {
+    socket.on('set data', function (content, send_mails) {
         console.log("set data(content = " + JSON.stringify(content) + ")");
 
-        db.events.findOne({ _id: content.key }, function(err, event) {
+        db.collection("events").findOne({ _id: content.key }, null, function (err, event) {
             if (feedback_error(err, event !== null)) { return; }
             var i;
             var vmin = 0,
@@ -86,27 +89,38 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
 
             function addParticipant(i) {
                 if (i < content.participants.length) {
-                    db.participants.findOne({
+                    db.collection("participants").findOne({
                         mail: content.participants[i].mail,
                         event: event._id
-                    }, function(err, participant) {
+                    }, null, function (err, participant) {
                         if (feedback_error(err)) { return; }
                         if (participant === null) {
                             // create a new one
-                            db.participants.insert({
-                                mail: content.participants[i].mail,
-                                wish: content.participants[i].wish,
-                                event: event._id,
-                                status: 0 // 0 == mail not sent
-                            }, function(err, newParticipant) {
-                                if (feedback_error(err)) { return; }
+                            insert_participant();
 
-                                content.participants[i]._id = newParticipant._id;
-                                content.participants[i].status = newParticipant.status;
+                            function insert_participant() {
+                                db.collection("participants").insertOne({
+                                    _id: crypto.randomBytes(20).toString('hex'),
+                                    mail: content.participants[i].mail,
+                                    wish: content.participants[i].wish,
+                                    event: event._id,
+                                    status: 0 // 0 == mail not sent
+                                }, function (err, res) {
+                                    if (err !== null && err.code === 11000) {
+                                        insert_participant();
+                                        return;
+                                    }
+                                    if (feedback_error(err)) { return; }
 
-                                event.participants.push(newParticipant._id);
-                                addParticipant(i + 1);
-                            });
+                                    var newParticipant = res.ops[0];
+
+                                    content.participants[i]._id = newParticipant._id;
+                                    content.participants[i].status = newParticipant.status;
+
+                                    event.participants.push(newParticipant._id);
+                                    addParticipant(i + 1);
+                                });
+                            }
                         } else {
                             if (slots_changed && participant.status > 10) {
                                 participant.status = 10; // 10 == update mail not sent
@@ -116,10 +130,10 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                             content.participants[i].status = participant.status;
 
                             event.participants.push(participant._id);
-                            db.participants.update({ _id: participant._id }, {
+                            db.collection("participants").updateOne({ _id: participant._id }, {
                                 $set: { wish: content.participants[i].wish, status: participant.status }
-                            }, function(err, numReplaced) {
-                                if (feedback_error(err, numReplaced === 1)) { return; }
+                            }, null, function (err, res) {
+                                if (feedback_error(err, res.matchedCount === 1)) { return; }
 
                                 addParticipant(i + 1);
                             });
@@ -129,13 +143,13 @@ module.exports = function(socket, db, mailer, connected_admins, feedback_error) 
                     // all participants added
                     // event.slots and event.participants contain the fresh values
                     // content.participants contains the full&fresh participants values
-                    db.events.update({ _id: event._id }, {
+                    db.collection("events").updateOne({ _id: event._id }, {
                         $set: {
                             participants: event.participants,
                             slots: event.slots
                         }
-                    }, function(err, numReplaced) {
-                        if (feedback_error(err, numReplaced === 1)) { return; }
+                    }, null, function (err, res) {
+                        if (feedback_error(err, res.matchedCount === 1)) { return; }
 
                         var total_mails = 0;
                         var sent_mails = 0;
@@ -232,16 +246,16 @@ The Wish team</p>`
                         }
 
                         function check_mail(id, mail) {
-                            return function(err, message) {
+                            return function (err, message) {
                                 if (err) {
                                     errors += Mustache.render("<p>Error with <strong>{{mail}}</strong>: <i>{{error}}</i>", {
                                         mail: mail,
                                         error: String(err)
                                     });
-                                    db.participants.update({ _id: id }, { $set: { status: -10 } }); // -10 == error mail
+                                    db.collection("participants").updateOne({ _id: id }, { $set: { status: -10 } }); // -10 == error mail
                                 } else {
                                     sent_mails++;
-                                    db.participants.update({ _id: id }, { $set: { status: 20 } }); // 20 == mail sent but no activity
+                                    db.collection("participants").updateOne({ _id: id }, { $set: { status: 20 } }); // 20 == mail sent but no activity
                                 }
                                 if (errors) {
                                     socket.emit('feedback', {
@@ -274,7 +288,7 @@ The Wish team</p>`
         });
     });
 
-    socket.on("send results", function(content) {
+    socket.on("send results", function (content) {
         console.log("send results(content = " + JSON.stringify(content) + ")");
 
         var mail = {
@@ -319,7 +333,7 @@ The Wish team`,
 The Wish team</p>`
         };
 
-        db.events.findOne({ _id: content.key }, function(err, event) {
+        db.collection("events").findOne({ _id: content.key }, function (err, event) {
             if (feedback_error(err, event !== null)) { return; }
             var values;
 
@@ -361,7 +375,7 @@ The Wish team</p>`
             var errors = "";
 
             function check_mail(mail) {
-                return function(err, message) {
+                return function (err, message) {
                     if (err) {
                         errors += Mustache.render("<p>Error with <strong>{{mail}}</strong>: <i>{{error}}</i>", {
                             mail: mail,
@@ -397,7 +411,7 @@ The Wish team</p>`
         });
     });
 
-    socket.on("remind", function(content) {
+    socket.on("remind", function (content) {
         console.log("remind(content = " + JSON.stringify(content) + ")");
 
         var mail = {
@@ -413,10 +427,10 @@ The Wish team`,
 The Wish team</p>`
         };
 
-        db.events.findOne({ _id: content.key }, function(err, event) {
+        db.collection("events").findOne({ _id: content.key }, function (err, event) {
             if (feedback_error(err, event !== null)) { return; }
             // 30 == participant visited wish page
-            db.participants.find({ _id: { $in: event.participants }, status: { $lt: 35 } }, function(err, participants) {
+            db.collection("participants").find({ _id: { $in: event.participants }, status: { $lt: 35 } }).toArray(function (err, participants) {
 
                 if (participants.length > 0) {
                     socket.emit('feedback', {
@@ -431,6 +445,9 @@ The Wish team</p>`
                         text: "All the participants have already fill their wishes.",
                     });
                 }
+
+                var sent_mails = 0;
+                var errors = "";
 
                 for (var i = 0; i < participants.length; ++i) {
                     var values = {
@@ -450,21 +467,18 @@ The Wish team</p>`
                     }, check_mail(participants[i]._id, participants[i].mail));
                 }
 
-                var sent_mails = 0;
-                var errors = "";
-
                 function check_mail(id, mail) {
-                    return function(err, message) {
+                    return function (err, message) {
                         if (err) {
                             errors += Mustache.render("<p>Error with <strong>{{mail}}</strong>: <i>{{error}}</i>", {
                                 mail: mail,
                                 error: String(err)
                             });
-                            db.participants.update({ _id: id }, { $set: { status: -10 } }); // -10 == mail error
+                            db.collection("participants").updateOne({ _id: id }, { $set: { status: -10 } }); // -10 == mail error
                         } else {
                             sent_mails++;
                             // 20 == mail sent but no activity from participant
-                            db.participants.update({ _id: id, status: { $lt: 20 } }, { $set: { status: 20 } });
+                            db.collection("participants").updateOne({ _id: id, status: { $lt: 20 } }, { $set: { status: 20 } });
                         }
                         if (errors) {
                             socket.emit('feedback', {
