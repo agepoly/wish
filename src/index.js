@@ -99,8 +99,9 @@ io.on('connection', function (socket) {
 });
 
 MongoClient.connect(conf.mongodb_url, (err, client) => {
-    if (err) return console.log(err)
-    db = client.db('wish')
+    "use strict";
+    if (err) return console.log(err);
+    db = client.db('wish');
 
     Logger.setLevel('debug');
     Logger.filter('class', ['Db']);
@@ -109,7 +110,6 @@ MongoClient.connect(conf.mongodb_url, (err, client) => {
     var serverPort = Number(process.argv[2]) || 3000;
 
     server.listen(serverPort, function () {
-        "use strict";
         console.log("listening on port " + serverPort);
     });
 });

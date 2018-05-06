@@ -14,6 +14,8 @@ module.exports = function(socket, db) {
         db.collection("events").find({}).sort({
             creation_time: -1
         }).toArray(function(err, events) {
+            console.log(err);
+            console.log(events);
             var i;
             var text = "<ul>";
             for (i = 0; i < events.length; ++i) {
