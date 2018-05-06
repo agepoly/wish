@@ -22,6 +22,7 @@ function init() {
     document.getElementById('nslots').onchange = function (event) {
         localStorage.nslots = event.target.value;
         create_slots();
+        check_validity();
     };
 
     document.getElementById('admin_mail').value = localStorage.admin_mail || "";
@@ -247,9 +248,9 @@ function create_slots() {
     document.getElementById('slots').innerHTML = content;
 
     var check_and_save = function () {
-        if (document.getElementById('mails_error').innerText != "") {
-            check_validity();
-        }
+        // if (document.getElementById('mails_error').innerText != "") {
+        check_validity();
+        // }
         save_slots_in_local_storage();
     };
 
