@@ -145,7 +145,7 @@ function initDOM() {
             });
         } else {
             SOCKET.emit('set data', {
-                key: window.location.hash.substring(1),
+                key: window.location.hash.substring(1) + window.location.search.substring(1),
                 slots: out.slots,
                 participants: out.participants
             }, false);
@@ -153,7 +153,7 @@ function initDOM() {
     };
     document.getElementById("remind").onclick = function() {
         SOCKET.emit('remind', {
-            key: window.location.hash.substring(1)
+            key: window.location.hash.substring(1) + window.location.search.substring(1)
         });
     };
     document.getElementById("assign").onclick = function() {
@@ -175,7 +175,7 @@ function initDOM() {
             });
         } else {
             SOCKET.emit('send results', {
-                key: window.location.hash.substring(1),
+                key: window.location.hash.substring(1) + window.location.search.substring(1),
                 result: RESULT
             });
         }
@@ -190,7 +190,7 @@ function initDOM() {
         p.hidden = false;
     });
 
-    SOCKET.emit("get data", window.location.hash.substring(1));
+    SOCKET.emit("get data", window.location.hash.substring(1) + window.location.search.substring(1));
 }
 
 function assign(content) {

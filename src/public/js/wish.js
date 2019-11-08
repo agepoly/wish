@@ -18,7 +18,7 @@ socket.on('feedback', function(content) {
     document.getElementById('save').value = "Save";
 });
 
-socket.emit("get wish", window.location.hash.substring(1));
+socket.emit("get wish", window.location.hash.substring(1) + window.location.search.substring(1));
 
 function init(content) {
     "use strict";
@@ -30,7 +30,7 @@ function init(content) {
         document.getElementById('save').value = "Please wait...";
 
         socket.emit("set wish", {
-            key: window.location.hash.substring(1),
+            key: window.location.hash.substring(1) + window.location.search.substring(1),
             wish: wish
         });
     };

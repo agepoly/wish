@@ -19,7 +19,7 @@ module.exports = function(socket, db) {
             var i;
             var text = "<ul>";
             for (i = 0; i < events.length; ++i) {
-                text += Mustache.render("<li>{{date}} <a href=\"{{{url}}}/admin#{{{key}}}\"><strong>{{name}}</strong></a> (admin: {{mail}}, {{nparticipants}} participants): {{message}}</li>", {
+                text += Mustache.render("<li>{{date}} <a href=\"{{{url}}}/admin?{{{key}}}\"><strong>{{name}}</strong></a> (admin: {{mail}}, {{nparticipants}} participants): {{message}}</li>", {
                     name: events[i].name,
                     mail: events[i].admin_mail,
                     message: events[i].message,

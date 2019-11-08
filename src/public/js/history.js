@@ -11,7 +11,7 @@ socket.on("get history", function(content) {
     }
 });
 
-socket.emit("ask history", window.location.hash.substring(1));
+socket.emit("ask history", window.location.search.substring(1));
 
 function init(content) {
     "use strict";
