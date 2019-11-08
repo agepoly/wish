@@ -76,7 +76,7 @@ SOCKET.on("get data", function(content, mailing_in_progress) {
                 cancelButtonText: "Later"
             }).then(function() {
                 SOCKET.emit('set data', {
-                    key: window.location.hash.substring(1),
+                    key: window.location.hash.substring(1) + window.location.search.substring(1),
                     slots: content.slots,
                     participants: content.participants
                 }, true);
