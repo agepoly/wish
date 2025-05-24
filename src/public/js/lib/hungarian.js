@@ -25,21 +25,19 @@
 
 "use strict";
 
-
-
 /// Create a new array and prefill
 /// with an initial value.
 /// @param array The desired array length.
 /// @param value The value to be assigned.
 /// @returns A new array filled with initial values
 function NewArray(length, value) {
-    var array = new Array(length);
+  var array = new Array(length);
 
-    for (var i = 0; i < length; ++i) {
-        array[i] = value;
-    }
+  for (var i = 0; i < length; ++i) {
+    array[i] = value;
+  }
 
-    return array;
+  return array;
 }
 
 /// Fill an array with a given value.
@@ -47,9 +45,9 @@ function NewArray(length, value) {
 /// @param value The value to be assigned.
 /// @returns The given array, filled with value
 function ArrayFill(array, value) {
-    for (var i = 0; i < array.length; ++i) {
-        array[i] = value;
-    }
+  for (var i = 0; i < array.length; ++i) {
+    array[i] = value;
+  }
 }
 
 /// Copy an array to a certain length. If the source
@@ -60,13 +58,13 @@ function ArrayFill(array, value) {
 /// @param value The to be repeated padding value.
 /// @returns A copy whose length is as specified.
 function ArrayCopy(array, length, value) {
-    var copy = array.slice(0, length);
+  var copy = array.slice(0, length);
 
-    while (copy.length < length) {
-        copy.push(value);
-    }
+  while (copy.length < length) {
+    copy.push(value);
+  }
 
-    return copy;
+  return copy;
 }
 
 /**
@@ -94,32 +92,32 @@ function ArrayCopy(array, length, value) {
  * @author Kevin L. Stern
  */
 function Hungarian(costMatrix) {
-    this.dim = Math.max(costMatrix.length, costMatrix[0].length);
-    this.rows = costMatrix.length;
-    this.cols = costMatrix[0].length;
+  this.dim = Math.max(costMatrix.length, costMatrix[0].length);
+  this.rows = costMatrix.length;
+  this.cols = costMatrix[0].length;
 
-    this.costMatrix = [];
+  this.costMatrix = [];
 
-    //
-    for (var w = 0; w < this.dim; w++) {
-        if (w < costMatrix.length) {
-            if (costMatrix[w].length != this.cols) {
-                throw new Error("Irregular cost matrix");
-            }
-            this.costMatrix[w] = ArrayCopy(costMatrix[w], this.dim, 0.0);
-        } else {
-            this.costMatrix[w] = NewArray(this.dim, 0.0);
-        }
+  //
+  for (var w = 0; w < this.dim; w++) {
+    if (w < costMatrix.length) {
+      if (costMatrix[w].length != this.cols) {
+        throw new Error("Irregular cost matrix");
+      }
+      this.costMatrix[w] = ArrayCopy(costMatrix[w], this.dim, 0.0);
+    } else {
+      this.costMatrix[w] = NewArray(this.dim, 0.0);
     }
+  }
 
-    this.labelByWorker = NewArray(this.dim, 0.0);
-    this.labelByJob = NewArray(this.dim, 0.0);
-    this.minSlackWorkerByJob = NewArray(this.dim, 0);
-    this.minSlackValueByJob = NewArray(this.dim, 0.0);
-    this.committedWorkers = NewArray(this.dim, false);
-    this.parentWorkerByCommittedJob = NewArray(this.dim, 0);
-    this.matchJobByWorker = NewArray(this.dim, -1);
-    this.matchWorkerByJob = NewArray(this.dim, -1);
+  this.labelByWorker = NewArray(this.dim, 0.0);
+  this.labelByJob = NewArray(this.dim, 0.0);
+  this.minSlackWorkerByJob = NewArray(this.dim, 0);
+  this.minSlackValueByJob = NewArray(this.dim, 0.0);
+  this.committedWorkers = NewArray(this.dim, false);
+  this.parentWorkerByCommittedJob = NewArray(this.dim, 0);
+  this.matchJobByWorker = NewArray(this.dim, -1);
+  this.matchWorkerByJob = NewArray(this.dim, -1);
 }
 
 /**
@@ -127,19 +125,19 @@ function Hungarian(costMatrix) {
  * workers and by assigning to each job a label equal to the minimum cost
  * among its incident edges.
  */
-Hungarian.prototype.computeInitialFeasibleSolution = function() {
-    var j;
-    for (j = 0; j < this.dim; j++) {
-        this.labelByJob[j] = Infinity;
-    }
+Hungarian.prototype.computeInitialFeasibleSolution = function () {
+  var j;
+  for (j = 0; j < this.dim; j++) {
+    this.labelByJob[j] = Infinity;
+  }
 
-    for (var w = 0; w < this.dim; w++) {
-        for (j = 0; j < this.dim; j++) {
-            if (this.costMatrix[w][j] < this.labelByJob[j]) {
-                this.labelByJob[j] = this.costMatrix[w][j];
-            }
-        }
+  for (var w = 0; w < this.dim; w++) {
+    for (j = 0; j < this.dim; j++) {
+      if (this.costMatrix[w][j] < this.labelByJob[j]) {
+        this.labelByJob[j] = this.costMatrix[w][j];
+      }
     }
+  }
 };
 
 /**
@@ -149,32 +147,32 @@ Hungarian.prototype.computeInitialFeasibleSolution = function() {
  *         provided cost matrix. A matching value of -1 indicates that the
  *         corresponding worker is unassigned.
  */
-Hungarian.prototype.execute = function() {
-    /*
-     * Heuristics to improve performance: Reduce rows and columns by their
-     * smallest element, compute an initial non-zero dual feasible solution and
-     * create a greedy matching from workers to jobs of the cost matrix.
-     */
-    this.reduce();
-    this.computeInitialFeasibleSolution();
-    this.greedyMatch();
+Hungarian.prototype.execute = function () {
+  /*
+   * Heuristics to improve performance: Reduce rows and columns by their
+   * smallest element, compute an initial non-zero dual feasible solution and
+   * create a greedy matching from workers to jobs of the cost matrix.
+   */
+  this.reduce();
+  this.computeInitialFeasibleSolution();
+  this.greedyMatch();
 
-    var w = this.fetchUnmatchedWorker();
-    while (w < this.dim) {
-        this.initializePhase(w);
-        this.executePhase();
-        w = this.fetchUnmatchedWorker();
+  var w = this.fetchUnmatchedWorker();
+  while (w < this.dim) {
+    this.initializePhase(w);
+    this.executePhase();
+    w = this.fetchUnmatchedWorker();
+  }
+
+  var result = ArrayCopy(this.matchJobByWorker, this.rows);
+
+  for (w = 0; w < result.length; w++) {
+    if (result[w] >= this.cols) {
+      result[w] = -1;
     }
+  }
 
-    var result = ArrayCopy(this.matchJobByWorker, this.rows);
-
-    for (w = 0; w < result.length; w++) {
-        if (result[w] >= this.cols) {
-            result[w] = -1;
-        }
-    }
-
-    return result;
+  return result;
 };
 
 /**
@@ -195,92 +193,98 @@ Hungarian.prototype.execute = function() {
  * maintaining the minimum slack values among non-committed jobs. When a phase
  * completes, the matching will have increased in size.
  */
-Hungarian.prototype.executePhase = function() {
-    var j;
-    while (true) {
-        var minSlackWorker = -1,
-            minSlackJob = -1;
-        var minSlackValue = Infinity;
+Hungarian.prototype.executePhase = function () {
+  var j;
+  while (true) {
+    var minSlackWorker = -1,
+      minSlackJob = -1;
+    var minSlackValue = Infinity;
 
-        for (j = 0; j < this.dim; j++) {
-            if (this.parentWorkerByCommittedJob[j] == -1) {
-                if (this.minSlackValueByJob[j] < minSlackValue) {
-                    minSlackValue = this.minSlackValueByJob[j];
-                    minSlackWorker = this.minSlackWorkerByJob[j];
-                    minSlackJob = j;
-                }
-            }
+    for (j = 0; j < this.dim; j++) {
+      if (this.parentWorkerByCommittedJob[j] == -1) {
+        if (this.minSlackValueByJob[j] < minSlackValue) {
+          minSlackValue = this.minSlackValueByJob[j];
+          minSlackWorker = this.minSlackWorkerByJob[j];
+          minSlackJob = j;
         }
-
-        if (minSlackValue > 0) {
-            this.updateLabeling(minSlackValue);
-        }
-
-        this.parentWorkerByCommittedJob[minSlackJob] = minSlackWorker;
-
-        if (this.matchWorkerByJob[minSlackJob] == -1) {
-            /*
-             * An augmenting path has been found.
-             */
-            var committedJob = minSlackJob;
-            var parentWorker = this.parentWorkerByCommittedJob[committedJob];
-            while (true) {
-                var temp = this.matchJobByWorker[parentWorker];
-                this.match(parentWorker, committedJob);
-                committedJob = temp;
-                if (committedJob == -1) {
-                    break;
-                }
-                parentWorker = this.parentWorkerByCommittedJob[committedJob];
-            }
-            return;
-
-        } else {
-            /*
-             * Update slack values since we increased the size of the committed
-             * workers set.
-             */
-            var worker = this.matchWorkerByJob[minSlackJob];
-            this.committedWorkers[worker] = true;
-            for (j = 0; j < this.dim; j++) {
-                if (this.parentWorkerByCommittedJob[j] == -1) {
-                    var slack = this.costMatrix[worker][j] - this.labelByWorker[worker] - this.labelByJob[j];
-                    if (this.minSlackValueByJob[j] > slack) {
-                        this.minSlackValueByJob[j] = slack;
-                        this.minSlackWorkerByJob[j] = worker;
-                    }
-                }
-            }
-        }
+      }
     }
+
+    if (minSlackValue > 0) {
+      this.updateLabeling(minSlackValue);
+    }
+
+    this.parentWorkerByCommittedJob[minSlackJob] = minSlackWorker;
+
+    if (this.matchWorkerByJob[minSlackJob] == -1) {
+      /*
+       * An augmenting path has been found.
+       */
+      var committedJob = minSlackJob;
+      var parentWorker = this.parentWorkerByCommittedJob[committedJob];
+      while (true) {
+        var temp = this.matchJobByWorker[parentWorker];
+        this.match(parentWorker, committedJob);
+        committedJob = temp;
+        if (committedJob == -1) {
+          break;
+        }
+        parentWorker = this.parentWorkerByCommittedJob[committedJob];
+      }
+      return;
+    } else {
+      /*
+       * Update slack values since we increased the size of the committed
+       * workers set.
+       */
+      var worker = this.matchWorkerByJob[minSlackJob];
+      this.committedWorkers[worker] = true;
+      for (j = 0; j < this.dim; j++) {
+        if (this.parentWorkerByCommittedJob[j] == -1) {
+          var slack =
+            this.costMatrix[worker][j] -
+            this.labelByWorker[worker] -
+            this.labelByJob[j];
+          if (this.minSlackValueByJob[j] > slack) {
+            this.minSlackValueByJob[j] = slack;
+            this.minSlackWorkerByJob[j] = worker;
+          }
+        }
+      }
+    }
+  }
 };
 
 /**
  *
  * @return the first unmatched worker or {@link #dim} if none.
  */
-Hungarian.prototype.fetchUnmatchedWorker = function() {
-    var w;
-    for (w = 0; w < this.dim; w++) {
-        if (this.matchJobByWorker[w] == -1) {
-            break;
-        }
+Hungarian.prototype.fetchUnmatchedWorker = function () {
+  var w;
+  for (w = 0; w < this.dim; w++) {
+    if (this.matchJobByWorker[w] == -1) {
+      break;
     }
-    return w;
+  }
+  return w;
 };
 
 /**
  * Find a valid matching by greedily selecting among zero-cost matchings. This
  * is a heuristic to jump-start the augmentation algorithm.
  */
-Hungarian.prototype.greedyMatch = function() {
-    for (var w = 0; w < this.dim; w++) {
-        for (var j = 0; j < this.dim; j++) {
-            if (this.matchJobByWorker[w] == -1 && this.matchWorkerByJob[j] == -1 && this.costMatrix[w][j] - this.labelByWorker[w] - this.labelByJob[j] === 0) {
-                this.match(w, j);
-            }
-        }
+Hungarian.prototype.greedyMatch = function () {
+  for (var w = 0; w < this.dim; w++) {
+    for (var j = 0; j < this.dim; j++) {
+      if (
+        this.matchJobByWorker[w] == -1 &&
+        this.matchWorkerByJob[j] == -1 &&
+        this.costMatrix[w][j] - this.labelByWorker[w] - this.labelByJob[j] === 0
+      ) {
+        this.match(w, j);
+      }
     }
+  }
 };
 
 /**
@@ -291,23 +295,24 @@ Hungarian.prototype.greedyMatch = function() {
  * @param w
  *          the worker at which to root the next phase.
  */
-Hungarian.prototype.initializePhase = function(w) {
-    ArrayFill(this.committedWorkers, false);
-    ArrayFill(this.parentWorkerByCommittedJob, -1);
+Hungarian.prototype.initializePhase = function (w) {
+  ArrayFill(this.committedWorkers, false);
+  ArrayFill(this.parentWorkerByCommittedJob, -1);
 
-    this.committedWorkers[w] = true;
-    for (var j = 0; j < this.dim; j++) {
-        this.minSlackValueByJob[j] = this.costMatrix[w][j] - this.labelByWorker[w] - this.labelByJob[j];
-        this.minSlackWorkerByJob[j] = w;
-    }
+  this.committedWorkers[w] = true;
+  for (var j = 0; j < this.dim; j++) {
+    this.minSlackValueByJob[j] =
+      this.costMatrix[w][j] - this.labelByWorker[w] - this.labelByJob[j];
+    this.minSlackWorkerByJob[j] = w;
+  }
 };
 
 /**
  * Helper method to record a matching between worker w and job j.
  */
-Hungarian.prototype.match = function(w, j) {
-    this.matchJobByWorker[w] = j;
-    this.matchWorkerByJob[j] = w;
+Hungarian.prototype.match = function (w, j) {
+  this.matchJobByWorker[w] = j;
+  this.matchWorkerByJob[j] = w;
 };
 
 /**
@@ -316,39 +321,39 @@ Hungarian.prototype.match = function(w, j) {
  * all elements of the column. Note that an optimal assignment for a reduced
  * cost matrix is optimal for the original cost matrix.
  */
-Hungarian.prototype.reduce = function() {
-    var j, min, w;
-    for (w = 0; w < this.dim; w++) {
-        min = Infinity;
-        for (j = 0; j < this.dim; j++) {
-            if (this.costMatrix[w][j] < min) {
-                min = this.costMatrix[w][j];
-            }
-        }
-        for (j = 0; j < this.dim; j++) {
-            this.costMatrix[w][j] -= min;
-        }
+Hungarian.prototype.reduce = function () {
+  var j, min, w;
+  for (w = 0; w < this.dim; w++) {
+    min = Infinity;
+    for (j = 0; j < this.dim; j++) {
+      if (this.costMatrix[w][j] < min) {
+        min = this.costMatrix[w][j];
+      }
     }
-
-    min = NewArray(this.dim, Infinity);
-    //double[] min = new double[dim];
-    //for (int j = 0; j < dim; j++) {
-    //	min[j] = Double.POSITIVE_INFINITY;
-    //}
-
-    for (w = 0; w < this.dim; w++) {
-        for (j = 0; j < this.dim; j++) {
-            if (this.costMatrix[w][j] < min[j]) {
-                min[j] = this.costMatrix[w][j];
-            }
-        }
+    for (j = 0; j < this.dim; j++) {
+      this.costMatrix[w][j] -= min;
     }
+  }
 
-    for (w = 0; w < this.dim; w++) {
-        for (j = 0; j < this.dim; j++) {
-            this.costMatrix[w][j] -= min[j];
-        }
+  min = NewArray(this.dim, Infinity);
+  //double[] min = new double[dim];
+  //for (int j = 0; j < dim; j++) {
+  //	min[j] = Double.POSITIVE_INFINITY;
+  //}
+
+  for (w = 0; w < this.dim; w++) {
+    for (j = 0; j < this.dim; j++) {
+      if (this.costMatrix[w][j] < min[j]) {
+        min[j] = this.costMatrix[w][j];
+      }
     }
+  }
+
+  for (w = 0; w < this.dim; w++) {
+    for (j = 0; j < this.dim; j++) {
+      this.costMatrix[w][j] -= min[j];
+    }
+  }
 };
 
 /**
@@ -356,104 +361,108 @@ Hungarian.prototype.reduce = function() {
  * committed workers and by subtracting the slack value for committed jobs. In
  * addition, update the minimum slack values appropriately.
  */
-Hungarian.prototype.updateLabeling = function(slack) {
-    for (var w = 0; w < this.dim; w++) {
-        if (this.committedWorkers[w]) {
-            this.labelByWorker[w] += slack;
-        }
+Hungarian.prototype.updateLabeling = function (slack) {
+  for (var w = 0; w < this.dim; w++) {
+    if (this.committedWorkers[w]) {
+      this.labelByWorker[w] += slack;
     }
+  }
 
-    for (var j = 0; j < this.dim; j++) {
-        if (this.parentWorkerByCommittedJob[j] != -1) {
-            this.labelByJob[j] -= slack;
-        } else {
-            this.minSlackValueByJob[j] -= slack;
-        }
+  for (var j = 0; j < this.dim; j++) {
+    if (this.parentWorkerByCommittedJob[j] != -1) {
+      this.labelByJob[j] -= slack;
+    } else {
+      this.minSlackValueByJob[j] -= slack;
     }
+  }
 };
 
-
-
 function Test() {
-    /// Compare whether two arrays are identical value-wise.
-    /// @param a Left hand side array
-    /// @param b Right hand side array
-    /// @return A boolean indicating value equivalency
-    function ArrayEquals(a, b) {
-        if (a.length == b.length) {
-            for (var i = 0; i < a.length; ++i) {
-                if (a[i] != b[i]) {
-                    return false;
-                }
-            }
-
-            return true;
+  /// Compare whether two arrays are identical value-wise.
+  /// @param a Left hand side array
+  /// @param b Right hand side array
+  /// @return A boolean indicating value equivalency
+  function ArrayEquals(a, b) {
+    if (a.length == b.length) {
+      for (var i = 0; i < a.length; ++i) {
+        if (a[i] != b[i]) {
+          return false;
         }
+      }
 
-        return false;
+      return true;
     }
 
-    /// Compute the cheapest path through the matrix and compare
-    /// the outcome with the known solution.
-    /// @param matrix An array of arrays with numbers.
-    /// @param solution The known solution, for validation.
-    function Assert(matrix, solution) {
+    return false;
+  }
 
-        var h = new Hungarian(matrix);
-        var s = h.execute();
+  /// Compute the cheapest path through the matrix and compare
+  /// the outcome with the known solution.
+  /// @param matrix An array of arrays with numbers.
+  /// @param solution The known solution, for validation.
+  function Assert(matrix, solution) {
+    var h = new Hungarian(matrix);
+    var s = h.execute();
 
-        if (ArrayEquals(solution, s)) {
-            console.log("Solution correct.");
-        } else {
-            console.log("Failed: ", matrix, solution, s);
-        }
+    if (ArrayEquals(solution, s)) {
+      console.log("Solution correct.");
+    } else {
+      console.log("Failed: ", matrix, solution, s);
     }
+  }
 
-    /// Some tests copied from: http://www.fantascienza.net/leonardo/so/hungarian.d
-    Assert([
-        [],
-        []
-    ], [-1, -1]);
-    Assert([
-        [1]
-    ], [0]);
-    Assert([
-        [1],
-        [1]
-    ], [0, -1]);
-    Assert([
-        [1, 1]
-    ], [0]);
-    Assert([
-        [1, 1],
-        [1, 1]
-    ], [0, 1]);
-    Assert([
-        [1, 1],
-        [1, 1],
-        [1, 1]
-    ], [0, 1, -1]);
-    Assert([
-        [1, 2, 3],
-        [6, 5, 4]
-    ], [0, 2]);
-    Assert([
-        [1, 2, 3],
-        [6, 5, 4],
-        [1, 1, 1]
-    ], [0, 2, 1]);
-    Assert([
-        [1, 2, 3],
-        [6, 5, 4],
-        [1, 1, 1]
-    ], [0, 2, 1]);
-    Assert([
-        [10, 25, 15, 20],
-        [15, 30, 5, 15],
-        [35, 20, 12, 24],
-        [17, 25, 24, 20]
-    ], [0, 2, 1, 3]);
-
+  /// Some tests copied from: http://www.fantascienza.net/leonardo/so/hungarian.d
+  Assert([[], []], [-1, -1]);
+  Assert([[1]], [0]);
+  Assert([[1], [1]], [0, -1]);
+  Assert([[1, 1]], [0]);
+  Assert(
+    [
+      [1, 1],
+      [1, 1],
+    ],
+    [0, 1],
+  );
+  Assert(
+    [
+      [1, 1],
+      [1, 1],
+      [1, 1],
+    ],
+    [0, 1, -1],
+  );
+  Assert(
+    [
+      [1, 2, 3],
+      [6, 5, 4],
+    ],
+    [0, 2],
+  );
+  Assert(
+    [
+      [1, 2, 3],
+      [6, 5, 4],
+      [1, 1, 1],
+    ],
+    [0, 2, 1],
+  );
+  Assert(
+    [
+      [1, 2, 3],
+      [6, 5, 4],
+      [1, 1, 1],
+    ],
+    [0, 2, 1],
+  );
+  Assert(
+    [
+      [10, 25, 15, 20],
+      [15, 30, 5, 15],
+      [35, 20, 12, 24],
+      [17, 25, 24, 20],
+    ],
+    [0, 2, 1, 3],
+  );
 }
 
 // Test();

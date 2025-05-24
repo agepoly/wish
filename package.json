@@ -4,6 +4,9 @@
   "description": "website to solve assignment problem",
   "main": "src/index.js",
   "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js",
+    "format": "prettier --write \"src/**/*.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -17,13 +20,16 @@
   },
   "homepage": "https://wish.agepoly.ch",
   "dependencies": {
-    "emailjs": "^1.0.8",
+    "emailjs": "^4.0.3",
     "express": "^4.14.1",
     "mongodb": "^3.0.5",
     "mustache": "^2.3.0",
-    "socket.io": "^1.7.2"
+    "socket.io": "^4.8.1"
   },
   "jshintConfig": {
     "strict": "true"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
   }
 }
